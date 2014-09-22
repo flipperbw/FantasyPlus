@@ -1,0 +1,19 @@
+{
+  "name": "FantasyPlus",
+  "version": "1.0",
+  "manifest_version": 2,
+  "description": "Adds extra weekly projections (from various reputable sources) to fantasy football leagues.",
+  "permissions": [
+    "http://espn.go.com/*",
+    "http://games.espn.go.com/*",
+    "http://www.fantasypros.com/*",
+    "http://www.fantasysharks.com/*",
+    "webRequest"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["http://games.espn.go.com/ffl/clubhouse*", "http://games.espn.go.com/ffl/freeagency*", "http://games.espn.go.com/ffl/matchuppreview*"],
+      "js" : ["jquery-1.11.1.min.js", "contentscript.js"]
+    }
+  ]
+}
