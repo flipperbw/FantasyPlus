@@ -3,6 +3,7 @@
 - Fix name-pos-team
 - Look for other obscure settings
 - Fix bottom column on matchuppreview
+- Somehow do all 9 requests at once
 */
 
 /*
