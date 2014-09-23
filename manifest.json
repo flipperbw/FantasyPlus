@@ -4,6 +4,7 @@
   "manifest_version": 2,
   "description": "Adds extra weekly projections (from various reputable sources) to fantasy football leagues.",
   "icons": {
+    "16" : "FantasyPlusIcon-16.png",
     "48" : "FantasyPlusIcon-48.png",
     "128" : "FantasyPlusIcon-128.png"
   },
