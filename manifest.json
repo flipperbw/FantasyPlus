@@ -3,6 +3,10 @@
   "version": "1.0",
   "manifest_version": 2,
   "description": "Adds extra weekly projections (from various reputable sources) to fantasy football leagues.",
+  "icons": {
+    "48" : "FantasyPlusIcon-48.png",
+    "128" : "FantasyPlusIcon-128.png"
+  },
   "permissions": [
     "http://espn.go.com/*",
     "http://games.espn.go.com/*",
