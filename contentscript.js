@@ -1,3 +1,10 @@
+/*-- TODO
+- Add a "total" row for starting players (and on matchup preview), which at least has fpros, but also can do pts, avg, last, and proj
+- Fix name-pos-team
+- Look for other obscure settings
+- Fix bottom column on matchuppreview
+*/
+
 /*
 var tag = document.createElement("script");
 tag.type="text/javascript";
@@ -278,56 +285,66 @@ $(document).ready(function () {
 			return $(this).text() == 'PROJ';
 		});
 		header_index = $(heads[0]).index();
-		heads.after('<td class="playertableStat ExtraProjectionsFantasypros ExtraProjectionsFantasyprosHeader">FPros</td>');
-		
-		$('.playerTableBgRowHead.tableHead.playertableSectionHeader').find('th:last').attr('colspan',6);
-		
-		playerNameRows = $('[id^=playertable_] tbody tr.playerTableBgRowSubhead td').filter(function() {
-			return $(this).text() == 'PLAYER, TEAM POS';
-		});
-		playerNameIndex = $(playerNameRows[0]).index();
-		//for each player name
-		$.each($('[id^=playertable_] tbody tr.pncPlayerRow').not('.emptyRow'), function() {
-			var currRow = $(this);
+		if (header_index > -1) {
+			heads.after('<td class="playertableStat ExtraProjectionsFantasypros ExtraProjectionsFantasyprosHeader">FPros</td>');
 			
-			byeweek = $($('[id^=playertable_] tbody tr.playerTableBgRowSubhead td').filter(function() {
-				return $(this).text() == 'OPP';
-			})[0]).index();
+			$('.playerTableBgRowHead.tableHead.playertableSectionHeader').find('th:last').attr('colspan',6);
 			
-			if (currRow.find('td').eq(byeweek).text() == "BYE") {
-				projPoints = "-";
-			}
-			else {
-				player_cell = currRow.find('td').eq(playerNameIndex);
-				if (player_cell.text().indexOf('D/ST') > -1) {
-					var player_name = $(player_cell).find('a').text();
-					var team_name = "";
+			playerNameRows = $('[id^=playertable_] tbody tr.playerTableBgRowSubhead td').filter(function() {
+				return $(this).text() == 'PLAYER, TEAM POS';
+			});
+			playerNameIndex = $(playerNameRows[0]).index();
+			//for each player name
+			$.each($('[id^=playertable_] tbody tr.pncPlayerRow').not('.emptyRow'), function() {
+				var currRow = $(this);
+				
+				byeweek = $($('[id^=playertable_] tbody tr.playerTableBgRowSubhead td').filter(function() {
+					return $(this).text() == 'OPP';
+				})[0]).index();
+				byeweek_text = currRow.find('td').eq(byeweek).text();
+				
+				if (!byeweek_text) {
+					projPoints = "-";
+				}
+				else if (byeweek_text == "** BYE **") {
+					projPoints = "-";
+					adj_header_index = header_index - 1;
 				}
 				else {
-					var player_name = player_cell.text().split(",")[0];
-					var team_name = player_cell.text().split(",")[1].split(/\s|\xa0/)[1].toUpperCase();
+					adj_header_index = header_index;
+					
+					player_cell = currRow.find('td').eq(playerNameIndex);
+					if (player_cell.text().indexOf('D/ST') > -1) {
+						var player_name = $(player_cell).find('a').text();
+						var team_name = "";
+					}
+					else {
+						var player_name = player_cell.text().split(",")[0];
+						var team_name = player_cell.text().split(",")[1].split(/\s|\xa0/)[1].toUpperCase();
+					}
+					player_name = player_name.replace('*','');
+					//console.log(player_name, team_name);
+					projPoints = calculateProjections(player_name);
 				}
-				player_name = player_name.replace('*','');
-				//console.log(player_name, team_name);
-				projPoints = calculateProjections(player_name);
-			}
-			currRow.find('td').eq(header_index).after('<td class="playertableStat ExtraProjectionsFantasypros">' + projPoints + '</td');
-		});
+				currRow.find('td').eq(adj_header_index).after('<td class="playertableStat ExtraProjectionsFantasypros">' + projPoints + '</td');
+			});
+		}
 	}
 	
-	var observerConfig = {
-		childList: true,
-		characterData: true,
-		subtree: true
-	};
-	var target_observe = document.querySelector('.playerTableContainerDiv');
-	var observerESPN = new MutationObserver(function (mutations) {
-		observerESPN.disconnect();
-		if (mutations.length > 0) {
-			addProjections();
-		}
+	if (document.URL.match(/ffl\/(freeagency|clubhouse)/)) {
+		var observerConfig = {
+			childList: true,
+			characterData: true,
+			subtree: true
+		};
+		var target_observe = document.querySelector('.playerTableContainerDiv');
+		var observerESPN = new MutationObserver(function (mutations) {
+			observerESPN.disconnect();
+			if (mutations.length > 0) {
+				addProjections();
+			}
+			observerESPN.observe(target_observe, observerConfig);
+		});
 		observerESPN.observe(target_observe, observerConfig);
-	});
-	observerESPN.observe(target_observe, observerConfig);
-	
+	}
 });
