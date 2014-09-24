@@ -12,7 +12,7 @@ And supports IDP's as well:
 
 ![IDP Preview](http://i.imgur.com/GKYSZHL.png)
 
-Future Ideas:
+Future Ideas
 ------
 * Support Yahoo, NFL, and Fleaflicker
 * Give the option to select which experts you want
