@@ -20,5 +20,4 @@ Future Ideas:
 
 Known Issues
 ------
-* Players with the exact same name may share the same projection (ex. Alex Smith)
 * Some esoteric scoring settings are not currently monitored ("2 points for the first 10 yards if your name starts with a J")
