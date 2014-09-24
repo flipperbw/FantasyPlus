@@ -1,8 +1,9 @@
 {
-  "name": "Extra Fantasy Projections",
-  "version": "1.0",
+  "name": "FantasyPlus",
+  "short_name": "FantasyPlus",
+  "version": "1.0.1",
   "manifest_version": 2,
-  "description": "Adds extra weekly projections (from various reputable sources) to ESPN fantasy football leagues.",
+  "description": "Adds weekly projected points from Fantasypros.com (Pro Football Focus, NumberFire, etc.) and FantasySharks (for D/ST and IDP) to your fantasy sites.",
   "icons": {
     "16" : "FantasyPlusIcon-16.png",
     "48" : "FantasyPlusIcon-48.png",
