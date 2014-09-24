@@ -1,6 +1,5 @@
 /*-- TODO
 - Add a "total" row for starting players (and on matchup preview), which at least has fpros, but also can do pts, avg, last, and proj
-- Fix name-pos-team
 - Look for other obscure settings
 - Fix bottom column on matchuppreview
 - Somehow do all 9 requests at once
@@ -14,6 +13,16 @@ document.body.appendChild(tag);
 */
 
 $(document).ready(function () {
+	// GLOBALS
+	window.alldata = {};
+	
+	window.positions = ['qb', 'rb', 'wr', 'te', 'k'];
+	window.idp_positions = ['6','8','9','10'];
+	window.all_positions = window.positions.concat(window.idp_positions);
+	
+	window.idp_conversion = {'6': 'D/ST', '8': 'DL', '9': 'LB', '10': 'DB'};
+	window.team_name_conversion = {'ARZ': 'ARI', 'GBP': 'GB', 'KCC': 'KC', 'NEP': 'NE', 'NOR': 'NO', 'SDC': 'SD', 'SFO': 'SF', 'TBB': 'TB', 'WAS': 'WSH'};
+	
 	//Get League Settings
 	var league_id = document.URL.match(/leagueId=(\d+)/)[1];
 	var xhr_league = new XMLHttpRequest();
@@ -77,47 +86,37 @@ $(document).ready(function () {
 		getPosProjections();
 	}
 	
-	//Get the data
+	
+	//Get the data from external sites
 	function getAllProjections(position) {
+		if (window.positions.indexOf(position) > -1) {
+			source_site = 'http://www.fantasypros.com/nfl/projections/' + position + '.php?filters=44:45:73:152:469&export=xls';
+		}
+		else {
+			source_site = 'http://www.fantasysharks.com/apps/bert/forecasts/projections.php?csv=1&Position=' + position;
+		}
+		
 		var allxhr = new XMLHttpRequest();
-		allxhr.open("GET", 'http://www.fantasypros.com/nfl/projections/' + position + '.php?filters=44:45:73:152:469&export=xls', false);
+		allxhr.open("GET", source_site, false);
 		allxhr.send();
 		return allxhr.responseText;
 	}
 	
-	function getIDPProjections(pos_num) {
-		var idpxhr = new XMLHttpRequest();
-		idpxhr.open("GET", 'http://www.fantasysharks.com/apps/bert/forecasts/projections.php?csv=1&Position=' + pos_num, false);
-		idpxhr.send();
-		return idpxhr.responseText;
-	}
-	
+	// credit to stackoverflow
 	function parsesiteCSV(str) {
 		var arr = [];
-		var quote = false;  // true means we're inside a quoted field
+		var quote = false;
 		
-		// iterate over each character, keep track of current row and column (of the returned array)
 		for (var row = col = c = 0; c < str.length; c++) {
-			var cc = str[c], nc = str[c+1];        // current character, next character
-			arr[row] = arr[row] || [];             // create a new row if necessary
-			arr[row][col] = arr[row][col] || '';   // create a new column (start with empty string) if necessary
+			var cc = str[c], nc = str[c+1];
+			arr[row] = arr[row] || [];
+			arr[row][col] = arr[row][col] || '';
 			
-			// If the current character is a quotation mark, and we're inside a
-			// quoted field, and the next character is also a quotation mark,
-			// add a quotation mark to the current column and skip the next character
 			if (cc == '"' && quote && nc == '"') { arr[row][col] += cc; ++c; continue; }  
-			
-			// If it's just one quotation mark, begin/end quoted field
 			if (cc == '"') { quote = !quote; continue; }
-			
-			// If it's a comma and we're not in a quoted field, move on to the next column
 			if (cc == ',' && !quote) { ++col; continue; }
-			
-			// If it's a newline and we're not in a quoted field, move on to the next
-			// row and move to column 0 of that new row
 			if (cc == '\n' && !quote) { ++row; col = 0; continue; }
-			
-			// Otherwise, append the current character to the current column
+
 			arr[row][col] += cc;
 		}
 
@@ -125,61 +124,79 @@ $(document).ready(function () {
 	}
 	
 	function getPosProjections() {
-		window.alldata = {};
-		//I might need to add position+team for names that are the same
-
-		positions = ['qb', 'rb', 'wr', 'te', 'k'];
-		for (var p=0; p < positions.length; p++) {
-			da = getAllProjections(positions[p]);
-			q = da.split('\n');
-			
-			headers = q[5].split('\t')
-			for (var i=6; i < q.length - 1; i++) {
-				var playerdata = {};
-				var currentline = q[i].split("\t");
-				player_name = currentline[0].trim();
-				for (var j=1; j < headers.length - 1; j++) {
-					playerdata[headers[j].trim()] = currentline[j].trim();
+		for (var p=0; p < window.all_positions.length; p++) {
+			p_name = window.all_positions[p];
+			retrieved_proj = getAllProjections(p_name);
+			retrieved_proj = retrieved_proj.trim();
+			if (window.positions.indexOf(p_name) > -1) {
+				player_heading = 'Player Name';
+				pos_name = p_name.toUpperCase();
+				retrieved_proj = retrieved_proj.split('\n').splice(4);
+				
+				parsed_proj = [];
+				for (var t=0; t < retrieved_proj.length; t++) {
+					parsed_proj[t] = retrieved_proj[t].split("\t");
 				}
-				window.alldata[player_name] = playerdata;
 			}
-		}
-
-		idp_positions = ['6','8','9','10']
-		for (var idp=0; idp < idp_positions.length; idp++) {
-			idp_da = getIDPProjections(idp_positions[idp]);
-			parsed_idp_da = parsesiteCSV(idp_da.trim());
-
-			idp_headers = parsed_idp_da[0];
-			for (var ii=1; ii < parsed_idp_da.length; ii++) {
+			else {
+				player_heading = 'Player';
+				pos_name = window.idp_conversion[p_name];
+				parsed_proj = parsesiteCSV(retrieved_proj);
+			}
+			
+			headers = parsed_proj[0];
+			for (var h=0; h < headers.length; h++) {
+				headers[h] = headers[h].trim();
+			}
+			
+			team_header = headers.indexOf('Team');
+			player_name_header = headers.indexOf(player_heading);
+			
+			for (var i=1; i < parsed_proj.length; i++) {
 				var playerdata = {};
-				var currentline = parsed_idp_da[ii];
-
-				player_name = currentline[1];
-				//DST
-				if (idp_positions[idp] == '6') {
-					player_name = player_name.split(',')[0] + ' D/ST';
-				}
-				//Other IDPs, reversing names
-				else {
-					player_name = player_name.split(',')[1] + " " + player_name.split(',')[0]
+				var currentline = parsed_proj[i];
+				
+				team_name = currentline[team_header].trim();
+				if (window.team_name_conversion.hasOwnProperty(team_name)) {
+					team_name = window.team_name_conversion[team_name];
 				}
 				
-				player_name = player_name.trim();
-				for (var jj=2; jj < idp_headers.length - 1; jj++) {
-					playerdata[idp_headers[jj]] = currentline[jj];
+				player_name = currentline[player_name_header].trim();
+				
+				if (window.idp_positions.indexOf(p_name) > -1) {
+					//DST
+					if (p_name == '6') {
+						player_name = player_name.split(',')[0] + ' D/ST';
+						team_name = "-";
+					}
+					//Other IDPs, reversing names
+					else {
+						player_name = player_name.split(',')[1] + " " + player_name.split(',')[0]
+					}
+					
+					player_name = player_name.trim();
 				}
-				window.alldata[player_name] = playerdata;
+				
+				// Add team and position to player_name for differentiating duplicate names
+				full_name = player_name + "|" + pos_name + "|" + team_name;
+				
+				for (var j = player_name_header + 1; j < headers.length - 1; j++) {
+					playerdata[headers[j].trim()] = currentline[j].trim();
+				}
+				
+				window.alldata[full_name] = playerdata;
 			}
 		}
 		
 		addProjections();
 	}
 
-	function calculateProjections(player_name) {
+	function calculateProjections(player_name, pos_name, team_name) {
 		// get their projected data from window.alldata
 		// multiply it by the league settings
-		player_data = window.alldata[player_name]
+		full_name = player_name + "|" + pos_name + "|" + team_name;
+		
+		player_data = window.alldata[full_name]
 		
 		if (typeof(player_data) === "undefined") {
 			if (player_name == 'Steve Smith Sr.') {
@@ -219,7 +236,8 @@ $(document).ready(function () {
 				return("??");
 			}
 			
-			player_data = window.alldata[player_name];
+			full_name = player_name + "|" + pos_name + "|" + team_name;
+			player_data = window.alldata[full_name];
 			if (typeof(player_data) === "undefined") {
 				return("??");
 			}
@@ -306,6 +324,7 @@ $(document).ready(function () {
 				
 				if (!byeweek_text) {
 					projPoints = "-";
+					adj_header_index = header_index;
 				}
 				else if (byeweek_text == "** BYE **") {
 					projPoints = "-";
@@ -316,17 +335,27 @@ $(document).ready(function () {
 					
 					player_cell = currRow.find('td').eq(playerNameIndex);
 					if (player_cell.text().indexOf('D/ST') > -1) {
-						var player_name = $(player_cell).find('a').text();
-						var team_name = "";
+						var player_name = $(player_cell).find('a').text().trim();
+						var team_name = "-";
+						var pos_name = 'D/ST';
 					}
 					else {
 						var player_name = player_cell.text().split(",")[0];
-						var team_name = player_cell.text().split(",")[1].split(/\s|\xa0/)[1].toUpperCase();
+						var team_pos = player_cell.text().split(",")[1].split(/\s|\xa0/);
+						var team_name = team_pos[1].toUpperCase();
+						var pos_name = team_pos[2];
+						if ((pos_name == 'DT') || (pos_name == 'DE')) {
+							pos_name = 'DL';
+						}
+						else if ((pos_name == 'CB') || (pos_name == 'S')) {
+							pos_name = 'DB';
+						}
 					}
 					player_name = player_name.replace('*','');
-					//console.log(player_name, team_name);
-					projPoints = calculateProjections(player_name);
+					
+					projPoints = calculateProjections(player_name, pos_name, team_name);
 				}
+
 				currRow.find('td').eq(adj_header_index).after('<td class="playertableStat ExtraProjectionsFantasypros">' + projPoints + '</td');
 			});
 		}
