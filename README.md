@@ -17,8 +17,11 @@ Future Ideas
 * Support Yahoo, NFL, and Fleaflicker
 * Give the option to select which experts you want
 * Add more projected sources, especially for defense
+* Add more columns (like Standard Deviation, Ranking, Injury-Adjusted Averages, etc.)
+* Add "total" rows
 
 Known Issues
 ------
 * Some esoteric scoring settings are not currently monitored ("2 points for the first 10 yards if your name starts with a J")
+* There is a small delay while it fetches the data - will work to reduce that as much as possible
 * FantasyPros doesn't have return yardage, which can be pretty valuable
