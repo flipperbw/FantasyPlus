@@ -21,3 +21,4 @@ Future Ideas
 Known Issues
 ------
 * Some esoteric scoring settings are not currently monitored ("2 points for the first 10 yards if your name starts with a J")
+* FantasyPros doesn't have return yardage, which can be pretty valuable

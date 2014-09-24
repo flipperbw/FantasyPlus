@@ -1,6 +1,6 @@
 /*-- TODO
 - Add a "total" row for starting players (and on matchup preview), which at least has fpros, but also can do pts, avg, last, and proj
-- Look for other obscure settings
+- Add standard deviation, ranking, injury adjusted average points, somehow adjust OPRK for shitty teams
 - Fix bottom column on matchuppreview
 - Somehow do all 9 requests at once
 */
@@ -33,26 +33,36 @@ $(document).ready(function () {
 	function parse_data(league_data) {
 		window.league_settings = {};
 
-		window.league_settings['pass_yds'] = $("td", league_data).filter(function() { return $.text([this]) == 'Passing Yards (PY)'; }).next().text() || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(PY5)') > -1; }).next().text()) / 5.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(PY20)') > -1; }).next().text()) / 20.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(PY25)') > -1; }).next().text()) / 25.0 || 0;
+		window.league_settings['pass_yds'] = $("td", league_data).filter(function() { return $.text([this]) == 'Passing Yards (PY)'; }).next().text() || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(PY5)') > -1; }).next().text()) / 5.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(PY10)') > -1; }).next().text()) / 10.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(PY20)') > -1; }).next().text()) / 20.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(PY25)') > -1; }).next().text()) / 25.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(PY50)') > -1; }).next().text()) / 50.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(PY100)') > -1; }).next().text()) / 100.0 || 0;
 		window.league_settings['pass_tds'] = $("td", league_data).filter(function() { return $.text([this]) == 'TD Pass (PTD)'; }).next().text() || 0;
 		window.league_settings['pass_ints'] = $("td", league_data).filter(function() { return $.text([this]) == 'Interceptions Thrown (INT)'; }).next().text() || 0;
+		window.league_settings['pass_cmp'] = $("td", league_data).filter(function() { return $.text([this]) == 'Each Pass Completed (PC)'; }).next().text() || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(PC5)') > -1; }).next().text()) / 5.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(PC10)') > -1; }).next().text()) / 10.0 || 0;
+		window.league_settings['pass_icmp'] = $("td", league_data).filter(function() { return $.text([this]) == 'Each Incomplete Pass (INC)'; }).next().text() || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(IP5)') > -1; }).next().text()) / 5.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(IP10)') > -1; }).next().text()) / 10.0 || 0;
+		window.league_settings['pass_att'] = $("td", league_data).filter(function() { return $.text([this]) == 'Each Pass Attempted (PA)'; }).next().text() || 0;
+		window.league_settings['pass_300_bonus'] = $("td", league_data).filter(function() { return $.text([this]) == '300-399 yard passing game (P300)'; }).next().text() || 0;
+		window.league_settings['pass_400_bonus'] = $("td", league_data).filter(function() { return $.text([this]) == '400+ yard passing game (P400)'; }).next().text() || 0;
 		
-		window.league_settings['rush_yds'] = $("td", league_data).filter(function() { return $.text([this]) == 'Rushing Yards (RY)'; }).next().text() || parseFloat($("td", league_data).filter(function() { return $.text([this]) == 'Every 10 rushing yards (RY10)'; }).next().text()) / 10.0 || 0;
+		window.league_settings['rush_yds'] = $("td", league_data).filter(function() { return $.text([this]) == 'Rushing Yards (RY)'; }).next().text() || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(RY5)') > -1; }).next().text()) / 5.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]) == 'Every 10 rushing yards (RY10)'; }).next().text()) / 10.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(RY20)') > -1; }).next().text()) / 20.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(RY25)') > -1; }).next().text()) / 25.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(RY50)') > -1; }).next().text()) / 50.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(RY100)') > -1; }).next().text()) / 100.0 || 0;
+		window.league_settings['rush_att'] = $("td", league_data).filter(function() { return $.text([this]) == 'Rushing Attempts (RA)'; }).next().text() || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(RA5)') > -1; }).next().text()) / 5.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(RA10)') > -1; }).next().text()) / 10.0 || 0;
 		window.league_settings['rush_tds'] = $("td", league_data).filter(function() { return $.text([this]) == 'TD Rush (RTD)'; }).next().text() || 0;
 		window.league_settings['rush_100_bonus'] = $("td", league_data).filter(function() { return $.text([this]) == '100-199 yard rushing game (RY100)'; }).next().text() || 0;
 		window.league_settings['rush_200_bonus'] = $("td", league_data).filter(function() { return $.text([this]) == '200+ yard rushing game (RY200)'; }).next().text() || 0;
 		
-		window.league_settings['rec_yds'] = $("td", league_data).filter(function() { return $.text([this]) == 'Receiving Yards (REY)'; }).next().text() || parseFloat($("td", league_data).filter(function() { return $.text([this]) == 'Every 10 receiving yards (REY10)'; }).next().text()) / 10.0 || 0;
-		window.league_settings['rec_att'] = $("td", league_data).filter(function() { return $.text([this]) == 'Each reception (REC)'; }).next().text() || 0;
+		window.league_settings['rec_yds'] = $("td", league_data).filter(function() { return $.text([this]) == 'Receiving Yards (REY)'; }).next().text() || parseFloat($("td", league_data).filter(function() { return $.text([this]) == 'Every 5 receiving yards (REY5)'; }).next().text()) / 5.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(REY10)') > -1; }).next().text()) / 10.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(REY20)') > -1; }).next().text()) / 20.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(REY25)') > -1; }).next().text()) / 25.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(REY50)') > -1; }).next().text()) / 50.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(REY100)'); }).next().text()) / 100.0 || 0;
+		window.league_settings['rec_att'] = $("td", league_data).filter(function() { return $.text([this]) == 'Each reception (REC)'; }).next().text() || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(REC5)') > -1; }).next().text()) / 5.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(REC10)') > -1; }).next().text()) / 10.0 || 0;
 		window.league_settings['rec_tds'] = $("td", league_data).filter(function() { return $.text([this]) == 'TD Reception (RETD)'; }).next().text() || 0;
 		window.league_settings['rec_100_bonus'] = $("td", league_data).filter(function() { return $.text([this]) == '100-199 yard receiving game (REY100)'; }).next().text() || 0;
 		window.league_settings['rec_200_bonus'] = $("td", league_data).filter(function() { return $.text([this]) == '200+ yard receiving game (REY200)'; }).next().text() || 0;
+		//Receiving Target (RET)
 		
 		window.league_settings['xpt'] = $("td", league_data).filter(function() { return $.text([this]) == 'Each PAT Made (PAT)'; }).next().text() || 0;
 		window.league_settings['fgm'] = $("td", league_data).filter(function() { return $.text([this]) == 'Total FG Missed (FGM)'; }).next().text() || 0;
-		window.league_settings['fg_0'] = $("td", league_data).filter(function() { return $.text([this]) == 'FG Made (0-39 yards) (FG0)'; }).next().text() || 3;
+		window.league_settings['fga'] = $("td", league_data).filter(function() { return $.text([this]) == 'Total FG Attempted (FGA)'; }).next().text() || 0;
+		window.league_settings['fg'] = $("td", league_data).filter(function() { return $.text([this]) == 'Total FG Made (FG)'; }).next().text() || 0;
+		window.league_settings['fg_0'] = $("td", league_data).filter(function() { return $.text([this]) == 'FG Made (0-39 yards) (FG0)'; }).next().text() || 0;
 		window.league_settings['fg_40'] = $("td", league_data).filter(function() { return $.text([this]) == 'FG Made (40-49 yards) (FG40)'; }).next().text() || 0;
 		window.league_settings['fg_50'] = $("td", league_data).filter(function() { return $.text([this]) == 'FG Made (50+ yards) (FG50)'; }).next().text() || 0;
+		//Each PAT Attempted (PATA)
 		
 		window.league_settings['fumbles'] = $("td", league_data).filter(function() { return $.text([this]) == 'Total Fumbles Lost (FUML)'; }).next().text() || 0;
 		
@@ -64,18 +74,24 @@ $(document).ready(function () {
 		window.league_settings['int'] = $("td", league_data).filter(function() { return $.text([this]) == 'Each Interception (INT)'; }).next().text() || 0;
 		window.league_settings['deftd'] = $($("td", league_data).filter(function() { return $.text([this]) == 'Interception Return TD (INTTD)'; })[0]).next().text() || 0;
 		window.league_settings['fr'] = $("td", league_data).filter(function() { return $.text([this]) == 'Each Fumble Recovered (FR)'; }).next().text() || 0;
-		
 		window.league_settings['sk'] = $("td", league_data).filter(function() { return $.text([this]) == 'Each Sack (SK)'; }).next().text() || parseFloat($("td", league_data).filter(function() { return $.text([this]) == '1/2 Sack (HALFSK)'; }).next().text()) * 2 || 0;
+		
+		window.league_settings['pa'] = $("td", league_data).filter(function() { return $.text([this]) == 'Points Allowed (PA)'; }).next().text() || 0;
 		window.league_settings['pa0'] = $("td", league_data).filter(function() { return $.text([this]) == '0 points allowed (PA0)'; }).next().text() || 0;
 		window.league_settings['pa1'] = $("td", league_data).filter(function() { return $.text([this]) == '1-6 points allowed (PA1)'; }).next().text() || 0;
 		window.league_settings['pa7'] = $("td", league_data).filter(function() { return $.text([this]) == '7-13 points allowed (PA7)'; }).next().text() || 0;
 		window.league_settings['pa14'] = $("td", league_data).filter(function() { return $.text([this]) == '14-17 points allowed (PA14)'; }).next().text() || 0;
+		window.league_settings['pa18'] = $("td", league_data).filter(function() { return $.text([this]) == '18-21 points allowed (PA18)'; }).next().text() || 0;
+		window.league_settings['pa22'] = $("td", league_data).filter(function() { return $.text([this]) == '22-27 points allowed (PA22)'; }).next().text() || 0;
 		window.league_settings['pa28'] = $("td", league_data).filter(function() { return $.text([this]) == '28-34 points allowed (PA28)'; }).next().text() || 0;
 		window.league_settings['pa35'] = $("td", league_data).filter(function() { return $.text([this]) == '35-45 points allowed (PA35)'; }).next().text() || 0;
 		window.league_settings['pa46'] = $("td", league_data).filter(function() { return $.text([this]) == '46+ points allowed (PA46)'; }).next().text() || 0;
+		
+		window.league_settings['ya'] = $("td", league_data).filter(function() { return $.text([this]) == 'Yards Allowed (YA)'; }).next().text() || 0;
 		window.league_settings['ya100'] = $("td", league_data).filter(function() { return $.text([this]) == 'Less than 100 total yards allowed (YA100)'; }).next().text() || 0;
 		window.league_settings['ya199'] = $("td", league_data).filter(function() { return $.text([this]) == '100-199 total yards allowed (YA199)'; }).next().text() || 0;
 		window.league_settings['ya299'] = $("td", league_data).filter(function() { return $.text([this]) == '200-299 total yards allowed (YA299)'; }).next().text() || 0;
+		window.league_settings['ya349'] = $("td", league_data).filter(function() { return $.text([this]) == '300-349 total yards allowed (YA349)'; }).next().text() || 0;
 		window.league_settings['ya399'] = $("td", league_data).filter(function() { return $.text([this]) == '350-399 total yards allowed (YA399)'; }).next().text() || 0;
 		window.league_settings['ya449'] = $("td", league_data).filter(function() { return $.text([this]) == '400-449 total yards allowed (YA449)'; }).next().text() || 0;
 		window.league_settings['ya499'] = $("td", league_data).filter(function() { return $.text([this]) == '450-499 total yards allowed (YA499)'; }).next().text() || 0;
@@ -208,6 +224,12 @@ $(document).ready(function () {
 			else if (player_name == 'T.Y. Hilton') {
 				player_name = 'Ty Hilton';
 			}
+			else if (player_name == 'Stevie Johnson') {
+				player_name = 'Steve Johnson';
+			}
+			else if (player_name == 'Ha Ha Clinton-Dix') {
+				player_name = 'Hasean Clinton-Dix';
+			}
 			else if (player_name.split(' ')[0] == 'Chris') {
 				player_name = 'Christopher ' + player_name.split(' ').slice(1).join(' ');
 			}
@@ -249,23 +271,31 @@ $(document).ready(function () {
 			window.league_settings['pass_yds'] * (player_data['pass_yds'] || 0) +
 			window.league_settings['pass_tds'] * (player_data['pass_tds'] || 0) +
 			window.league_settings['pass_ints'] * (player_data['pass_ints'] || 0) +
-			
+			window.league_settings['pass_att'] * (player_data['pass_att'] || 0) +
+			window.league_settings['pass_cmp'] * (player_data['pass_cmp'] || 0) +
+			window.league_settings['pass_icmp'] * ((player_data['pass_att'] || 0) - (player_data['pass_cmp'] || 0)) +	
+			window.league_settings['pass_300_bonus'] * (300 <= player_data['pass_yds'] && player_data['pass_yds'] < 400) +
+			window.league_settings['pass_400_bonus'] * ((player_data['pass_yds'] || 0) >= 400) +
+		
 			window.league_settings['rush_yds'] * (player_data['rush_yds'] || 0) +
 			window.league_settings['rush_tds'] * (player_data['rush_tds'] || 0) +
-			window.league_settings['rush_100_bonus'] * ((player_data['rush_yds'] || 0) >= 100) +
+			window.league_settings['rush_att'] * (player_data['rush_att'] || 0) +
+			window.league_settings['rush_100_bonus'] * (100 <= player_data['rush_yds'] && player_data['rush_yds'] < 200) +
 			window.league_settings['rush_200_bonus'] * ((player_data['rush_yds'] || 0) >= 200) +
 			
 			window.league_settings['rec_yds'] * (player_data['rec_yds'] || 0) +
 			window.league_settings['rec_att'] * (player_data['rec_att'] || 0) +
 			window.league_settings['rec_tds'] * (player_data['rec_tds'] || 0) +
-			window.league_settings['rec_100_bonus'] * ((player_data['rec_yds'] || 0) >= 100) +
+			window.league_settings['rec_100_bonus'] * (100 <= player_data['rec_yds'] && player_data['rec_yds'] < 200) +
 			window.league_settings['rec_200_bonus'] * ((player_data['rec_yds'] || 0) >= 200) +
 			
 			window.league_settings['xpt'] * (player_data['xpt'] || 0) +
+			window.league_settings['fg'] * (player_data['fg'] || 0) +
 			((0.6 * (window.league_settings['fg_0'] || 3)) + (0.3 * (window.league_settings['fg_40'] || 3)) + (0.1 * (window.league_settings['fg_50'] || 3))) * (player_data['fg'] || 0) +
+			window.league_settings['fga'] * (player_data['fga'] || 0) +
 			window.league_settings['fgm'] * ((player_data['fga'] || 0) - (player_data['fg'] || 0)) +
 			
-			window.league_settings['fumbles'] * (player_data['fumbles'] || 0) +				
+			window.league_settings['fumbles'] * (player_data['fumbles'] || 0) +
 			
 			window.league_settings['sk'] * (player_data['Scks'] || 0) +
 			window.league_settings['ff'] * (player_data['FumFrc'] || 0) +
@@ -274,23 +304,29 @@ $(document).ready(function () {
 			window.league_settings['pd'] * (player_data['PassDef'] || 0) +
 			window.league_settings['int'] * (player_data['Int'] || 0) +
 			window.league_settings['deftd'] * (player_data['DefTD'] || 0) +
-			window.league_settings['fr'] * (player_data['Fum'] || 0);
+			window.league_settings['fr'] * (player_data['Fum'] || 0) +
 		
-			window.league_settings['pa0'] * ((player_data['Pts Agn'] || 0) == 0) +
-			window.league_settings['pa1'] * (0 < (player_data['Pts Agn'] || 0) <= 6) +
-			window.league_settings['pa7'] * (6 < (player_data['Pts Agn'] || 0) <= 13) +
-			window.league_settings['pa14'] * (13 < (player_data['Pts Agn'] || 0) <= 17) +
-			window.league_settings['pa28'] * (27 < (player_data['Pts Agn'] || 0) <= 34) +
-			window.league_settings['pa35'] * (34 < (player_data['Pts Agn'] || 0) <= 45) +
-			window.league_settings['pa46'] * (45 < (player_data['Pts Agn'] || 0)) +
-			window.league_settings['ya100'] * (0 <= (player_data['Yds Allowed'] || 0) < 100) +
-			window.league_settings['ya199'] * (100 <= (player_data['Yds Allowed'] || 0) < 200) +
-			window.league_settings['ya299'] * (200 <= (player_data['Yds Allowed'] || 0) < 300) +
-			window.league_settings['ya399'] * (350 <= (player_data['Yds Allowed'] || 0) < 400) +
-			window.league_settings['ya449'] * (400 <= (player_data['Yds Allowed'] || 0) < 450) +
-			window.league_settings['ya499'] * (450 <= (player_data['Yds Allowed'] || 0) < 500) +
-			window.league_settings['ya549'] * (500 <= (player_data['Yds Allowed'] || 0) < 550) +
-			window.league_settings['ya550'] * (550 <= (player_data['Yds Allowed'] || 0));
+			window.league_settings['pa'] * (player_data['Pts Agn'] || 0) +
+			window.league_settings['pa0'] * (player_data['Pts Agn'] == 0) +
+			window.league_settings['pa1'] * (0 < player_data['Pts Agn'] && player_data['Pts Agn'] <= 6) +
+			window.league_settings['pa7'] * (6 < player_data['Pts Agn'] && player_data['Pts Agn'] <= 13) +
+			window.league_settings['pa14'] * (13 < player_data['Pts Agn'] && player_data['Pts Agn'] <= 17) +
+			window.league_settings['pa18'] * (17 < player_data['Pts Agn'] && player_data['Pts Agn'] <= 21) +
+			window.league_settings['pa22'] * (21 < player_data['Pts Agn'] && player_data['Pts Agn'] <= 27) +
+			window.league_settings['pa28'] * (27 < player_data['Pts Agn'] && player_data['Pts Agn'] <= 34) +
+			window.league_settings['pa35'] * (34 < player_data['Pts Agn'] && player_data['Pts Agn'] <= 45) +
+			window.league_settings['pa46'] * (45 < player_data['Pts Agn']) +
+			
+			window.league_settings['ya'] * (player_data['Yds Allowed'] || 0) +
+			window.league_settings['ya100'] * (0 <= player_data['Yds Allowed'] && player_data['Yds Allowed'] < 100) +
+			window.league_settings['ya199'] * (100 <= player_data['Yds Allowed'] && player_data['Yds Allowed'] < 200) +
+			window.league_settings['ya299'] * (200 <= player_data['Yds Allowed'] && player_data['Yds Allowed'] < 300) +
+			window.league_settings['ya349'] * (300 <= player_data['Yds Allowed'] && player_data['Yds Allowed'] < 350) +
+			window.league_settings['ya399'] * (350 <= player_data['Yds Allowed'] && player_data['Yds Allowed'] < 400) +
+			window.league_settings['ya449'] * (400 <= player_data['Yds Allowed'] && player_data['Yds Allowed'] < 450) +
+			window.league_settings['ya499'] * (450 <= player_data['Yds Allowed'] && player_data['Yds Allowed'] < 500) +
+			window.league_settings['ya549'] * (500 <= player_data['Yds Allowed'] && player_data['Yds Allowed'] < 550) +
+			window.league_settings['ya550'] * (550 <= player_data['Yds Allowed']);
 
 		//console.log(player_score);
 		return(Math.round(player_score * 100) / 100);
