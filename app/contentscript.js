@@ -1,8 +1,17 @@
 /*-- TODO
 - Add a "total" row for starting players (and on matchup preview), which at least has fpros, but also can do pts, avg, last, and proj
-- Add standard deviation, ranking, injury adjusted average points, somehow adjust OPRK for shitty teams
+- Add standard deviation, ranking, injury adjusted average points, somehow adjust OPRK for shitty teams, snap %
 - Fix bottom column on matchuppreview
 - Somehow do all 9 requests at once
+- debug/verbose mode
+- cache the data for a few hours
+- yahoo support / nfl / fleaflicker / myfantasyleague
+- return yardage
+- firefox/safari
+- sortable? doubt it
+- option to disable/add
+- option for experts
+- show fpros col right away, but maybe add a loading spinner to signify something is happening
 */
 
 /*
@@ -65,15 +74,15 @@ $(document).ready(function () {
 		
 		window.league_settings['fumbles'] = $("td", league_data).filter(function() { return $.text([this]) == 'Total Fumbles Lost (FUML)'; }).next().text() || 0;
 		
-		window.league_settings['ff'] = $("td", league_data).filter(function() { return $.text([this]) == 'Each Fumble Forced (FF)'; }).next().text() || 0;
+		window.league_settings['ff'] = $($("td", league_data).filter(function() { return $.text([this]) == 'Each Fumble Forced (FF)'; })[0]).next().text() || 0;
 		window.league_settings['tka'] = $("td", league_data).filter(function() { return $.text([this]) == 'Assisted Tackles (TKA)'; }).next().text() || 0;
 		window.league_settings['tks'] = $("td", league_data).filter(function() { return $.text([this]) == 'Solo Tackles (TKS)'; }).next().text() || 0;
 		window.league_settings['pd'] = $("td", league_data).filter(function() { return $.text([this]) == 'Passes Defensed (PD)'; }).next().text() || 0;
 		
-		window.league_settings['int'] = $("td", league_data).filter(function() { return $.text([this]) == 'Each Interception (INT)'; }).next().text() || 0;
+		window.league_settings['int'] = $($("td", league_data).filter(function() { return $.text([this]) == 'Each Interception (INT)'; })[0]).next().text() || 0;
 		window.league_settings['deftd'] = $($("td", league_data).filter(function() { return $.text([this]) == 'Interception Return TD (INTTD)'; })[0]).next().text() || 0;
-		window.league_settings['fr'] = $("td", league_data).filter(function() { return $.text([this]) == 'Each Fumble Recovered (FR)'; }).next().text() || 0;
-		window.league_settings['sk'] = $("td", league_data).filter(function() { return $.text([this]) == 'Each Sack (SK)'; }).next().text() || parseFloat($("td", league_data).filter(function() { return $.text([this]) == '1/2 Sack (HALFSK)'; }).next().text()) * 2 || 0;
+		window.league_settings['fr'] = $($("td", league_data).filter(function() { return $.text([this]) == 'Each Fumble Recovered (FR)'; })[0]).next().text() || 0;
+		window.league_settings['sk'] = $($("td", league_data).filter(function() { return $.text([this]) == 'Each Sack (SK)'; })[0]).next().text() || parseFloat($($("td", league_data).filter(function() { return $.text([this]) == '1/2 Sack (HALFSK)'; })[0]).next().text()) * 2 || 0;
 		
 		window.league_settings['pa'] = $("td", league_data).filter(function() { return $.text([this]) == 'Points Allowed (PA)'; }).next().text() || 0;
 		window.league_settings['pa0'] = $("td", league_data).filter(function() { return $.text([this]) == '0 points allowed (PA0)'; }).next().text() || 0;
@@ -395,35 +404,40 @@ $(document).ready(function () {
 				}
 				else {
 					adj_header_index = header_index;
-					
 					player_cell = currRow.find('td').eq(playerNameIndex);
-					if (player_cell.text().indexOf('D/ST') > -1) {
-						var player_name = $(player_cell).find('a').text().trim();
-						var team_name = "-";
-						var pos_name = 'D/ST';
+					
+					if (player_cell.text().match(/(O|IR)$/)) { // player is Out
+						projPoints = "0";
+					}
+					else if (player_cell.text().match(/(TQB|HC)$/)) { // can't project head coaches or TQB's
+						projPoints = "-";
 					}
 					else {
-						var player_name = player_cell.text().split(",")[0];
-						var team_pos = player_cell.text().split(",")[1].split(/\s|\xa0/);
-						var team_name = team_pos[1].toUpperCase();
-						var pos_name = team_pos[2];
-						if ((pos_name == 'DT') || (pos_name == 'DE')) {
-							pos_name = 'DL';
+						if (player_cell.text().indexOf('D/ST') > -1) {
+							var player_name = $(player_cell).find('a').text().trim();
+							var team_name = "-";
+							var pos_name = 'D/ST';
 						}
-						else if ((pos_name == 'CB') || (pos_name == 'S')) {
-							pos_name = 'DB';
+						
+						else {
+							var player_name = player_cell.text().split(",")[0];
+							var team_pos = player_cell.text().split(",")[1].split(/\s|\xa0/);
+							var team_name = team_pos[1].toUpperCase();
+							var pos_name = team_pos[2];
+							if ((pos_name == 'DT') || (pos_name == 'DE')) {
+								pos_name = 'DL';
+							}
+							else if ((pos_name == 'CB') || (pos_name == 'S')) {
+								pos_name = 'DB';
+							}
 						}
-					}
-					player_name = player_name.replace('*','');
+						player_name = player_name.replace('*','');
 
-					if (player_cell.text().match(/O$/)) { // player is Out
-						projPoints = "0";
-					} else {
 						projPoints = calculateProjections(player_name, pos_name, team_name);
 					}
 				}
 
-				currRow.find('td').eq(adj_header_index).after('<td class="playertableStat ExtraProjectionsFantasypros">' + projPoints + '</td');
+				currRow.find('td').eq(adj_header_index).after('<td class="playertableStat ExtraProjectionsFantasypros ExtraProjectionsFantasyprosData">' + projPoints + '</td');
 			});
 		}
 	}
