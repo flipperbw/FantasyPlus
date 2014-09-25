@@ -230,6 +230,9 @@ $(document).ready(function () {
 			else if (player_name == 'Ha Ha Clinton-Dix') {
 				player_name = 'Hasean Clinton-Dix';
 			}
+			else if (player_name == 'Cecil Shorts III') {
+				player_name = 'Cecil Shorts';
+			}
 			else if (player_name.split(' ')[0] == 'Chris') {
 				player_name = 'Christopher ' + player_name.split(' ').slice(1).join(' ');
 			}
