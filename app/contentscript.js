@@ -391,8 +391,12 @@ $(document).ready(function () {
 						}
 					}
 					player_name = player_name.replace('*','');
-					
-					projPoints = calculateProjections(player_name, pos_name, team_name);
+
+					if (player_cell.text().match(/O$/)) { // player is Out
+						projPoints = "0";
+					} else {
+						projPoints = calculateProjections(player_name, pos_name, team_name);
+					}
 				}
 
 				currRow.find('td').eq(adj_header_index).after('<td class="playertableStat ExtraProjectionsFantasypros">' + projPoints + '</td');
