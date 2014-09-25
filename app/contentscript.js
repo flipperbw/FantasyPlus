@@ -24,11 +24,10 @@ $(document).ready(function () {
 	window.team_name_conversion = {'ARZ': 'ARI', 'GBP': 'GB', 'KCC': 'KC', 'NEP': 'NE', 'NOR': 'NO', 'SDC': 'SD', 'SFO': 'SF', 'TBB': 'TB', 'WAS': 'WSH'};
 	
 	//Get League Settings
-	var league_id = document.URL.match(/leagueId=(\d+)/)[1];
-	var xhr_league = new XMLHttpRequest();
-	xhr_league.open("GET", 'http://games.espn.go.com/ffl/leaguesetup/sections/scoring?leagueId=' + league_id, false);
-	xhr_league.send();
-	parse_data(xhr_league.responseText);
+  var league_id = document.URL.match(/leagueId=(\d+)/)[1];
+  $.get('http://games.espn.go.com/ffl/leaguesetup/sections/scoring', {"leagueId": league_id}, function(d) {
+    parse_data(d);
+  });
 	
 	function parse_data(league_data) {
 		window.league_settings = {};
@@ -104,107 +103,95 @@ $(document).ready(function () {
 	
 	
 	//Get the data from external sites
-	function getAllProjections(position) {
+  function fetchPositionProjections(position, cb) {
+    var source_site = '';
 		if (window.positions.indexOf(position) > -1) {
 			source_site = 'http://www.fantasypros.com/nfl/projections/' + position + '.php?filters=44:45:73:152:469&export=xls';
 		}
 		else {
 			source_site = 'http://www.fantasysharks.com/apps/bert/forecasts/projections.php?csv=1&Position=' + position;
 		}
-		
-		var allxhr = new XMLHttpRequest();
-		allxhr.open("GET", source_site, false);
-		allxhr.send();
-		return allxhr.responseText;
+
+    $.get(source_site, function(data) {
+      cb(position, data.trim());
+    });
 	}
 	
 	// credit to stackoverflow
 	function parsesiteCSV(str) {
 		var arr = [];
-		var quote = false;
-		
-		for (var row = col = c = 0; c < str.length; c++) {
-			var cc = str[c], nc = str[c+1];
-			arr[row] = arr[row] || [];
-			arr[row][col] = arr[row][col] || '';
-			
-			if (cc == '"' && quote && nc == '"') { arr[row][col] += cc; ++c; continue; }  
-			if (cc == '"') { quote = !quote; continue; }
-			if (cc == ',' && !quote) { ++col; continue; }
-			if (cc == '\n' && !quote) { ++row; col = 0; continue; }
+    var quote = false;
 
-			arr[row][col] += cc;
-		}
+    var rows = str.split("\n")
+    for(var rindex = 0 ; rindex < rows.length ; rindex++) {
+      var cols = rows[rindex].split(/\s?\t\s?/);
+      if(cols.length > 2) {
+        arr.push(cols);
+      } else {
+        var maybecsv = cols[0].split(',');
+        if(maybecsv.length > 2) {
+          arr.push(cols[0].split(','));
+        }
+      }
+    }
 
 		return arr;
 	}
 	
-	function getPosProjections() {
+  function getPosProjections() {
+    var ready = window.all_positions.length;
 		for (var p=0; p < window.all_positions.length; p++) {
-			p_name = window.all_positions[p];
-			retrieved_proj = getAllProjections(p_name);
-			retrieved_proj = retrieved_proj.trim();
-			if (window.positions.indexOf(p_name) > -1) {
-				player_heading = 'Player Name';
-				pos_name = p_name.toUpperCase();
-				retrieved_proj = retrieved_proj.split('\n').splice(4);
-				
-				parsed_proj = [];
-				for (var t=0; t < retrieved_proj.length; t++) {
-					parsed_proj[t] = retrieved_proj[t].split("\t");
-				}
-			}
-			else {
-				player_heading = 'Player';
-				pos_name = window.idp_conversion[p_name];
-				parsed_proj = parsesiteCSV(retrieved_proj);
-			}
-			
-			headers = parsed_proj[0];
-			for (var h=0; h < headers.length; h++) {
-				headers[h] = headers[h].trim();
-			}
-			
-			team_header = headers.indexOf('Team');
-			player_name_header = headers.indexOf(player_heading);
-			
-			for (var i=1; i < parsed_proj.length; i++) {
-				var playerdata = {};
-				var currentline = parsed_proj[i];
-				
-				team_name = currentline[team_header].trim();
-				if (window.team_name_conversion.hasOwnProperty(team_name)) {
-					team_name = window.team_name_conversion[team_name];
-				}
-				
-				player_name = currentline[player_name_header].trim();
-				
-				if (window.idp_positions.indexOf(p_name) > -1) {
-					//DST
-					if (p_name == '6') {
-						player_name = player_name.split(',')[0] + ' D/ST';
-						team_name = "-";
-					}
-					//Other IDPs, reversing names
-					else {
-						player_name = player_name.split(',')[1] + " " + player_name.split(',')[0]
-					}
-					
-					player_name = player_name.trim();
-				}
-				
-				// Add team and position to player_name for differentiating duplicate names
-				full_name = player_name + "|" + pos_name + "|" + team_name;
-				
-				for (var j = player_name_header + 1; j < headers.length - 1; j++) {
-					playerdata[headers[j].trim()] = currentline[j].trim();
-				}
-				
-				window.alldata[full_name] = playerdata;
-			}
+      var p_name = window.all_positions[p];
+      fetchPositionProjections(p_name, function(p_name, raw_data) {
+        var parsed_proj = parsesiteCSV(raw_data);
+        var headers = parsed_proj[0];
+        var pos_name;
+        var dst_offset = 0;
+        if (window.positions.indexOf(p_name) > -1) {
+          pos_name = p_name.toUpperCase();
+          } else {
+          dst_offset = 1;
+          pos_name = window.idp_conversion[p_name];
+        }
+          
+        for (var i=1; i < parsed_proj.length; i++) {
+          var playerdata = {};
+          var currentline = parsed_proj[i];
+          
+          player_name = currentline[0 + dst_offset].trim();
+          team_name = currentline[1 + (dst_offset * 2)].trim();
+          if (window.team_name_conversion.hasOwnProperty(team_name)) {
+            team_name = window.team_name_conversion[team_name];
+          }
+          
+          if (window.idp_positions.indexOf(p_name) > -1) {
+            //DST
+            if (p_name == '6') {
+              player_name = player_name + ' D/ST';
+              team_name = "-";
+            }
+            //Other IDPs, reversing names
+            else {
+              player_name = currentline[2].replace('"', '') + " " + currentline[1].replace('"', '');
+            }
+            
+            player_name = player_name.trim().replace('"', '');
+          }
+          
+          // Add team and position to player_name for differentiating duplicate names
+          full_name = player_name + "|" + pos_name + "|" + team_name;
+          
+          for (var j = 2 + (dst_offset * 4); j < headers.length - 1; j++) {
+            playerdata[headers[j].trim()] = currentline[j].trim();
+          }
+          
+          window.alldata[full_name] = playerdata;
+        }
+
+        ready = ready - 1;
+        if(ready == 0) { addProjections(); }
+      });
 		}
-		
-		addProjections();
 	}
 
 	function calculateProjections(player_name, pos_name, team_name) {
