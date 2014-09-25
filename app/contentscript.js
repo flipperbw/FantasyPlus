@@ -1,5 +1,5 @@
 /*-- TODO
-- Add a "total" row for starting players (and on matchup preview), which at least has fpros, but also can do pts, avg, last, and proj
+- can do pts, avg, last for total rows
 - Add standard deviation, ranking, injury adjusted average points, somehow adjust OPRK for shitty teams, snap %
 - Fix bottom column on matchuppreview
 - Somehow do all 9 requests at once
@@ -110,7 +110,6 @@ $(document).ready(function () {
 		getPosProjections();
 	}
 	
-	
 	//Get the data from external sites
 	function fetchPositionProjections(position, cb) {
 		var source_site = '';
@@ -217,26 +216,9 @@ $(document).ready(function () {
 				
 				ready = ready - 1;
 				if (ready == 0) {
-					addProjections();
+					prepareAddProjections();
 				}
 			});
-		}
-		
-		if (document.URL.match(/ffl\/(freeagency|clubhouse)/)) {
-			var observerConfig = {
-				childList: true,
-				characterData: true,
-				subtree: true
-			};
-			var target_observe = document.querySelector('.playerTableContainerDiv');
-			var observerESPN = new MutationObserver(function (mutations) {
-				observerESPN.disconnect();
-				if (mutations.length > 0) {
-					addProjections();
-				}
-				observerESPN.observe(target_observe, observerConfig);
-			});
-			observerESPN.observe(target_observe, observerConfig);
 		}
 	}
 
@@ -265,6 +247,9 @@ $(document).ready(function () {
 			}
 			else if (player_name == 'Cecil Shorts III') {
 				player_name = 'Cecil Shorts';
+			}
+			else if (player_name == 'D\'Qwell Jackson') {
+				player_name = 'D\'qwell Jackson';
 			}
 			else if (player_name.split(' ')[0] == 'Chris') {
 				player_name = 'Christopher ' + player_name.split(' ').slice(1).join(' ');
@@ -368,16 +353,37 @@ $(document).ready(function () {
 		return(Math.round(player_score * 100) / 100);
 	}
 	
+	function prepareAddProjections() {
+		addProjections();
+		
+		if (document.URL.match(/ffl\/(freeagency|clubhouse|dropplayers|rosterfix)/)) {
+			var observerConfig = {
+				childList: true,
+				characterData: true,
+				subtree: true
+			};
+			var target_observe = document.querySelector('.playerTableContainerDiv');
+			var observerESPN = new MutationObserver(function (mutations) {
+				observerESPN.disconnect();
+				if (mutations.length > 0) {
+					addProjections();
+				}
+				observerESPN.observe(target_observe, observerConfig);
+			});
+			observerESPN.observe(target_observe, observerConfig);
+		}
+	}
+	
 	function addProjections() {
 		$('.ExtraProjectionsFantasypros').remove();
 		
 		//Add header cells
-		heads = $('[id^=playertable_] tbody tr.playerTableBgRowSubhead td').filter(function() {
+		var proj_heads = $('[id^=playertable_] tbody tr.playerTableBgRowSubhead td').filter(function() {
 			return $(this).text() == 'PROJ';
 		});
-		header_index = $(heads[0]).index();
+		var header_index = $(proj_heads[0]).index();
 		if (header_index > -1) {
-			heads.after('<td class="playertableStat ExtraProjectionsFantasypros ExtraProjectionsFantasyprosHeader">FPros</td>');
+			proj_heads.after('<td class="playertableStat ExtraProjectionsFantasypros ExtraProjectionsFantasyprosHeader">FPros</td>');
 			
 			$('.playerTableBgRowHead.tableHead.playertableSectionHeader').find('th:last').attr('colspan',6);
 			
@@ -439,8 +445,73 @@ $(document).ready(function () {
 
 				currRow.find('td').eq(adj_header_index).after('<td class="playertableStat ExtraProjectionsFantasypros ExtraProjectionsFantasyprosData">' + projPoints + '</td');
 			});
+			
+			if (document.URL.match(/ffl\/(clubhouse|dropplayers)/)) {
+				var header_rows = $('[id^=playertable_] tbody tr.playerTableBgRowHead');
+				var sumTotal;
+				var sumTotalESPN;
+				var keepAdding;
+				var currHeaderRow;
+				var headerType;
+				var sumpts = 0;
+				var sumptsESPN = 0;
+				
+				$.each(header_rows, function() {
+					currHeaderRow = $(this);
+					headerType = currHeaderRow.find('th.playertableSectionHeaderFirst').text();
+					keepAdding = true;
+					sumTotal = 0;
+					sumTotalESPN = 0;
+					
+					if (headerType == 'STARTERS' || headerType == 'BENCH') {
+						while (keepAdding) {
+							currHeaderRow = currHeaderRow.next();
+							if (currHeaderRow.hasClass('playerTableBgRowSubhead')) {
+								continue;
+							}
+							else if (currHeaderRow.hasClass('pncPlayerRow') && !currHeaderRow.hasClass('emptyRow')) {
+								proj_cell = currHeaderRow.find('.ExtraProjectionsFantasyprosData');
+								sumpts = proj_cell.text();
+								sumptsESPN = proj_cell.prev().text();
+								
+								if (parseFloat(sumpts)) {
+									sumTotal = parseFloat(sumTotal + parseFloat(sumpts));
+								}
+								if (parseFloat(sumptsESPN)) {
+									sumTotalESPN = parseFloat(sumTotalESPN + parseFloat(sumptsESPN));
+								}
+							}
+							else {
+								keepAdding = false;
+							}
+						}
+
+						// I should fix this to make it more automatic...
+						currHeaderRow.before('<tr class="pncPlayerRow playerTableBgRow0 ExtraProjectionsFantasypros"><td class="playerSlot" style="font-weight: bold;">Total</td><td></td><td></td><td class="sectionLeadingSpacer"></td><td></td><td></td><td class="sectionLeadingSpacer"></td><td></td><td></td><td></td><td></td><td class="sectionLeadingSpacer"></td><td class="playertableStat">' + Math.round(sumTotalESPN * 100) / 100 + '</td><td class="playertableStat">' + Math.round(sumTotal * 100) / 100 + '</td><td></td><td></td><td></td><td></td></tr>');
+					}
+				});
+			}
+			else if (document.URL.match(/ffl\/matchuppreview/)) {
+				var matchup_tables = $('.playerTableTable');
+				var datapoints;
+				var matchup_total;
+				
+				$.each(matchup_tables, function() {
+					currTable = $(this);
+					datapoints = currTable.find('.ExtraProjectionsFantasyprosData');
+					
+					matchup_total = 0;
+					if (datapoints.length > 0) {
+						$.each(datapoints, function() {
+							if (parseFloat($(this).text())) {
+								matchup_total = parseFloat(matchup_total + parseFloat($(this).text()));
+							}
+						});
+					}
+					
+					currTable.next().prepend('<div class="danglerBox totalScore">' + Math.round(matchup_total) + '</div>');
+				});
+			}
 		}
 	}
-	
-	
 });
