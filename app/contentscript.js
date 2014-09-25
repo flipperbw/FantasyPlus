@@ -25,10 +25,23 @@ $(document).ready(function () {
 	
 	//Get League Settings
 	var league_id = document.URL.match(/leagueId=(\d+)/)[1];
-	var xhr_league = new XMLHttpRequest();
-	xhr_league.open("GET", 'http://games.espn.go.com/ffl/leaguesetup/sections/scoring?leagueId=' + league_id, false);
-	xhr_league.send();
-	parse_data(xhr_league.responseText);
+
+	//check local store
+	chrome.storage.sync.get('league_settings', function(settings)
+	{
+		//if empty, make request for settings
+		if($.isEmptyObject(settings))
+		{
+			$.get('http://games.espn.go.com/ffl/leaguesetup/sections/scoring', {"leagueId": league_id}, function(d) {
+				parse_data(d);
+			});	
+		}
+		else //push settings local
+		{
+			window.league_settings = settings['league_settings'];
+			getPosProjections();
+		}
+	});
 	
 	function parse_data(league_data) {
 		window.league_settings = {};
@@ -98,6 +111,12 @@ $(document).ready(function () {
 		window.league_settings['ya549'] = $("td", league_data).filter(function() { return $.text([this]) == '500-549 total yards allowed (YA549)'; }).next().text() || 0;
 		window.league_settings['ya550'] = $("td", league_data).filter(function() { return $.text([this]) == '550+ total yards allowed (YA550)'; }).next().text() || 0;
 		
+		//set local store
+		chrome.storage.sync.set({'league_settings': window.league_settings}, function()
+		{
+			console.log('set local store success!');
+		});
+
 		//console.log(window.league_settings);
 		getPosProjections();
 	}
