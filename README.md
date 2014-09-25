@@ -1,6 +1,10 @@
 FantasyPlus
 ===========
 
+How Do I Get it?
+------
+https://chrome.google.com/webstore/detail/fantasyplus/gojndgicjncbiobejfpjpcahadininga
+
 What is this?
 ------
 
