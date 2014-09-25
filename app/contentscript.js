@@ -24,11 +24,27 @@ $(document).ready(function () {
 	window.team_name_conversion = {'ARZ': 'ARI', 'GBP': 'GB', 'KCC': 'KC', 'NEP': 'NE', 'NOR': 'NO', 'SDC': 'SD', 'SFO': 'SF', 'TBB': 'TB', 'WAS': 'WSH'};
 	
 	//Get League Settings
+
 	var league_id = document.URL.match(/leagueId=(\d+)/)[1];
+	//First look in local storage
+	var cached_info_storage = chrome.storage.local;
+	cached_info_storage.get(league_id, set_league_settings());
+	//Only redownload league settings if we don't have it stored
+	if(!window.league_settings){
+		$.get('http://games.espn.go.com/ffl/leaguesetup/sections/scoring', {"leagueId": league_id}, function(d) {
+			parse_data(d);
+		});
+	}
+	//Fill in projections with data, either cached or stored
+	getPosProjections();
+
+	//Reload league rules in case they changed since we cached them
+	//Because we moved getPosProjections() call from parse_data, it 
+	//won't necessarily redraw but we still get a fresh copy.
 	$.get('http://games.espn.go.com/ffl/leaguesetup/sections/scoring', {"leagueId": league_id}, function(d) {
-		parse_data(d);
-	});
-	
+			parse_data(d);
+		});
+
 	function parse_data(league_data) {
 		window.league_settings = {};
 
@@ -96,11 +112,14 @@ $(document).ready(function () {
 		window.league_settings['ya499'] = $("td", league_data).filter(function() { return $.text([this]) == '450-499 total yards allowed (YA499)'; }).next().text() || 0;
 		window.league_settings['ya549'] = $("td", league_data).filter(function() { return $.text([this]) == '500-549 total yards allowed (YA549)'; }).next().text() || 0;
 		window.league_settings['ya550'] = $("td", league_data).filter(function() { return $.text([this]) == '550+ total yards allowed (YA550)'; }).next().text() || 0;
-		
+		//Store league settings in local storage so we don't have to wait next time
+		cached_info_storage.set({league_id : window.league_settings});
 		//console.log(window.league_settings);
-		getPosProjections();
 	}
 	
+	function set_league_settings(stored_league_settings){
+		window.league_settings = stored_league_settings;
+	}
 	
 	//Get the data from external sites
 	function fetchPositionProjections(position, cb) {
