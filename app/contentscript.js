@@ -373,6 +373,8 @@ $(document).ready(function () {
 			var observerESPN = new MutationObserver(function (mutations) {
 				observerESPN.disconnect();
 				if (mutations.length > 0) {
+                    $('.ExtraProjectionsFantasypros').remove();
+                    addColumn();
 					addProjections();
 				}
 				observerESPN.observe(target_observe, observerConfig);
@@ -382,7 +384,6 @@ $(document).ready(function () {
 	}
 
     function addColumn() {
-        $('.ExtraProjectionsFantasypros').remove();
         var proj_head = $('tr.playerTableBgRowSubhead td:contains(PROJ)');
         var header_index = proj_head.first().index();
 
