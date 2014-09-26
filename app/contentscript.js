@@ -467,7 +467,7 @@ $(document).ready(function () {
 						while (keepAdding) {
 							currHeaderRow = currHeaderRow.next();
 							if (currHeaderRow.hasClass('playerTableBgRowSubhead')) {
-								continue;
+								td_length = currHeaderRow.find('td').length;
 							}
 							else if (currHeaderRow.hasClass('pncPlayerRow') && !currHeaderRow.hasClass('emptyRow')) {
 								proj_cell = currHeaderRow.find('.ExtraProjectionsFantasyprosData');
@@ -487,7 +487,13 @@ $(document).ready(function () {
 						}
 
 						// I should fix this to make it more automatic...
-						currHeaderRow.before('<tr class="pncPlayerRow playerTableBgRow0 ExtraProjectionsFantasypros"><td class="playerSlot" style="font-weight: bold;">Total</td><td></td><td></td><td class="sectionLeadingSpacer"></td><td></td><td></td><td class="sectionLeadingSpacer"></td><td></td><td></td><td></td><td></td><td class="sectionLeadingSpacer"></td><td class="playertableStat">' + Math.round(sumTotalESPN * 100) / 100 + '</td><td class="playertableStat">' + Math.round(sumTotal * 100) / 100 + '</td><td></td><td></td><td></td><td></td></tr>');
+						if (td_length == 18) {
+							extra_td = '<td></td>';
+						}
+						else {
+							extra_td = '';
+						}
+						currHeaderRow.before('<tr class="pncPlayerRow playerTableBgRow0 ExtraProjectionsFantasypros"><td class="playerSlot" style="font-weight: bold;">Total</td><td></td>' + extra_td + '<td class="sectionLeadingSpacer"></td><td></td><td></td><td class="sectionLeadingSpacer"></td><td></td><td></td><td></td><td></td><td class="sectionLeadingSpacer"></td><td class="playertableStat">' + Math.round(sumTotalESPN * 100) / 100 + '</td><td class="playertableStat">' + Math.round(sumTotal * 100) / 100 + '</td><td></td><td></td><td></td><td></td></tr>');
 					}
 				});
 			}
