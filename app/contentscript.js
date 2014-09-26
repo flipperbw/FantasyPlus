@@ -383,13 +383,21 @@ $(document).ready(function () {
 
     function addColumn() {
         $('.ExtraProjectionsFantasypros').remove();
-        $('tr.playerTableBgRowSubhead td:contains(PROJ)')
-            .after('<td class="playertableStat ExtraProjectionsFantasypros ExtraProjectionsFantasyprosHeader">FPros</td>');
+        var proj_head = $('tr.playerTableBgRowSubhead td:contains(PROJ)');
+        var header_index = proj_head.first().index();
+
+        proj_head.after('<td class="playertableStat ExtraProjectionsFantasypros ExtraProjectionsFantasyprosHeader">FPros</td>');
 
         $('.playerTableBgRowHead.tableHead.playertableSectionHeader').find('th:last').attr('colspan', 6);
 
-        playerTable.find('tr.pncPlayerRow:not(.emptyRow) td.sectionLeadingSpacer:nth-last-child(6) + td')
-            .after('<td class="playertableStat ExtraProjectionsFantasypros ExtraProjectionsFantasyprosData">...</td>')
+        playerTable.find('tr.pncPlayerRow').not('.emptyRow').each(function () {
+            var currRow = $(this);
+            var byeweek = playerTable.find('tr.playerTableBgRowSubhead td:contains(OPP)').first().index();
+            var byeweek_text = currRow.find('td').eq(byeweek).text();
+            var adj_header_index = (byeweek_text == "** BYE **" ? header_index - 1 : header_index);
+
+            currRow.find('td').eq(adj_header_index).after('<td class="playertableStat ExtraProjectionsFantasypros ExtraProjectionsFantasyprosData">...</td>');
+        });
     }
 
     function getProjectedPoints(currRow) {
