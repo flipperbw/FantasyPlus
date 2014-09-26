@@ -378,26 +378,21 @@ $(document).ready(function () {
 		$('.ExtraProjectionsFantasypros').remove();
 		
 		//Add header cells
-		var proj_heads = $('[id^=playertable_] tbody tr.playerTableBgRowSubhead td').filter(function() {
-			return $(this).text() == 'PROJ';
-		});
-		var header_index = $(proj_heads[0]).index();
+        var table = $('[id^=playertable_] tbody');
+		var proj_heads = table.find('tr.playerTableBgRowSubhead td:contains(PROJ)');
+        var header_index = proj_heads.first().index();
 		if (header_index > -1) {
 			proj_heads.after('<td class="playertableStat ExtraProjectionsFantasypros ExtraProjectionsFantasyprosHeader">FPros</td>');
 			
 			$('.playerTableBgRowHead.tableHead.playertableSectionHeader').find('th:last').attr('colspan',6);
 			
-			playerNameRows = $('[id^=playertable_] tbody tr.playerTableBgRowSubhead td').filter(function() {
-				return $(this).text() == 'PLAYER, TEAM POS';
-			});
-			playerNameIndex = $(playerNameRows[0]).index();
+			var playerNameRows = table.find('tr.playerTableBgRowSubhead td:contains(PLAYER, TEAM POS)');
+			var playerNameIndex = playerNameRows.first().index();
 			//for each player name
-			$.each($('[id^=playertable_] tbody tr.pncPlayerRow').not('.emptyRow'), function() {
+			table.find('tr.pncPlayerRow').not('.emptyRow').each(function() {
 				var currRow = $(this);
-				
-				byeweek = $($('[id^=playertable_] tbody tr.playerTableBgRowSubhead td').filter(function() {
-					return $(this).text() == 'OPP';
-				})[0]).index();
+
+                var byeweek = table.find('tr.playerTableBgRowSubhead td:contains(OPP)').first().index();
 				byeweek_text = currRow.find('td').eq(byeweek).text();
 				
 				if (!byeweek_text) {
@@ -443,11 +438,11 @@ $(document).ready(function () {
 					}
 				}
 
-				currRow.find('td').eq(adj_header_index).after('<td class="playertableStat ExtraProjectionsFantasypros ExtraProjectionsFantasyprosData">' + projPoints + '</td');
+				currRow.find('td').eq(adj_header_index).after('<td class="playertableStat ExtraProjectionsFantasypros ExtraProjectionsFantasyprosData">' + projPoints + '</td>');
 			});
 			
 			if (document.URL.match(/ffl\/(clubhouse|dropplayers)/)) {
-				var header_rows = $('[id^=playertable_] tbody tr.playerTableBgRowHead');
+				var header_rows = table.find('tr.playerTableBgRowHead');
 				var sumTotal;
 				var sumTotalESPN;
 				var keepAdding;
@@ -456,7 +451,7 @@ $(document).ready(function () {
 				var sumpts = 0;
 				var sumptsESPN = 0;
 				
-				$.each(header_rows, function() {
+				header_rows.each(function() {
 					currHeaderRow = $(this);
 					headerType = currHeaderRow.find('th.playertableSectionHeaderFirst').text();
 					keepAdding = true;
@@ -502,7 +497,7 @@ $(document).ready(function () {
 				var datapoints;
 				var matchup_total;
 				
-				$.each(matchup_tables, function() {
+				matchup_tables.each(function() {
 					currTable = $(this);
 					datapoints = currTable.find('.ExtraProjectionsFantasyprosData');
 					
