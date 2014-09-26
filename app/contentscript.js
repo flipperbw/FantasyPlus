@@ -391,60 +391,57 @@ $(document).ready(function () {
         playerTable.find('tr.pncPlayerRow:not(.emptyRow) td.sectionLeadingSpacer:nth-last-child(6) + td')
             .after('<td class="playertableStat ExtraProjectionsFantasypros ExtraProjectionsFantasyprosData">...</td>')
     }
-	
-	function addProjections() {
-		//Add header cells
-        var table = $('[id^=playertable_] tbody');
 
-        table.find('.ExtraProjectionsFantasyprosData').each(function() {
+    function getProjectedPoints(currRow) {
+        var player_cell = currRow.find('td.playertablePlayerName');
+        var player_cell_text = player_cell.text();
+
+        if (player_cell_text.match(/(O|IR)$/)) { // player is Out
+            return "0";
+        }
+
+        if (player_cell_text.match(/(TQB|HC)$/)) { // can't project head coaches or TQB's
+            return "--";
+        }
+
+        if (player_cell_text.indexOf('D/ST') > -1) {
+            var player_name = player_cell.find('a').text().trim();
+            var team_name = "-";
+            var pos_name = 'D/ST';
+        }
+
+        else {
+            var player_name = player_cell_text.split(",")[0];
+            var team_pos = player_cell_text.split(",")[1].split(/\s|\xa0/);
+            var team_name = team_pos[1].toUpperCase();
+            var pos_name = team_pos[2];
+            if ((pos_name == 'DT') || (pos_name == 'DE')) {
+                pos_name = 'DL';
+            }
+            else if ((pos_name == 'CB') || (pos_name == 'S')) {
+                pos_name = 'DB';
+            }
+        }
+        player_name = player_name.replace('*', '');
+
+        return calculateProjections(player_name, pos_name, team_name);
+    }
+
+    function addProjections() {
+        playerTable.find('.ExtraProjectionsFantasyprosData').each(function() {
             var cell = $(this);
             var currRow = cell.parent();
 
             var byeweek_text = currRow.find('td.sectionLeadingSpacer ~ td:first').text();
+            var isByeWeek = !byeweek_text || byeweek_text == "** BYE **";
 
-            if (!byeweek_text || byeweek_text == "** BYE **") {
-                projPoints = "-";
-            }
-            else {
-                var player_cell = currRow.find('td.playertablePlayerName');
-                var player_cell_text = player_cell.text();
-
-                if (player_cell_text.match(/(O|IR)$/)) { // player is Out
-                    projPoints = "0";
-                }
-                else if (player_cell_text.match(/(TQB|HC)$/)) { // can't project head coaches or TQB's
-                    projPoints = "-";
-                }
-                else {
-                    if (player_cell_text.indexOf('D/ST') > -1) {
-                        var player_name = player_cell.find('a').text().trim();
-                        var team_name = "-";
-                        var pos_name = 'D/ST';
-                    }
-
-                    else {
-                        var player_name = player_cell_text.split(",")[0];
-                        var team_pos = player_cell_text.split(",")[1].split(/\s|\xa0/);
-                        var team_name = team_pos[1].toUpperCase();
-                        var pos_name = team_pos[2];
-                        if ((pos_name == 'DT') || (pos_name == 'DE')) {
-                            pos_name = 'DL';
-                        }
-                        else if ((pos_name == 'CB') || (pos_name == 'S')) {
-                            pos_name = 'DB';
-                        }
-                    }
-                    player_name = player_name.replace('*','');
-
-                    projPoints = calculateProjections(player_name, pos_name, team_name);
-                }
-            }
-            cell.text(projPoints);
+            var projectedPoints = isByeWeek ? "--" : getProjectedPoints(currRow);
+            cell.text(projectedPoints);
 
         });
 
         if (document.URL.match(/ffl\/(clubhouse|dropplayers)/)) {
-            var header_rows = table.find('tr.playerTableBgRowHead');
+            var header_rows = playerTable.find('tr.playerTableBgRowHead');
             var sumTotal;
             var sumTotalESPN;
             var keepAdding;
