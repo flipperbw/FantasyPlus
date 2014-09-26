@@ -35,6 +35,7 @@ $(document).ready(function () {
 	//Get League Settings
 	var league_id = document.URL.match(/leagueId=(\d+)/)[1];
 	$.get('http://games.espn.go.com/ffl/leaguesetup/sections/scoring', {"leagueId": league_id}, function(d) {
+        addColumn();
 		parse_data(d);
 	});
 	
@@ -354,7 +355,6 @@ $(document).ready(function () {
 	}
 	
 	function prepareAddProjections() {
-        addColumn();
 		addProjections();
 		
 		if (document.URL.match(/ffl\/(freeagency|clubhouse|dropplayers|rosterfix)/)) {
@@ -374,12 +374,6 @@ $(document).ready(function () {
 			observerESPN.observe(target_observe, observerConfig);
 		}
 	}
-
-    function addProjections() {
-        addColumn();
-
-        fillRows();
-    }
 
     function addColumn() {
         $('.ExtraProjectionsFantasypros').remove();
@@ -405,7 +399,7 @@ $(document).ready(function () {
         }
     }
 	
-	function fillRows() {
+	function addProjections() {
 		//Add header cells
         var table = $('[id^=playertable_] tbody');
         var proj_heads = table.find('tr.playerTableBgRowSubhead td:contains(PROJ)');
@@ -414,8 +408,6 @@ $(document).ready(function () {
         if(!hasProjectionTable) return;
 
         var playerNameRows = table.find('tr.playerTableBgRowSubhead td:contains(PLAYER, TEAM POS)');
-        var playerNameIndex = playerNameRows.first().index();
-
 
         table.find('.ExtraProjectionsFantasyprosData').each(function() {
             var cell = $(this);
