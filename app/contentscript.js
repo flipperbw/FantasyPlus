@@ -34,9 +34,15 @@ $(document).ready(function () {
 	
 	//Get League Settings
 	var league_id = document.URL.match(/leagueId=(\d+)/)[1];
+    var playerTable = $('[id^=playertable_] tbody');
 	$.get('http://games.espn.go.com/ffl/leaguesetup/sections/scoring', {"leagueId": league_id}, function(d) {
-        addColumn();
-		parse_data(d);
+
+        var hasProjectionTable = playerTable.find('tr.playerTableBgRowSubhead td:contains(PROJ)').length > 0;
+
+        if(hasProjectionTable) {
+            addColumn();
+            parse_data(d);
+        }
 	});
 	
 	function parse_data(league_data) {
@@ -377,37 +383,18 @@ $(document).ready(function () {
 
     function addColumn() {
         $('.ExtraProjectionsFantasypros').remove();
-        var table = $('[id^=playertable_] tbody');
-        var proj_heads = table.find('tr.playerTableBgRowSubhead td:contains(PROJ)');
-        var header_index = proj_heads.first().index();
-        if (header_index > -1) {
-            proj_heads.after('<td class="playertableStat ExtraProjectionsFantasypros ExtraProjectionsFantasyprosHeader">FPros</td>');
+        $('tr.playerTableBgRowSubhead td:contains(PROJ)')
+            .after('<td class="playertableStat ExtraProjectionsFantasypros ExtraProjectionsFantasyprosHeader">FPros</td>');
 
-            $('.playerTableBgRowHead.tableHead.playertableSectionHeader').find('th:last').attr('colspan', 6);
+        $('.playerTableBgRowHead.tableHead.playertableSectionHeader').find('th:last').attr('colspan', 6);
 
-            var playerNameRows = table.find('tr.playerTableBgRowSubhead td:contains(PLAYER, TEAM POS)');
-            var playerNameIndex = playerNameRows.first().index();
-
-            table.find('tr.pncPlayerRow').not('.emptyRow').each(function() {
-                var currRow = $(this);
-                var byeweek = table.find('tr.playerTableBgRowSubhead td:contains(OPP)').first().index();
-                var byeweek_text = currRow.find('td').eq(byeweek).text();
-                var adj_header_index = (byeweek_text == "** BYE **" ? header_index - 1 : header_index);
-
-                currRow.find('td').eq(adj_header_index).after('<td class="playertableStat ExtraProjectionsFantasypros ExtraProjectionsFantasyprosData">...</td>');
-            });
-        }
+        playerTable.find('tr.pncPlayerRow:not(.emptyRow) td.sectionLeadingSpacer:nth-last-child(6) + td')
+            .after('<td class="playertableStat ExtraProjectionsFantasypros ExtraProjectionsFantasyprosData">...</td>')
     }
 	
 	function addProjections() {
 		//Add header cells
         var table = $('[id^=playertable_] tbody');
-        var proj_heads = table.find('tr.playerTableBgRowSubhead td:contains(PROJ)');
-        var hasProjectionTable = proj_heads.first().index() > -1;
-
-        if(!hasProjectionTable) return;
-
-        var playerNameRows = table.find('tr.playerTableBgRowSubhead td:contains(PLAYER, TEAM POS)');
 
         table.find('.ExtraProjectionsFantasyprosData').each(function() {
             var cell = $(this);
