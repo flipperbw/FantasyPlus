@@ -354,6 +354,7 @@ $(document).ready(function () {
 	}
 	
 	function prepareAddProjections() {
+        addColumn();
 		addProjections();
 		
 		if (document.URL.match(/ffl\/(freeagency|clubhouse|dropplayers|rosterfix)/)) {
@@ -373,146 +374,166 @@ $(document).ready(function () {
 			observerESPN.observe(target_observe, observerConfig);
 		}
 	}
+
+    function addProjections() {
+        addColumn();
+
+        fillRows();
+    }
+
+    function addColumn() {
+        $('.ExtraProjectionsFantasypros').remove();
+        var table = $('[id^=playertable_] tbody');
+        var proj_heads = table.find('tr.playerTableBgRowSubhead td:contains(PROJ)');
+        var header_index = proj_heads.first().index();
+        if (header_index > -1) {
+            proj_heads.after('<td class="playertableStat ExtraProjectionsFantasypros ExtraProjectionsFantasyprosHeader">FPros</td>');
+
+            $('.playerTableBgRowHead.tableHead.playertableSectionHeader').find('th:last').attr('colspan', 6);
+
+            var playerNameRows = table.find('tr.playerTableBgRowSubhead td:contains(PLAYER, TEAM POS)');
+            var playerNameIndex = playerNameRows.first().index();
+
+            table.find('tr.pncPlayerRow').not('.emptyRow').each(function() {
+                var currRow = $(this);
+                var byeweek = table.find('tr.playerTableBgRowSubhead td:contains(OPP)').first().index();
+                var byeweek_text = currRow.find('td').eq(byeweek).text();
+                var adj_header_index = (byeweek_text == "** BYE **" ? header_index - 1 : header_index);
+
+                currRow.find('td').eq(adj_header_index).after('<td class="playertableStat ExtraProjectionsFantasypros ExtraProjectionsFantasyprosData">...</td>');
+            });
+        }
+    }
 	
-	function addProjections() {
-		$('.ExtraProjectionsFantasypros').remove();
-		
+	function fillRows() {
 		//Add header cells
         var table = $('[id^=playertable_] tbody');
-		var proj_heads = table.find('tr.playerTableBgRowSubhead td:contains(PROJ)');
-        var header_index = proj_heads.first().index();
-		if (header_index > -1) {
-			proj_heads.after('<td class="playertableStat ExtraProjectionsFantasypros ExtraProjectionsFantasyprosHeader">FPros</td>');
-			
-			$('.playerTableBgRowHead.tableHead.playertableSectionHeader').find('th:last').attr('colspan',6);
-			
-			var playerNameRows = table.find('tr.playerTableBgRowSubhead td:contains(PLAYER, TEAM POS)');
-			var playerNameIndex = playerNameRows.first().index();
-			//for each player name
-			table.find('tr.pncPlayerRow').not('.emptyRow').each(function() {
-				var currRow = $(this);
+        var proj_heads = table.find('tr.playerTableBgRowSubhead td:contains(PROJ)');
+        var hasProjectionTable = proj_heads.first().index() > -1;
 
-                var byeweek = table.find('tr.playerTableBgRowSubhead td:contains(OPP)').first().index();
-				byeweek_text = currRow.find('td').eq(byeweek).text();
-				
-				if (!byeweek_text) {
-					projPoints = "-";
-					adj_header_index = header_index;
-				}
-				else if (byeweek_text == "** BYE **") {
-					projPoints = "-";
-					adj_header_index = header_index - 1;
-				}
-				else {
-					adj_header_index = header_index;
-					player_cell = currRow.find('td').eq(playerNameIndex);
-					
-					if (player_cell.text().match(/(O|IR)$/)) { // player is Out
-						projPoints = "0";
-					}
-					else if (player_cell.text().match(/(TQB|HC)$/)) { // can't project head coaches or TQB's
-						projPoints = "-";
-					}
-					else {
-						if (player_cell.text().indexOf('D/ST') > -1) {
-							var player_name = $(player_cell).find('a').text().trim();
-							var team_name = "-";
-							var pos_name = 'D/ST';
-						}
-						
-						else {
-							var player_name = player_cell.text().split(",")[0];
-							var team_pos = player_cell.text().split(",")[1].split(/\s|\xa0/);
-							var team_name = team_pos[1].toUpperCase();
-							var pos_name = team_pos[2];
-							if ((pos_name == 'DT') || (pos_name == 'DE')) {
-								pos_name = 'DL';
-							}
-							else if ((pos_name == 'CB') || (pos_name == 'S')) {
-								pos_name = 'DB';
-							}
-						}
-						player_name = player_name.replace('*','');
+        if(!hasProjectionTable) return;
 
-						projPoints = calculateProjections(player_name, pos_name, team_name);
-					}
-				}
+        var playerNameRows = table.find('tr.playerTableBgRowSubhead td:contains(PLAYER, TEAM POS)');
+        var playerNameIndex = playerNameRows.first().index();
 
-				currRow.find('td').eq(adj_header_index).after('<td class="playertableStat ExtraProjectionsFantasypros ExtraProjectionsFantasyprosData">' + projPoints + '</td>');
-			});
-			
-			if (document.URL.match(/ffl\/(clubhouse|dropplayers)/)) {
-				var header_rows = table.find('tr.playerTableBgRowHead');
-				var sumTotal;
-				var sumTotalESPN;
-				var keepAdding;
-				var currHeaderRow;
-				var headerType;
-				var sumpts = 0;
-				var sumptsESPN = 0;
-				
-				header_rows.each(function() {
-					currHeaderRow = $(this);
-					headerType = currHeaderRow.find('th.playertableSectionHeaderFirst').text();
-					keepAdding = true;
-					sumTotal = 0;
-					sumTotalESPN = 0;
-					
-					if (headerType == 'STARTERS' || headerType == 'BENCH') {
-						while (keepAdding) {
-							currHeaderRow = currHeaderRow.next();
-							if (currHeaderRow.hasClass('playerTableBgRowSubhead')) {
-								td_length = currHeaderRow.find('td').length;
-							}
-							else if (currHeaderRow.hasClass('pncPlayerRow') && !currHeaderRow.hasClass('emptyRow')) {
-								proj_cell = currHeaderRow.find('.ExtraProjectionsFantasyprosData');
-								sumpts = proj_cell.text();
-								sumptsESPN = proj_cell.prev().text();
-								
-								if (parseFloat(sumpts)) {
-									sumTotal = parseFloat(sumTotal + parseFloat(sumpts));
-								}
-								if (parseFloat(sumptsESPN)) {
-									sumTotalESPN = parseFloat(sumTotalESPN + parseFloat(sumptsESPN));
-								}
-							}
-							else {
-								keepAdding = false;
-							}
-						}
 
-						// I should fix this to make it more automatic...
-						if (td_length == 18) {
-							extra_td = '<td></td>';
-						}
-						else {
-							extra_td = '';
-						}
-						currHeaderRow.before('<tr class="pncPlayerRow playerTableBgRow0 ExtraProjectionsFantasypros"><td class="playerSlot" style="font-weight: bold;">Total</td><td></td>' + extra_td + '<td class="sectionLeadingSpacer"></td><td></td><td></td><td class="sectionLeadingSpacer"></td><td></td><td></td><td></td><td></td><td class="sectionLeadingSpacer"></td><td class="playertableStat">' + Math.round(sumTotalESPN * 100) / 100 + '</td><td class="playertableStat">' + Math.round(sumTotal * 100) / 100 + '</td><td></td><td></td><td></td><td></td></tr>');
-					}
-				});
-			}
-			else if (document.URL.match(/ffl\/matchuppreview/)) {
-				var matchup_tables = $('.playerTableTable');
-				var datapoints;
-				var matchup_total;
-				
-				matchup_tables.each(function() {
-					currTable = $(this);
-					datapoints = currTable.find('.ExtraProjectionsFantasyprosData');
-					
-					matchup_total = 0;
-					if (datapoints.length > 0) {
-						$.each(datapoints, function() {
-							if (parseFloat($(this).text())) {
-								matchup_total = parseFloat(matchup_total + parseFloat($(this).text()));
-							}
-						});
-					}
-					
-					currTable.next().prepend('<div class="danglerBox totalScore">' + Math.round(matchup_total) + '</div>');
-				});
-			}
-		}
+        table.find('.ExtraProjectionsFantasyprosData').each(function() {
+            var cell = $(this);
+            var currRow = cell.parent();
+
+            var byeweek_text = currRow.find('td.sectionLeadingSpacer ~ td:first').text();
+
+            if (!byeweek_text || byeweek_text == "** BYE **") {
+                projPoints = "-";
+            }
+            else {
+                var player_cell = currRow.find('td.playertablePlayerName');
+                var player_cell_text = player_cell.text();
+
+                if (player_cell_text.match(/(O|IR)$/)) { // player is Out
+                    projPoints = "0";
+                }
+                else if (player_cell_text.match(/(TQB|HC)$/)) { // can't project head coaches or TQB's
+                    projPoints = "-";
+                }
+                else {
+                    if (player_cell_text.indexOf('D/ST') > -1) {
+                        var player_name = player_cell.find('a').text().trim();
+                        var team_name = "-";
+                        var pos_name = 'D/ST';
+                    }
+
+                    else {
+                        var player_name = player_cell_text.split(",")[0];
+                        var team_pos = player_cell_text.split(",")[1].split(/\s|\xa0/);
+                        var team_name = team_pos[1].toUpperCase();
+                        var pos_name = team_pos[2];
+                        if ((pos_name == 'DT') || (pos_name == 'DE')) {
+                            pos_name = 'DL';
+                        }
+                        else if ((pos_name == 'CB') || (pos_name == 'S')) {
+                            pos_name = 'DB';
+                        }
+                    }
+                    player_name = player_name.replace('*','');
+
+                    projPoints = calculateProjections(player_name, pos_name, team_name);
+                }
+            }
+            cell.text(projPoints);
+
+        });
+
+        if (document.URL.match(/ffl\/(clubhouse|dropplayers)/)) {
+            var header_rows = table.find('tr.playerTableBgRowHead');
+            var sumTotal;
+            var sumTotalESPN;
+            var keepAdding;
+            var currHeaderRow;
+            var headerType;
+            var sumpts = 0;
+            var sumptsESPN = 0;
+
+            header_rows.each(function() {
+                currHeaderRow = $(this);
+                headerType = currHeaderRow.find('th.playertableSectionHeaderFirst').text();
+                keepAdding = true;
+                sumTotal = 0;
+                sumTotalESPN = 0;
+
+                if (headerType == 'STARTERS' || headerType == 'BENCH') {
+                    while (keepAdding) {
+                        currHeaderRow = currHeaderRow.next();
+                        if (currHeaderRow.hasClass('playerTableBgRowSubhead')) {
+            								td_length = currHeaderRow.find('td').length;
+                        }
+                        else if (currHeaderRow.hasClass('pncPlayerRow') && !currHeaderRow.hasClass('emptyRow')) {
+                            proj_cell = currHeaderRow.find('.ExtraProjectionsFantasyprosData');
+                            sumpts = proj_cell.text();
+                            sumptsESPN = proj_cell.prev().text();
+
+                            if (parseFloat(sumpts)) {
+                                sumTotal = parseFloat(sumTotal + parseFloat(sumpts));
+                            }
+                            if (parseFloat(sumptsESPN)) {
+                                sumTotalESPN = parseFloat(sumTotalESPN + parseFloat(sumptsESPN));
+                            }
+                        }
+                        else {
+                            keepAdding = false;
+                        }
+                    }
+                    // I should fix this to make it more automatic...
+                    if (td_length == 18) {
+                      extra_td = '<td></td>';
+                    }
+                    else {
+                      extra_td = '';
+                    }
+                    currHeaderRow.before('<tr class="pncPlayerRow playerTableBgRow0 ExtraProjectionsFantasypros"><td class="playerSlot" style="font-weight: bold;">Total</td><td></td>' + extra_td + '<td class="sectionLeadingSpacer"></td><td></td><td></td><td class="sectionLeadingSpacer"></td><td></td><td></td><td></td><td></td><td class="sectionLeadingSpacer"></td><td class="playertableStat">' + Math.round(sumTotalESPN * 100) / 100 + '</td><td class="playertableStat">' + Math.round(sumTotal * 100) / 100 + '</td><td></td><td></td><td></td><td></td></tr>');
+                }
+            });
+        }
+        else if (document.URL.match(/ffl\/matchuppreview/)) {
+            var matchup_tables = $('.playerTableTable');
+            var datapoints;
+            var matchup_total;
+
+            matchup_tables.each(function() {
+                currTable = $(this);
+                datapoints = currTable.find('.ExtraProjectionsFantasyprosData');
+
+                matchup_total = 0;
+                if (datapoints.length > 0) {
+                    $.each(datapoints, function() {
+                        if (parseFloat($(this).text())) {
+                            matchup_total = parseFloat(matchup_total + parseFloat($(this).text()));
+                        }
+                    });
+                }
+
+                currTable.next().prepend('<div class="danglerBox totalScore">' + Math.round(matchup_total) + '</div>');
+            });
+        }
 	}
 });
