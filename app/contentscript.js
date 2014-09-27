@@ -11,7 +11,6 @@
 - sortable? doubt it
 - option to disable/add
 - option for experts
-- show fpros col right away, but maybe add a loading spinner to signify something is happening
 */
 
 /*
