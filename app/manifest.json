@@ -15,6 +15,9 @@
 	"http://www.fantasysharks.com/*",
     "webRequest"
   ],
+  "web_accessible_resources": [
+      "loading.gif"
+  ],
   "content_scripts": [
     {
       "matches": ["http://games.espn.go.com/ffl/clubhouse*", "http://games.espn.go.com/ffl/freeagency*", "http://games.espn.go.com/ffl/matchuppreview*", 
