@@ -22,6 +22,8 @@ document.body.appendChild(tag);
 */
 
 $(document).ready(function () {
+	$('.games-alert-mod').remove();
+	
 	// GLOBALS
 	window.alldata = {};
 	
@@ -226,7 +228,6 @@ $(document).ready(function () {
 		// get their projected data from window.alldata
 		// multiply it by the league settings
 		full_name = player_name + "|" + pos_name + "|" + team_name;
-		
 		player_data = window.alldata[full_name]
 		
 		if (typeof(player_data) === "undefined") {
@@ -275,11 +276,16 @@ $(document).ready(function () {
 			else if (player_name.split(' ')[0] == 'Robert') {
 				player_name = 'Rob ' + player_name.split(' ').slice(1).join(' ');
 			}
-			else {
-				return("??");
-			}
+			//else {
+			//	return("??");
+			//}
 			
 			full_name = player_name + "|" + pos_name + "|" + team_name;
+			
+			if (player_name == 'Dexter McCluster') {
+				full_name = 'Dexter McCluster|RB|TEN';
+			}
+			
 			player_data = window.alldata[full_name];
 			if (typeof(player_data) === "undefined") {
 				return("??");

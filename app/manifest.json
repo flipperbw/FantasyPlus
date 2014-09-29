@@ -1,7 +1,7 @@
 {
   "name": "FantasyPlus",
   "short_name": "FantasyPlus",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "manifest_version": 2,
   "description": "Adds weekly projections from Fantasypros.com (PFF, CBS, NumberFire, etc.) and FantasySharks (for D/ST and IDP) to fantasy sites.",
   "icons": {
@@ -13,7 +13,8 @@
     "http://games.espn.go.com/*",
 	"http://www.fantasypros.com/*",
 	"http://www.fantasysharks.com/*",
-    "webRequest"
+    "webRequest",
+	"storage"
   ],
   "content_scripts": [
     {
