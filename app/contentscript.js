@@ -22,7 +22,7 @@ document.body.appendChild(tag);
 */
 
 $(document).ready(function () {
-	$('.games-alert-mod').remove();
+	$('.games-alert-tilt').remove();
 	
 	// GLOBALS
 	window.alldata = {};
@@ -122,8 +122,12 @@ $(document).ready(function () {
 			source_site = 'http://www.fantasysharks.com/apps/bert/forecasts/projections.php?csv=1&Position=' + position;
 		}
 		
-		$.get(source_site, function(data) {
+		$.ajax({
+			url: source_site
+		}).done(function(data) {
 			cb(position, data.trim());
+		}).fail(function() {
+			cb(position, 'error');
 		});
 	}
 	
@@ -157,63 +161,64 @@ $(document).ready(function () {
 				var pos_name;
 				var parsed_proj;
 				
-				if (window.positions.indexOf(p_name) > -1) {
-					player_heading = 'Player Name';
-					pos_name = p_name.toUpperCase();
-					retrieved_proj = raw_data.split('\n').splice(4);
-					
-					parsed_proj = [];
-					for (var t=0; t < retrieved_proj.length; t++) {
-						parsed_proj[t] = retrieved_proj[t].split("\t");
-					}
-				}
-				else {
-					player_heading = 'Player';
-					pos_name = window.idp_conversion[p_name];
-					parsed_proj = parsesiteCSV(raw_data);
-				}
-				
-				var headers = parsed_proj[0];
-				for (var h=0; h < headers.length; h++) {
-					headers[h] = headers[h].trim();
-				}
-				
-				team_header = headers.indexOf('Team');
-				player_name_header = headers.indexOf(player_heading);
-				
-				for (var i=1; i < parsed_proj.length; i++) {
-					var playerdata = {};
-					var currentline = parsed_proj[i];
-					
-					team_name = currentline[team_header].trim();
-					if (window.team_name_conversion.hasOwnProperty(team_name)) {
-						team_name = window.team_name_conversion[team_name];
-					}
-					
-					player_name = currentline[player_name_header].trim();
-					
-					if (window.idp_positions.indexOf(p_name) > -1) {
-						//DST
-						if (p_name == '6') {
-							player_name = player_name.split(',')[0] + ' D/ST';
-							team_name = "-";
+				if (!(raw_data == 'error')) {
+					if (window.positions.indexOf(p_name) > -1) {
+						player_heading = 'Player Name';
+						pos_name = p_name.toUpperCase();
+						retrieved_proj = raw_data.split('\n').splice(4);
+						parsed_proj = [];
+						for (var t=0; t < retrieved_proj.length; t++) {
+							parsed_proj[t] = retrieved_proj[t].split("\t");
 						}
-						//Other IDPs, reversing names
-						else {
-							player_name = player_name.split(',')[1] + " " + player_name.split(',')[0]
+					}
+					else {
+						player_heading = 'Player';
+						pos_name = window.idp_conversion[p_name];
+						parsed_proj = parsesiteCSV(raw_data);
+					}
+					
+					var headers = parsed_proj[0];
+					for (var h=0; h < headers.length; h++) {
+						headers[h] = headers[h].trim();
+					}
+					
+					team_header = headers.indexOf('Team');
+					player_name_header = headers.indexOf(player_heading);
+					
+					for (var i=1; i < parsed_proj.length; i++) {
+						var playerdata = {};
+						var currentline = parsed_proj[i];
+						
+						team_name = currentline[team_header].trim();
+						if (window.team_name_conversion.hasOwnProperty(team_name)) {
+							team_name = window.team_name_conversion[team_name];
 						}
 						
-						player_name = player_name.trim();
+						player_name = currentline[player_name_header].trim();
+						
+						if (window.idp_positions.indexOf(p_name) > -1) {
+							//DST
+							if (p_name == '6') {
+								player_name = player_name.split(',')[0] + ' D/ST';
+								team_name = "-";
+							}
+							//Other IDPs, reversing names
+							else {
+								player_name = player_name.split(',')[1] + " " + player_name.split(',')[0]
+							}
+							
+							player_name = player_name.trim();
+						}
+						
+						// Add team and position to player_name for differentiating duplicate names
+						full_name = player_name + "|" + pos_name + "|" + team_name;
+						
+						for (var j = player_name_header + 1; j < headers.length - 1; j++) {
+							playerdata[headers[j].trim()] = currentline[j].trim();
+						}
+						
+						window.alldata[full_name] = playerdata;
 					}
-					
-					// Add team and position to player_name for differentiating duplicate names
-					full_name = player_name + "|" + pos_name + "|" + team_name;
-					
-					for (var j = player_name_header + 1; j < headers.length - 1; j++) {
-						playerdata[headers[j].trim()] = currentline[j].trim();
-					}
-					
-					window.alldata[full_name] = playerdata;
 				}
 				
 				ready = ready - 1;

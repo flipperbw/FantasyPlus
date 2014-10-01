@@ -10,17 +10,23 @@
     "128" : "FantasyPlusIcon-128.png"
   },
   "permissions": [
-    "http://games.espn.go.com/*",
-	"http://www.fantasypros.com/*",
-	"http://www.fantasysharks.com/*",
+    "http://*/*",
     "webRequest",
 	"storage"
   ],
   "content_scripts": [
     {
-      "matches": ["http://games.espn.go.com/ffl/clubhouse*", "http://games.espn.go.com/ffl/freeagency*", "http://games.espn.go.com/ffl/matchuppreview*", 
-                   "http://games.espn.go.com/ffl/dropplayers*", "http://games.espn.go.com/ffl/rosterfix*"],
-      "js" : ["jquery-1.11.1.min.js", "contentscript.js"]
+      "matches": [
+		"http://games.espn.go.com/ffl/clubhouse*",
+		"http://games.espn.go.com/ffl/freeagency*",
+		"http://games.espn.go.com/ffl/matchuppreview*", 
+		"http://games.espn.go.com/ffl/dropplayers*",
+		"http://games.espn.go.com/ffl/rosterfix*"
+	  ],
+      "js" : [
+		"jquery-1.11.1.min.js",
+		"contentscript.js"
+	  ]
     }
   ]
 }
