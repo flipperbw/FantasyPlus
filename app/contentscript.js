@@ -12,6 +12,8 @@
 - option to disable/add
 - option for experts
 - show fpros col right away, but maybe add a loading spinner to signify something is happening
+- WR1/2 fro mdepth chart, http://www.footballoutsiders.com/stats/teamdef
+- fix issue with fantasyfinder
 */
 
 /*
@@ -22,8 +24,6 @@ document.body.appendChild(tag);
 */
 
 $(document).ready(function () {
-	$('.games-alert-tilt').remove();
-	
 	// GLOBALS
 	window.alldata = {};
 	
@@ -34,13 +34,108 @@ $(document).ready(function () {
 	window.idp_conversion = {'6': 'D/ST', '8': 'DL', '9': 'LB', '10': 'DB'};
 	window.team_name_conversion = {'ARZ': 'ARI', 'GBP': 'GB', 'KCC': 'KC', 'NEP': 'NE', 'NOR': 'NO', 'SDC': 'SD', 'SFO': 'SF', 'TBB': 'TB', 'WAS': 'WSH'};
 	
-	//Get League Settings
-	var league_id = document.URL.match(/leagueId=(\d+)/)[1];
-	$.get('http://games.espn.go.com/ffl/leaguesetup/sections/scoring', {"leagueId": league_id}, function(d) {
-		parse_data(d);
-	});
+	if (document.URL.match(/football.fantasysports.yahoo.com/)) {
+		var league_id = document.URL.match(/football.fantasysports.yahoo.com\/f1\/(\d+)/)[1];
+		$.get('http://football.fantasysports.yahoo.com/f1/' + league_id + '/settings', function(d) {
+			parse_yahoo_league(d);
+		});
+	}
+	else if (document.URL.match(/games.espn.go.com/)) {
+		$('.games-alert-tilt').remove();
 	
-	function parse_data(league_data) {
+		var league_id = document.URL.match(/leagueId=(\d+)/)[1];
+		$.get('http://games.espn.go.com/ffl/leaguesetup/sections/scoring', {"leagueId": league_id}, function(d) {
+			parse_espn_league(d);
+		});
+	}
+	
+	function parse_yahoo_league(league_data) {
+		var league_table = $('#settings-stat-mod-table tbody', league_data);
+		window.league_settings = {};
+		
+		$.each($('tr', league_table), function() {
+			var currRow = $(this);
+			var statCell = $(currRow.find('td')[1]);
+			var rowStat = statCell.text();
+			if (rowStat.indexOf('yards per point') > -1) {
+				newRowStat = 1 / parseFloat(rowStat.split(' ')[0]);
+				statCell.text(newRowStat);
+			}
+		});
+		
+		//I should merge these together at some point, just with different "keys"
+		
+		window.league_settings['pass_tds'] = $("td", league_table).filter(function() { return $.text([this]) == 'Passing Touchdowns'; }).next().text() || 0;
+		
+		
+		window.league_settings['pass_yds'] = $("td", league_data).filter(function() { return $.text([this]) == 'Passing Yards (PY)'; }).next().text() || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(PY5)') > -1; }).next().text()) / 5.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(PY10)') > -1; }).next().text()) / 10.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(PY20)') > -1; }).next().text()) / 20.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(PY25)') > -1; }).next().text()) / 25.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(PY50)') > -1; }).next().text()) / 50.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(PY100)') > -1; }).next().text()) / 100.0 || 0;
+		window.league_settings['pass_tds'] = $("td", league_data).filter(function() { return $.text([this]) == 'TD Pass (PTD)'; }).next().text() || 0;
+		window.league_settings['pass_ints'] = $("td", league_data).filter(function() { return $.text([this]) == 'Interceptions Thrown (INT)'; }).next().text() || 0;
+		window.league_settings['pass_cmp'] = $("td", league_data).filter(function() { return $.text([this]) == 'Each Pass Completed (PC)'; }).next().text() || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(PC5)') > -1; }).next().text()) / 5.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(PC10)') > -1; }).next().text()) / 10.0 || 0;
+		window.league_settings['pass_icmp'] = $("td", league_data).filter(function() { return $.text([this]) == 'Each Incomplete Pass (INC)'; }).next().text() || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(IP5)') > -1; }).next().text()) / 5.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(IP10)') > -1; }).next().text()) / 10.0 || 0;
+		window.league_settings['pass_att'] = $("td", league_data).filter(function() { return $.text([this]) == 'Each Pass Attempted (PA)'; }).next().text() || 0;
+		window.league_settings['pass_300_bonus'] = $("td", league_data).filter(function() { return $.text([this]) == '300-399 yard passing game (P300)'; }).next().text() || 0;
+		window.league_settings['pass_400_bonus'] = $("td", league_data).filter(function() { return $.text([this]) == '400+ yard passing game (P400)'; }).next().text() || 0;
+		
+		window.league_settings['rush_yds'] = $("td", league_data).filter(function() { return $.text([this]) == 'Rushing Yards (RY)'; }).next().text() || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(RY5)') > -1; }).next().text()) / 5.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]) == 'Every 10 rushing yards (RY10)'; }).next().text()) / 10.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(RY20)') > -1; }).next().text()) / 20.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(RY25)') > -1; }).next().text()) / 25.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(RY50)') > -1; }).next().text()) / 50.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(RY100)') > -1; }).next().text()) / 100.0 || 0;
+		window.league_settings['rush_att'] = $("td", league_data).filter(function() { return $.text([this]) == 'Rushing Attempts (RA)'; }).next().text() || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(RA5)') > -1; }).next().text()) / 5.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(RA10)') > -1; }).next().text()) / 10.0 || 0;
+		window.league_settings['rush_tds'] = $("td", league_data).filter(function() { return $.text([this]) == 'TD Rush (RTD)'; }).next().text() || 0;
+		window.league_settings['rush_100_bonus'] = $("td", league_data).filter(function() { return $.text([this]) == '100-199 yard rushing game (RY100)'; }).next().text() || 0;
+		window.league_settings['rush_200_bonus'] = $("td", league_data).filter(function() { return $.text([this]) == '200+ yard rushing game (RY200)'; }).next().text() || 0;
+		
+		window.league_settings['rec_yds'] = $("td", league_data).filter(function() { return $.text([this]) == 'Receiving Yards (REY)'; }).next().text() || parseFloat($("td", league_data).filter(function() { return $.text([this]) == 'Every 5 receiving yards (REY5)'; }).next().text()) / 5.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(REY10)') > -1; }).next().text()) / 10.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(REY20)') > -1; }).next().text()) / 20.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(REY25)') > -1; }).next().text()) / 25.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(REY50)') > -1; }).next().text()) / 50.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(REY100)'); }).next().text()) / 100.0 || 0;
+		window.league_settings['rec_att'] = $("td", league_data).filter(function() { return $.text([this]) == 'Each reception (REC)'; }).next().text() || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(REC5)') > -1; }).next().text()) / 5.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(REC10)') > -1; }).next().text()) / 10.0 || 0;
+		window.league_settings['rec_tds'] = $("td", league_data).filter(function() { return $.text([this]) == 'TD Reception (RETD)'; }).next().text() || 0;
+		window.league_settings['rec_100_bonus'] = $("td", league_data).filter(function() { return $.text([this]) == '100-199 yard receiving game (REY100)'; }).next().text() || 0;
+		window.league_settings['rec_200_bonus'] = $("td", league_data).filter(function() { return $.text([this]) == '200+ yard receiving game (REY200)'; }).next().text() || 0;
+		//Receiving Target (RET)
+		
+		window.league_settings['xpt'] = $("td", league_data).filter(function() { return $.text([this]) == 'Each PAT Made (PAT)'; }).next().text() || 0;
+		window.league_settings['fgm'] = $("td", league_data).filter(function() { return $.text([this]) == 'Total FG Missed (FGM)'; }).next().text() || 0;
+		window.league_settings['fga'] = $("td", league_data).filter(function() { return $.text([this]) == 'Total FG Attempted (FGA)'; }).next().text() || 0;
+		window.league_settings['fg'] = $("td", league_data).filter(function() { return $.text([this]) == 'Total FG Made (FG)'; }).next().text() || 0;
+		window.league_settings['fg_0'] = $("td", league_data).filter(function() { return $.text([this]) == 'FG Made (0-39 yards) (FG0)'; }).next().text() || 0;
+		window.league_settings['fg_40'] = $("td", league_data).filter(function() { return $.text([this]) == 'FG Made (40-49 yards) (FG40)'; }).next().text() || 0;
+		window.league_settings['fg_50'] = $("td", league_data).filter(function() { return $.text([this]) == 'FG Made (50+ yards) (FG50)'; }).next().text() || 0;
+		//Each PAT Attempted (PATA)
+		
+		window.league_settings['fumbles'] = $("td", league_data).filter(function() { return $.text([this]) == 'Total Fumbles Lost (FUML)'; }).next().text() || 0;
+		
+		window.league_settings['ff'] = $($("td", league_data).filter(function() { return $.text([this]) == 'Each Fumble Forced (FF)'; })[0]).next().text() || 0;
+		window.league_settings['tka'] = $("td", league_data).filter(function() { return $.text([this]) == 'Assisted Tackles (TKA)'; }).next().text() || 0;
+		window.league_settings['tks'] = $("td", league_data).filter(function() { return $.text([this]) == 'Solo Tackles (TKS)'; }).next().text() || 0;
+		window.league_settings['pd'] = $("td", league_data).filter(function() { return $.text([this]) == 'Passes Defensed (PD)'; }).next().text() || 0;
+		
+		window.league_settings['int'] = $($("td", league_data).filter(function() { return $.text([this]) == 'Each Interception (INT)'; })[0]).next().text() || 0;
+		window.league_settings['deftd'] = $($("td", league_data).filter(function() { return $.text([this]) == 'Interception Return TD (INTTD)'; })[0]).next().text() || 0;
+		window.league_settings['fr'] = $($("td", league_data).filter(function() { return $.text([this]) == 'Each Fumble Recovered (FR)'; })[0]).next().text() || 0;
+		window.league_settings['sk'] = $($("td", league_data).filter(function() { return $.text([this]) == 'Each Sack (SK)'; })[0]).next().text() || parseFloat($($("td", league_data).filter(function() { return $.text([this]) == '1/2 Sack (HALFSK)'; })[0]).next().text()) * 2 || 0;
+		
+		window.league_settings['pa'] = $("td", league_data).filter(function() { return $.text([this]) == 'Points Allowed (PA)'; }).next().text() || 0;
+		window.league_settings['pa0'] = $("td", league_data).filter(function() { return $.text([this]) == '0 points allowed (PA0)'; }).next().text() || 0;
+		window.league_settings['pa1'] = $("td", league_data).filter(function() { return $.text([this]) == '1-6 points allowed (PA1)'; }).next().text() || 0;
+		window.league_settings['pa7'] = $("td", league_data).filter(function() { return $.text([this]) == '7-13 points allowed (PA7)'; }).next().text() || 0;
+		window.league_settings['pa14'] = $("td", league_data).filter(function() { return $.text([this]) == '14-17 points allowed (PA14)'; }).next().text() || 0;
+		window.league_settings['pa18'] = $("td", league_data).filter(function() { return $.text([this]) == '18-21 points allowed (PA18)'; }).next().text() || 0;
+		window.league_settings['pa22'] = $("td", league_data).filter(function() { return $.text([this]) == '22-27 points allowed (PA22)'; }).next().text() || 0;
+		window.league_settings['pa28'] = $("td", league_data).filter(function() { return $.text([this]) == '28-34 points allowed (PA28)'; }).next().text() || 0;
+		window.league_settings['pa35'] = $("td", league_data).filter(function() { return $.text([this]) == '35-45 points allowed (PA35)'; }).next().text() || 0;
+		window.league_settings['pa46'] = $("td", league_data).filter(function() { return $.text([this]) == '46+ points allowed (PA46)'; }).next().text() || 0;
+		
+		window.league_settings['ya'] = $("td", league_data).filter(function() { return $.text([this]) == 'Yards Allowed (YA)'; }).next().text() || 0;
+		window.league_settings['ya100'] = $("td", league_data).filter(function() { return $.text([this]) == 'Less than 100 total yards allowed (YA100)'; }).next().text() || 0;
+		window.league_settings['ya199'] = $("td", league_data).filter(function() { return $.text([this]) == '100-199 total yards allowed (YA199)'; }).next().text() || 0;
+		window.league_settings['ya299'] = $("td", league_data).filter(function() { return $.text([this]) == '200-299 total yards allowed (YA299)'; }).next().text() || 0;
+		window.league_settings['ya349'] = $("td", league_data).filter(function() { return $.text([this]) == '300-349 total yards allowed (YA349)'; }).next().text() || 0;
+		window.league_settings['ya399'] = $("td", league_data).filter(function() { return $.text([this]) == '350-399 total yards allowed (YA399)'; }).next().text() || 0;
+		window.league_settings['ya449'] = $("td", league_data).filter(function() { return $.text([this]) == '400-449 total yards allowed (YA449)'; }).next().text() || 0;
+		window.league_settings['ya499'] = $("td", league_data).filter(function() { return $.text([this]) == '450-499 total yards allowed (YA499)'; }).next().text() || 0;
+		window.league_settings['ya549'] = $("td", league_data).filter(function() { return $.text([this]) == '500-549 total yards allowed (YA549)'; }).next().text() || 0;
+		window.league_settings['ya550'] = $("td", league_data).filter(function() { return $.text([this]) == '550+ total yards allowed (YA550)'; }).next().text() || 0;
+		
+	}
+	
+	function parse_espn_league(league_data) {
 		window.league_settings = {};
 
 		window.league_settings['pass_yds'] = $("td", league_data).filter(function() { return $.text([this]) == 'Passing Yards (PY)'; }).next().text() || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(PY5)') > -1; }).next().text()) / 5.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(PY10)') > -1; }).next().text()) / 10.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(PY20)') > -1; }).next().text()) / 20.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(PY25)') > -1; }).next().text()) / 25.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(PY50)') > -1; }).next().text()) / 50.0 || parseFloat($("td", league_data).filter(function() { return $.text([this]).indexOf('(PY100)') > -1; }).next().text()) / 100.0 || 0;
@@ -185,39 +280,41 @@ $(document).ready(function () {
 					team_header = headers.indexOf('Team');
 					player_name_header = headers.indexOf(player_heading);
 					
-					for (var i=1; i < parsed_proj.length; i++) {
-						var playerdata = {};
-						var currentline = parsed_proj[i];
-						
-						team_name = currentline[team_header].trim();
-						if (window.team_name_conversion.hasOwnProperty(team_name)) {
-							team_name = window.team_name_conversion[team_name];
-						}
-						
-						player_name = currentline[player_name_header].trim();
-						
-						if (window.idp_positions.indexOf(p_name) > -1) {
-							//DST
-							if (p_name == '6') {
-								player_name = player_name.split(',')[0] + ' D/ST';
-								team_name = "-";
-							}
-							//Other IDPs, reversing names
-							else {
-								player_name = player_name.split(',')[1] + " " + player_name.split(',')[0]
+					if ((team_header > -1) && (player_name_header > -1)) {
+						for (var i=1; i < parsed_proj.length; i++) {
+							var playerdata = {};
+							var currentline = parsed_proj[i];
+							
+							team_name = currentline[team_header].trim();
+							if (window.team_name_conversion.hasOwnProperty(team_name)) {
+								team_name = window.team_name_conversion[team_name];
 							}
 							
-							player_name = player_name.trim();
+							player_name = currentline[player_name_header].trim();
+							
+							if (window.idp_positions.indexOf(p_name) > -1) {
+								//DST
+								if (p_name == '6') {
+									player_name = player_name.split(',')[0] + ' D/ST';
+									team_name = "-";
+								}
+								//Other IDPs, reversing names
+								else {
+									player_name = player_name.split(',')[1] + " " + player_name.split(',')[0]
+								}
+								
+								player_name = player_name.trim();
+							}
+							
+							// Add team and position to player_name for differentiating duplicate names
+							full_name = player_name + "|" + pos_name + "|" + team_name;
+							
+							for (var j = player_name_header + 1; j < headers.length - 1; j++) {
+								playerdata[headers[j].trim()] = currentline[j].trim();
+							}
+							
+							window.alldata[full_name] = playerdata;
 						}
-						
-						// Add team and position to player_name for differentiating duplicate names
-						full_name = player_name + "|" + pos_name + "|" + team_name;
-						
-						for (var j = player_name_header + 1; j < headers.length - 1; j++) {
-							playerdata[headers[j].trim()] = currentline[j].trim();
-						}
-						
-						window.alldata[full_name] = playerdata;
 					}
 				}
 				
@@ -480,6 +577,7 @@ $(document).ready(function () {
 							if (currHeaderRow.hasClass('playerTableBgRowSubhead')) {
 								td_length = currHeaderRow.find('td').length;
 							}
+							// fix this for other teams, no emptyrow or whatever
 							else if (currHeaderRow.hasClass('pncPlayerRow') && !currHeaderRow.hasClass('emptyRow')) {
 								proj_cell = currHeaderRow.find('.ExtraProjectionsFantasyprosData');
 								sumpts = proj_cell.text();
