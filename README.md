@@ -29,3 +29,11 @@ Known Issues
 * Some esoteric scoring settings are not currently monitored ("2 points for the first 10 yards if your name starts with a J")
 * There is a small delay while it fetches the data - will work to reduce that as much as possible
 * FantasyPros doesn't have return yardage, which can be pretty valuable
+
+Update Log
+------
+* v1.2.2 (2014-10-07)
+  * Extending permissions for all sites so I can grab from more resources in the future (without disabling the extension every time)
+  * Fixing server issues
+  * Removing tilt messages
+  * Other small enhancements with specific players
