@@ -32,6 +32,11 @@ Known Issues
 
 Update Log
 ------
+* v1.3.0 (2014-10-31)
+  * Added rankings and standard deviation
+  * Added loading indicator
+  * Cleaned up code
+  * Improved the mutation function
 * v1.2.2 (2014-10-07)
   * Extending permissions for all sites so I can grab from more resources in the future (without disabling the extension every time)
   * Fixing server issues
