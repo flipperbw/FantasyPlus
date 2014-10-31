@@ -14,6 +14,9 @@
     "webRequest",
 	"storage"
   ],
+  "web_accessible_resources": [
+      "loading.gif"
+  ],
   "content_scripts": [
     {
       "matches": [
