@@ -24,7 +24,7 @@ document.body.appendChild(tag);
 
 var league_id = document.URL.match(/leagueId=(\d+)/)[1];
 var onMatchupPreviewPage = document.URL.match(/ffl\/matchuppreview/);
-var hasPlayerTable = document.URL.match(/ffl\/(freeagency|clubhouse|dropplayers|rosterfix)/);
+var hasPlayerTable = document.URL.match(/ffl\/(freeagency|clubhouse|dropplayers|tradereview|rosterfix)/);
 var onClubhousePage = document.URL.match(/ffl\/(clubhouse|dropplayers)/);
 
 var loadingUrl = chrome.extension.getURL('loading.gif');
