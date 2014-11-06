@@ -1,7 +1,5 @@
 /*-- TODO
-- can do pts, avg, last for total rows
 - Add injury adjusted average points, somehow adjust OPRK for shitty teams, snap %
-- Fix bottom column on matchuppreview
 - Somehow do all 9 requests at once
 - debug/verbose mode
 - cache the data for a few hours
@@ -12,7 +10,6 @@
 - option to disable/add
 - option for experts
 - WR1/2 from depth chart, http://www.footballoutsiders.com/stats/teamdef
-- fix issue with fantasyfinder
 */
 
 /*
@@ -103,11 +100,8 @@ $(document).ready(function () {
 				projection_header = '<td class="playertableStat FantasyPlus FantasyPlusProjections FantasyPlusProjectionsHeader">FPROS</td>';
 				proj_head.after(projection_header);
 				proj_head.text('ESPN');
-				
-				
-				
+								
 				last_header_col = playerTable.find('.playertableSectionHeader th:contains(STATS)');
-				
 				last_header_col.each(function() {
 					curr_span = $(this).attr("colspan");
 					$(this).attr("colspan", curr_span + 1);
@@ -151,7 +145,12 @@ $(document).ready(function () {
 				last_header_col.after('<td class="FantasyPlus sectionLeadingSpacer"></td>');
 				
 				proj_head.after(all_header_cells);
-				proj_head.text('ESPN');
+				if (proj_head.find('a')) { //we're on a filterable page
+					proj_head.find('a').text('ESPN');
+				}
+				else {
+					proj_head.text('ESPN');
+				}
 				
 				var firstrow = true;
 				var byeweek = playerTable.find('tr.playerTableBgRowSubhead td:contains(OPP)').first().index();
