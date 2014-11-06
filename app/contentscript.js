@@ -100,7 +100,7 @@ $(document).ready(function () {
 			var playerTable = $('[id^=playertable_] tbody');
 
 			if (onMatchupPreviewPage) {
-				projection_header = '<td class="playertableStat FantasyPlus FantasyPlusProjections FantasyPlusProjectionsHeader">ALL</td>';
+				projection_header = '<td class="playertableStat FantasyPlus FantasyPlusProjections FantasyPlusProjectionsHeader">FPROS</td>';
 				proj_head.after(projection_header);
 				proj_head.text('ESPN');
 				
@@ -132,10 +132,10 @@ $(document).ready(function () {
 			}
 			else {
 				//make these options that are set above, add to a custom_cols array when each is enabled)
-				projection_header = '<td class="playertableStat FantasyPlus FantasyPlusProjections FantasyPlusProjectionsHeader">ALL</td>';
-				rank_header = '<td colspan="2" style="text-align: center" class="playertableStat FantasyPlus FantasyPlusRankings FantasyPlusRankingsHeader">WEEK</td>';
+				projection_header = '<td class="playertableStat FantasyPlus FantasyPlusProjections FantasyPlusProjectionsHeader">FPROS</td>';
+				rank_header = '<td colspan="2" style="text-align: center" class="playertableStat FantasyPlus FantasyPlusRankings FantasyPlusRankingsHeader">WEEK</td>'; //say wk 9 or this week
 				//stdev_header = '<td class="playertableStat FantasyPlus FantasyPlusStdevs FantasyPlusStdevsHeader">StDev</td>';
-				ros_header = '<td colspan="2" style="text-align: center" class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosHeader">SEASON</td>';
+				ros_header = '<td colspan="2" style="text-align: center" class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosHeader">REMAINING</td>';
 				
 				//temp hack
 				window.custom_cols = 5;
@@ -147,7 +147,7 @@ $(document).ready(function () {
 				last_header_col.after('<th class="FantasyPlus" colspan="3">OWNERSHIP</th>');
 				last_header_col.after('<th class="FantasyPlus" colspan="1">OPRK</th>'); //change to 2, OPRK to ESPN, and include the DVOA adjusted version
 				last_header_col.after('<td class="FantasyPlus sectionLeadingSpacer"></td>');
-				last_header_col.after('<th class="FantasyPlus" colspan="4">PROJ RANK (±RANGE)</th>');
+				last_header_col.after('<th class="FantasyPlus" colspan="4">PROJ POS RANK (±RANGE)</th>');
 				last_header_col.after('<td class="FantasyPlus sectionLeadingSpacer"></td>');
 				
 				proj_head.after(all_header_cells);
