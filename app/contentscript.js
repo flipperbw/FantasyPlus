@@ -97,7 +97,7 @@ $(document).ready(function () {
 			var playerTable = $('[id^=playertable_] tbody');
 
 			if (onMatchupPreviewPage) {
-				projection_header = '<td class="playertableStat FantasyPlus FantasyPlusProjections FantasyPlusProjectionsHeader">FPROS</td>';
+				projection_header = '<td class="playertableStat FantasyPlus FantasyPlusProjections FantasyPlusProjectionsHeader" title="Consensus point projections from FantasyPros (via FantasyPlus)">FPROS</td>';
 				proj_head.after(projection_header);
 				proj_head.text('ESPN');
 								
@@ -126,10 +126,10 @@ $(document).ready(function () {
 			}
 			else {
 				//make these options that are set above, add to a custom_cols array when each is enabled)
-				projection_header = '<td class="playertableStat FantasyPlus FantasyPlusProjections FantasyPlusProjectionsHeader">FPROS</td>';
-				rank_header = '<td colspan="2" style="text-align: center" class="playertableStat FantasyPlus FantasyPlusRankings FantasyPlusRankingsHeader">WEEK</td>'; //say wk 9 or this week
+				projection_header = '<td class="playertableStat FantasyPlus FantasyPlusProjections FantasyPlusProjectionsHeader" title="Consensus point projections from FantasyPros (via FantasyPlus)">FPROS</td>';
+				rank_header = '<td colspan="2" style="text-align: center" class="playertableStat FantasyPlus FantasyPlusRankings FantasyPlusRankingsHeader" title="Projected position rank (lower is better) for *this week* from FantasyPros (via FantasyPlus)">THIS WEEK</td>'; //say wk 9 or this week
 				//stdev_header = '<td class="playertableStat FantasyPlus FantasyPlusStdevs FantasyPlusStdevsHeader">StDev</td>';
-				ros_header = '<td colspan="2" style="text-align: center" class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosHeader">REMAINING</td>';
+				ros_header = '<td colspan="2" style="text-align: center" class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosHeader" title="Projected position rank (lower is better) for *the rest of the season* from FantasyPros (via FantasyPlus)">REMAINING</td>';
 				
 				//temp hack
 				window.custom_cols = 5;
@@ -137,21 +137,21 @@ $(document).ready(function () {
 				all_header_cells = projection_header + '<td class="FantasyPlus sectionLeadingSpacer"></td>' + rank_header + ros_header + '<td class="FantasyPlus sectionLeadingSpacer"></td>';
 				
 				last_header_col = $('.playerTableBgRowHead.tableHead.playertableSectionHeader').find('th:last');
-				last_header_col.attr('colspan', 2).text('PROJ PTS');
+				last_header_col.attr({'colspan': 2, 'title': 'Projected points for this week'}).text('PROJ PTS');
 				last_header_col.after('<th class="FantasyPlus" colspan="3">OWNERSHIP</th>');
 				last_header_col.after('<th class="FantasyPlus" colspan="1">OPRK</th>'); //change to 2, OPRK to ESPN, and include the DVOA adjusted version
 				last_header_col.after('<td class="FantasyPlus sectionLeadingSpacer"></td>');
-				last_header_col.after('<th class="FantasyPlus" colspan="4">PROJ POS RANK (±RANGE)</th>');
+				last_header_col.after('<th class="FantasyPlus" colspan="4" title="Projected position rank (lower is better) with 95% confidence interval from FantasyPros (via FantasyPlus)">PROJ POS RANK (±RANGE)</th>');
 				last_header_col.after('<td class="FantasyPlus sectionLeadingSpacer"></td>');
-				
+
 				proj_head.after(all_header_cells);
-				if (proj_head.find('a')) { //we're on a filterable page
+				if (proj_head.find('a').length > 0) { //we're on a filterable page
 					proj_head.find('a').text('ESPN');
 				}
 				else {
 					proj_head.text('ESPN');
 				}
-				
+
 				var firstrow = true;
 				var byeweek = playerTable.find('tr.playerTableBgRowSubhead td:contains(OPP)').first().index();
 				playerTable.find('tr.pncPlayerRow:not(.emptyRow)').each(function () {

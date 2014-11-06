@@ -27,12 +27,8 @@
 		"http://games.espn.go.com/ffl/tradereview*",
 		"http://games.espn.go.com/ffl/rosterfix*"
 	  ],
-      "css": [
-	    "jquery-ui.css"
-	  ],
 	  "js" : [
 		"jquery-1.11.1.min.js",
-		"jquery-ui.min.js",
 		"contentscript.js"
 	  ]
     }
