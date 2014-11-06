@@ -27,6 +27,10 @@ Known Issues
 
 Update Log
 ------
+* v1.3.1 (2014-11-06)
+  * Improved column layout
+  * Added rest of season rankings
+  * Fixed some bugs (e.g. FantasyFinder compatibility)
 * v1.3.0 (2014-10-31)
   * Added rankings and standard deviation
   * Added loading indicator
