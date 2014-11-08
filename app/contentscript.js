@@ -19,10 +19,16 @@ tag.src = "http://code.jquery.com/jquery-latest.min.js";
 document.body.appendChild(tag);
 */
 
-var league_id = document.URL.match(/leagueId=(\d+)/)[1];
-var onMatchupPreviewPage = document.URL.match(/ffl\/matchuppreview/);
-var hasPlayerTable = document.URL.match(/ffl\/(freeagency|clubhouse|dropplayers|tradereview|rosterfix)/);
-var onClubhousePage = document.URL.match(/ffl\/(clubhouse|dropplayers)/);
+// GLOBALS
+window.alldata = {};
+
+window.off_positions_proj = ['qb', 'rb', 'wr', 'te', 'k'];
+window.def_positions_proj = ['6','8','9','10'];
+window.all_positions_proj = window.off_positions_proj.concat(window.def_positions_proj);
+window.all_positions_rank = ['qb', 'rb', 'wr', 'te', 'k', 'dst', 'dl', 'lb', 'db'];
+
+window.idp_conversion = {'6': 'D/ST', '8': 'DL', '9': 'LB', '10': 'DB'};
+window.team_name_conversion = {'ARZ': 'ARI', 'GBP': 'GB', 'KCC': 'KC', 'NEP': 'NE', 'NOR': 'NO', 'SDC': 'SD', 'SFO': 'SF', 'TBB': 'TB', 'WAS': 'WSH'};
 
 var loadingUrl = chrome.extension.getURL('loading.gif');
 
@@ -31,27 +37,23 @@ var rankDone = $.Deferred();
 var rosDone = $.Deferred();
 		
 $(document).ready(function () {
-	// GLOBALS
-	window.alldata = {};
-	
-	window.off_positions_proj = ['qb', 'rb', 'wr', 'te', 'k'];
-	window.def_positions_proj = ['6','8','9','10'];
-	window.all_positions_proj = window.off_positions_proj.concat(window.def_positions_proj);
-	window.all_positions_rank = ['qb', 'rb', 'wr', 'te', 'k', 'dst', 'dl', 'lb', 'db'];
-	
-	window.idp_conversion = {'6': 'D/ST', '8': 'DL', '9': 'LB', '10': 'DB'};
-	window.team_name_conversion = {'ARZ': 'ARI', 'GBP': 'GB', 'KCC': 'KC', 'NEP': 'NE', 'NOR': 'NO', 'SDC': 'SD', 'SFO': 'SF', 'TBB': 'TB', 'WAS': 'WSH'};
-
 	if (document.URL.match(/games.espn.go.com/)) {
 		$('.games-alert-tilt').remove();
+		
+		var siteType = 'espn';
 		
 		var playerTable = $('[id^=playertable_] tbody');
 		var hasProjectionTable = playerTable.find('tr.playerTableBgRowSubhead td:contains(PROJ)').length > 0;
 		
+		var league_id = document.URL.match(/leagueId=(\d+)/)[1];
+		var onMatchupPreviewPage = document.URL.match(/ffl\/matchuppreview/);
+		var hasPlayerTable = document.URL.match(/ffl\/(freeagency|clubhouse|dropplayers|tradereview|rosterfix)/);
+		var onClubhousePage = document.URL.match(/ffl\/(clubhouse|dropplayers)/);
+		
 		if (hasProjectionTable) {
 			addColumns();
 			$.get('http://games.espn.go.com/ffl/leaguesetup/sections/scoring', {"leagueId": league_id}, function(d) {
-				var settings = parseESPNLeagueSettings(d);
+				var settings = parseLeagueSettings(d, siteType);
 				if (onMatchupPreviewPage) {
 					getPosProjections(settings);
 				}
@@ -64,31 +66,35 @@ $(document).ready(function () {
 			});
 		}
 	}
-	/* Yahoo eventually
 	else if (document.URL.match(/football.fantasysports.yahoo.com/)) {
+		var siteType = 'yahoo';
+		
+		//var playerTable = $('[id^=playertable_] tbody');
+		//var hasProjectionTable = playerTable.find('tr.playerTableBgRowSubhead td:contains(PROJ)').length > 0;
+		
 		var league_id = document.URL.match(/football.fantasysports.yahoo.com\/f1\/(\d+)/)[1];
-		$.get('http://football.fantasysports.yahoo.com/f1/' + league_id + '/settings', function(d) {
-			parse_yahoo_league(d);
-		});
-	}
-	
-	function parse_yahoo_league(league_data) {
-		var league_table = $('#settings-stat-mod-table tbody', league_data);
-		window.league_settings = {};
+		//var onMatchupPreviewPage = document.URL.match(/ffl\/matchuppreview/);
+		//var hasPlayerTable = document.URL.match(/ffl\/(freeagency|clubhouse|dropplayers|tradereview|rosterfix)/);
+		//var onClubhousePage = document.URL.match(/ffl\/(clubhouse|dropplayers)/);
 		
-		$.each($('tr', league_table), function() {
-			var currRow = $(this);
-			var statCell = $(currRow.find('td')[1]);
-			var rowStat = statCell.text();
-			if (rowStat.indexOf('yards per point') > -1) {
-				newRowStat = 1 / parseFloat(rowStat.split(' ')[0]);
-				statCell.text(newRowStat);
-			}
-		});
-		
+		//if (hasProjectionTable) {
+			//addColumns();
+			$.get('http://football.fantasysports.yahoo.com/f1/' + league_id + '/settings', function(d) {
+				var settings = parseLeagueSettings(d, siteType);
+				/*
+				if (onMatchupPreviewPage) {
+					getPosProjections(settings);
+				}
+				else {
+					getData(settings);
+					$.when(projDone, rankDone, rosDone).done(function () {
+						watchForChanges(settings);
+					});
+				}*/
+			});
+		//}
 	}
-	*/
-	
+
 	function addColumns() {
         var proj_head = $('[id^=playertable_] tbody tr.playerTableBgRowSubhead').find('td:contains(PROJ), td:contains(ESPN)');
         var header_index = proj_head.first().index();
@@ -174,112 +180,238 @@ $(document).ready(function () {
 		}
     }
 	
-	function parseESPNLeagueSettings(league_data) {
+	function parseLeagueSettings(league_data, siteType) {
         var $ld = $(league_data);
-        function getValue(setting_name) {
-            return parseFloat($ld.find("td:contains('" + setting_name + "')").next().first().text());
-        }
+		var settings = {};
+		settings['siteType'] = siteType;
+		
+		if (siteType == 'espn') {
+			function getValue(setting_name) {
+				return parseFloat($ld.find("td:contains('" + setting_name + "')").next().first().text());
+			}
 
-        var settings = {};
+			settings['pass_yds'] =
+				getValue('Passing Yards (PY)') ||
+				getValue('(PY5)') / 5.0 ||
+				getValue('(PY10)') / 10.0 ||
+				getValue('(PY20)') / 20.0 ||
+				getValue('(PY25)') / 25.0 ||
+				getValue('(PY50)') / 50.0 ||
+				getValue('(PY100)') / 100.0 || 0;
 
-        settings['pass_yds'] =
-            getValue('Passing Yards (PY)') ||
-            getValue('(PY5)') / 5.0 ||
-            getValue('(PY10)') / 10.0 ||
-            getValue('(PY20)') / 20.0 ||
-            getValue('(PY25)') / 25.0 ||
-            getValue('(PY50)') / 50.0 ||
-            getValue('(PY100)') / 100.0 || 0;
+			settings['pass_tds'] = getValue('TD Pass (PTD)') || 0;
+			settings['pass_ints'] = getValue('Interceptions Thrown (INT)') || 0;
+			settings['pass_cmp'] = getValue('Each Pass Completed (PC)') ||
+				getValue('(PC5)') / 5.0 ||
+				getValue('(PC10)') / 10.0 || 0;
+			settings['pass_icmp'] =
+				 getValue('Each Incomplete Pass (INC)') ||
+				getValue('(IP5)') / 5.0 ||
+				getValue('(IP10)') / 10.0 || 0;
+			settings['pass_att'] = getValue('Each Pass Attempted (PA)') || 0;
+			settings['pass_300_bonus'] = getValue('300-399 yard passing game (P300)') || 0;
+			settings['pass_400_bonus'] = getValue('400+ yard passing game (P400)') || 0;
 
-        settings['pass_tds'] = getValue('TD Pass (PTD)') || 0;
-        settings['pass_ints'] = getValue('Interceptions Thrown (INT)') || 0;
-        settings['pass_cmp'] = getValue('Each Pass Completed (PC)') ||
-            getValue('(PC5)') / 5.0 ||
-            getValue('(PC10)') / 10.0 || 0;
-        settings['pass_icmp'] =
-             getValue('Each Incomplete Pass (INC)') ||
-            getValue('(IP5)') / 5.0 ||
-            getValue('(IP10)') / 10.0 || 0;
-        settings['pass_att'] = getValue('Each Pass Attempted (PA)') || 0;
-        settings['pass_300_bonus'] = getValue('300-399 yard passing game (P300)') || 0;
-        settings['pass_400_bonus'] = getValue('400+ yard passing game (P400)') || 0;
+			settings['rush_yds'] = getValue('Rushing Yards (RY)') ||
+				getValue('(RY5)') / 5.0 ||
+				getValue('Every 10 rushing yards (RY10)') / 10.0 ||
+				getValue('(RY20)') / 20.0 ||
+				getValue('(RY25)') / 25.0 ||
+				getValue('(RY50)') / 50.0 ||
+				getValue('(RY100)') / 100.0 || 0;
+			settings['rush_att'] = getValue('Rushing Attempts (RA)') ||
+				getValue('(RA5)') / 5.0 ||
+				getValue('(RA10)') / 10.0 || 0;
+			settings['rush_tds'] = getValue('TD Rush (RTD)') || 0;
+			settings['rush_100_bonus'] = getValue('100-199 yard rushing game (RY100)') || 0;
+			settings['rush_200_bonus'] = getValue('200+ yard rushing game (RY200)') || 0;
 
-        settings['rush_yds'] = getValue('Rushing Yards (RY)') ||
-            getValue('(RY5)') / 5.0 ||
-            getValue('Every 10 rushing yards (RY10)') / 10.0 ||
-            getValue('(RY20)') / 20.0 ||
-            getValue('(RY25)') / 25.0 ||
-            getValue('(RY50)') / 50.0 ||
-            getValue('(RY100)') / 100.0 || 0;
-        settings['rush_att'] = getValue('Rushing Attempts (RA)') ||
-            getValue('(RA5)') / 5.0 ||
-            getValue('(RA10)') / 10.0 || 0;
-        settings['rush_tds'] = getValue('TD Rush (RTD)') || 0;
-        settings['rush_100_bonus'] = getValue('100-199 yard rushing game (RY100)') || 0;
-        settings['rush_200_bonus'] = getValue('200+ yard rushing game (RY200)') || 0;
+			settings['rec_yds'] =
+				getValue('Receiving Yards (REY)') ||
+				getValue('Every 5 receiving yards (REY5)') / 5.0 ||
+				getValue('(REY10)') / 10.0 ||
+				getValue('(REY20)') / 20.0 ||
+				getValue('(REY25)') / 25.0 ||
+				getValue('(REY50)') / 50.0 ||
+				getValue('(REY50)') / 100.0 || 0;
+			settings['rec_att'] =
+				getValue('Each reception (REC)') ||
+				getValue('(REC5)') / 5.0 ||
+				getValue('(REC10)') / 10.0 || 0;
+			settings['rec_tds'] = getValue('TD Reception (RETD)') || 0;
+			settings['rec_100_bonus'] = getValue('100-199 yard receiving game (REY100)') || 0;
+			settings['rec_200_bonus'] = getValue('200+ yard receiving game (REY200)') || 0;
+			//Receiving Target (RET)
 
-        settings['rec_yds'] =
-            getValue('Receiving Yards (REY)') ||
-            getValue('Every 5 receiving yards (REY5)') / 5.0 ||
-            getValue('(REY10)') / 10.0 ||
-            getValue('(REY20)') / 20.0 ||
-            getValue('(REY25)') / 25.0 ||
-            getValue('(REY50)') / 50.0 ||
-            getValue('(REY50)') / 100.0 || 0;
-        settings['rec_att'] =
-            getValue('Each reception (REC)') ||
-            getValue('(REC5)') / 5.0 ||
-            getValue('(REC10)') / 10.0 || 0;
-        settings['rec_tds'] = getValue('TD Reception (RETD)') || 0;
-        settings['rec_100_bonus'] = getValue('100-199 yard receiving game (REY100)') || 0;
-        settings['rec_200_bonus'] = getValue('200+ yard receiving game (REY200)') || 0;
-        //Receiving Target (RET)
+			settings['xpt'] = getValue('Each PAT Made (PAT)') || 0;
+			settings['fga'] =
+				(getValue('Total FG Attempted (FGA)') || 0) +
+				(0.6 * (getValue('FG Attempted (0-39 yards) (FGA9)') || 0)) +
+				(0.3 * (getValue('FG Attempted (40-49 yards) (FGA40)') || 0)) +
+				(0.1 * (getValue('FG Attempted (50+ yards) (FGA50)') || 0));
+			settings['fg'] =
+				(getValue('Total FG Made (FG)') || 0) +
+				(0.6 * (getValue('FG Made (0-39 yards) (FG0)') || 0)) +
+				(0.3 * (getValue('FG Made (40-49 yards) (FG40)') || 0)) +
+				(0.1 * (getValue('FG Made (50+ yards) (FG50)') || 0));
+			settings['fgm'] = 
+				(getValue('Total FG Missed (FGM)') || 0) +
+				(0.6 * (getValue('FG Missed (0-39 yards) (FGM0)') || 0)) +
+				(0.3 * (getValue('FG Missed (40-49 yards) (FGM40)') || 0)) +
+				(0.1 * (getValue('FG Missed (50+ yards) (FGM50)') || 0));
+			//Each PAT Attempted (PATA)
+			
+			settings['fumbles'] = getValue('Total Fumbles Lost (FUML)') || 0;
 
-        settings['xpt'] = getValue('Each PAT Made (PAT)') || 0;
-        settings['fgm'] = getValue('Total FG Missed (FGM)') || 0;
-        settings['fga'] = getValue('Total FG Attempted (FGA)') || 0;
-        settings['fg'] = getValue('Total FG Made (FG)') || 0;
-        settings['fg_0'] = getValue('FG Made (0-39 yards) (FG0)') || 0;
-        settings['fg_40'] = getValue('FG Made (40-49 yards) (FG40)') || 0;
-        settings['fg_50'] = getValue('FG Made (50+ yards) (FG50)') || 0;
-        //Each PAT Attempted (PATA)
+			settings['ff'] = getValue('Each Fumble Forced (FF)') || 0;
+			settings['tka'] = getValue('Assisted Tackles (TKA)') || 0;
+			settings['tks'] = getValue('Solo Tackles (TKS)') || 0;
+			settings['pd'] = getValue('Passes Defensed (PD)') || 0;
 
-        settings['fumbles'] = getValue('Total Fumbles Lost (FUML)') || 0;
+			settings['int'] = getValue('Each Interception (INT)') || 0;
+			settings['deftd'] = getValue('Interception Return TD (INTTD)') || 0;
+			settings['fr'] = getValue('Each Fumble Recovered (FR)') || 0;
+			settings['sk'] =
+				getValue('Each Sack (SK)') ||
+				getValue('1/2 Sack (HALFSK)') * 2 || 0;
 
-        settings['ff'] = getValue('Each Fumble Forced (FF)') || 0;
-        settings['tka'] = getValue('Assisted Tackles (TKA)') || 0;
-        settings['tks'] = getValue('Solo Tackles (TKS)') || 0;
-        settings['pd'] = getValue('Passes Defensed (PD)') || 0;
+			settings['pa'] = getValue('Points Allowed (PA)') || 0;
+			settings['pa0'] = getValue('0 points allowed (PA0)') || 0;
+			settings['pa1'] = getValue('1-6 points allowed (PA1)') || 0;
+			settings['pa7'] = getValue('7-13 points allowed (PA7)') || 0;
+			settings['pa14'] = getValue('14-17 points allowed (PA14)') || 0;
+			settings['pa18'] = getValue('18-21 points allowed (PA18)') || 0;
+			settings['pa22'] = getValue('22-27 points allowed (PA22)') || 0;
+			settings['pa28'] = getValue('28-34 points allowed (PA28)') || 0;
+			settings['pa35'] = getValue('35-45 points allowed (PA35)') || 0;
+			settings['pa46'] = getValue('46+ points allowed (PA46)') || 0;
 
-        settings['int'] = getValue('Each Interception (INT)') || 0;
-        settings['deftd'] = getValue('Interception Return TD (INTTD)') || 0;
-        settings['fr'] = getValue('Each Fumble Recovered (FR)') || 0;
-        settings['sk'] =
-            getValue('Each Sack (SK)') ||
-            getValue('1/2 Sack (HALFSK)') * 2 || 0;
+			settings['ya'] = getValue('Yards Allowed (YA)') || 0;
+			settings['ya100'] = getValue('Less than 100 total yards allowed (YA100)') || 0;
+			settings['ya199'] = getValue('100-199 total yards allowed (YA199)') || 0;
+			settings['ya299'] = getValue('200-299 total yards allowed (YA299)') || 0;
+			settings['ya349'] = getValue('300-349 total yards allowed (YA349)') || 0;
+			settings['ya399'] = getValue('350-399 total yards allowed (YA399)') || 0;
+			settings['ya449'] = getValue('400-449 total yards allowed (YA449)') || 0;
+			settings['ya499'] = getValue('450-499 total yards allowed (YA499)') || 0;
+			settings['ya549'] = getValue('500-549 total yards allowed (YA549)') || 0;
+			settings['ya550'] = getValue('550+ total yards allowed (YA550)') || 0;
+		}
+		else if (siteType == 'yahoo') {
+			var league_table = $('#settings-stat-mod-table tbody td', $ld);
 
-        settings['pa'] = getValue('Points Allowed (PA)') || 0;
-        settings['pa0'] = getValue('0 points allowed (PA0)') || 0;
-        settings['pa1'] = getValue('1-6 points allowed (PA1)') || 0;
-        settings['pa7'] = getValue('7-13 points allowed (PA7)') || 0;
-        settings['pa14'] = getValue('14-17 points allowed (PA14)') || 0;
-        settings['pa18'] = getValue('18-21 points allowed (PA18)') || 0;
-        settings['pa22'] = getValue('22-27 points allowed (PA22)') || 0;
-        settings['pa28'] = getValue('28-34 points allowed (PA28)') || 0;
-        settings['pa35'] = getValue('35-45 points allowed (PA35)') || 0;
-        settings['pa46'] = getValue('46+ points allowed (PA46)') || 0;
-
-        settings['ya'] = getValue('Yards Allowed (YA)') || 0;
-        settings['ya100'] = getValue('Less than 100 total yards allowed (YA100)') || 0;
-        settings['ya199'] = getValue('100-199 total yards allowed (YA199)') || 0;
-        settings['ya299'] = getValue('200-299 total yards allowed (YA299)') || 0;
-        settings['ya349'] = getValue('300-349 total yards allowed (YA349)') || 0;
-        settings['ya399'] = getValue('350-399 total yards allowed (YA399)') || 0;
-        settings['ya449'] = getValue('400-449 total yards allowed (YA449)') || 0;
-        settings['ya499'] = getValue('450-499 total yards allowed (YA499)') || 0;
-        settings['ya549'] = getValue('500-549 total yards allowed (YA549)') || 0;
-        settings['ya550'] = getValue('550+ total yards allowed (YA550)') || 0;
-
+			function getValue(setting_name) {
+				settingVals = [];
+				settingText = league_table.filter(function(){ return $(this).text() === setting_name; }).next().first().text();
+				if (settingText) {
+					settingList = settingText.split(';');
+					bonusDict = {};
+					
+					$.each(settingList, function( sindex, svalue ) {
+						svalue = svalue.trim();
+						if (svalue.indexOf('yards per point') > -1) {
+							settingStat = 1.0 / parseFloat(svalue.split(' ')[0]);
+							settingVals.push(settingStat);
+						}
+						else if (svalue.indexOf('points at ') > -1) {
+							bonusSettingList = svalue.split(' ');
+							bonusPts = parseFloat(bonusSettingList[0]);
+							bonusYds = parseFloat(bonusSettingList[3]);
+							bonusDict[bonusYds] = bonusPts;
+						}
+						else {
+							settingStat = parseFloat(svalue);
+							settingVals.push(settingStat);
+						}
+					});
+					
+					settingVals.push(bonusDict);
+				}
+				return settingVals;
+			}
+			
+			var passSettings = getValue('Passing Yards');
+				settings['pass_yds'] = passSettings[0] || 0;
+				settings['pass_bonus'] = {};
+					var passSettingsDict = passSettings[1];
+					for (var k in passSettingsDict) {
+						if (passSettingsDict.hasOwnProperty(k)) {
+							settings['pass_bonus'][k] = passSettingsDict[k];
+						}
+					}
+				settings['pass_tds'] = getValue('Passing Touchdowns')[0] || 0;
+				settings['pass_ints'] = getValue('Interceptions')[0] || 0;
+				settings['pass_cmp'] = getValue('Completions')[0] || 0;
+				settings['pass_icmp'] =	getValue('Incomplete Passes')[0] || 0;
+				settings['pass_att'] = getValue('Passing Attempts')[0] || 0;
+			
+			var rushSettings = getValue('Rushing Yards');
+				settings['rush_yds'] = rushSettings[0] || 0;
+				settings['rush_bonus'] = {};
+				var rushSettingsDict = rushSettings[1];
+					for (var k in rushSettingsDict) {
+						if (rushSettingsDict.hasOwnProperty(k)) {
+							settings['rush_bonus'][k] = rushSettingsDict[k];
+						}
+					}
+				settings['rush_att'] = getValue('Rushing Attempts')[0] || 0;
+				settings['rush_tds'] = getValue('Rushing Touchdowns')[0] || 0;
+			
+			var recSettings = getValue('Reception Yards');
+				settings['rec_yds'] = recSettings[0] || 0;
+				settings['rec_bonus'] = {};
+				var recSettingsDict = recSettings[1];
+					for (var k in recSettingsDict) {
+						if (recSettingsDict.hasOwnProperty(k)) {
+							settings['rec_bonus'][k] = recSettingsDict[k];
+						}
+					}
+				settings['rec_att'] = getValue('Receptions')[0] || 0;
+				settings['rec_tds'] = getValue('Reception Touchdowns')[0] || 0;
+			
+			settings['xpt'] = getValue('Point After Attempt Made')[0] || 0;
+			settings['fga'] = 0;
+			settings['fg'] =
+				(0.6 * ((getValue('Field Goals 0-19 Yards')[0] || 0) + (getValue('Field Goals 20-29 Yards')[0] || 0) + (getValue('Field Goals 30-39 Yards')[0] || 0)) / 3.0) +
+				(0.3 * (getValue('Field Goals 40-49 Yards')[0] || 0)) +
+				(0.1 * (getValue('Field Goals 50+ Yards')[0] || 0));
+			settings['fgm'] = 
+				(0.6 * ((getValue('Field Goals Missed 0-19 Yards')[0] || 0) + (getValue('Field Goals Missed 20-29 Yards')[0] || 0) + (getValue('Field Goals Missed 30-39 Yards')[0] || 0)) / 3.0) +
+				(0.3 * (getValue('Field Goals Missed 40-49 Yards')[0] || 0)) +
+				(0.1 * (getValue('Field Goals Missed 50+ Yards')[0] || 0));
+			
+			settings['fumbles'] = getValue('Fumbles Lost')[0] || getValue('Fumbles')[0] || 0;
+			
+			settings['ff'] = getValue('Fumble Force')[0] || 0;
+			settings['tka'] = getValue('Tackle Assist')[0] || 0;
+			settings['tks'] = getValue('Tackle Solo')[0] || 0;
+			settings['pd'] = getValue('Pass Defended')[0] || 0;
+			
+			settings['int'] = getValue('Interception')[0] || 0;
+			settings['deftd'] = getValue('Touchdown')[0] || getValue('Defensive Touchdown')[0] || 0;
+			settings['fr'] = getValue('Fumble Recovery')[0] || 0;
+			settings['sk'] = getValue('Sack')[0] || 0;
+			
+			settings['pa'] = 0;
+			settings['pa0'] = getValue('Points Allowed 0 points')[0] || 0;
+			settings['pa1'] = getValue('Points Allowed 1-6 points')[0] || 0;
+			settings['pa7'] = getValue('Points Allowed 7-13 points')[0] || 0;
+			settings['pa14'] = getValue('Points Allowed 14-20 points')[0] || 0;
+			settings['pa21'] = getValue('Points Allowed 21-27 points')[0] || 0;
+			settings['pa28'] = getValue('Points Allowed 28-34 points')[0] || 0;
+			settings['pa35'] = getValue('Points Allowed 35+ points')[0] || 0;
+			
+			settings['ya'] = 0;
+			settings['ya100'] = getValue('Defensive Yards Allowed 0-99')[0] || 0;
+			settings['ya199'] = getValue('Defensive Yards Allowed 100-199')[0] || 0;
+			settings['ya299'] = getValue('Defensive Yards Allowed 200-299')[0] || 0;
+			settings['ya399'] = getValue('Defensive Yards Allowed 300-399')[0] || 0;
+			settings['ya499'] = getValue('Defensive Yards Allowed 400-499')[0] || 0;
+			settings['ya500'] = getValue('Defensive Yards Allowed 500+')[0] || 0;
+			
+			console.log(settings);
+		}
+		
 		return settings;
 	}
 	
@@ -564,6 +696,26 @@ $(document).ready(function () {
 		getRosRankings(settings);
 	}
 
+	function calcBonus(settings, bonus_type) {
+		var b_list = [];
+		var adj = 0;
+		for (var k in settings[bonus_type + '_bonus']) {
+			if (passSettingsDict.hasOwnProperty(k)) {
+				b_list.push(k);
+			}
+		}
+		b_list = b_list.sort().reverse();
+		for (var b=0; b < b_list.length; b++) {
+			if (parseFloat(b_list[b+1])) {
+				adj += (settings[bonus_type + '_bonus'][b_list[b]] * (b_list[b] <= player_data[bonus_type + '_yds'] && player_data[bonus_type + '_yds'] < b_list[b+1]));
+			}
+			else {
+				adj += (settings[bonus_type + '_bonus'][b_list[b]] * (player_data[bonus_type + '_yds'] >= b_list[b]));
+			}
+		}
+		return adj;
+	}
+	
 	function calculateProjections(settings, datatype, player_name, pos_name, team_name) {
 		// get their projected data from window.alldata
 		// multiply it by the league settings
@@ -638,31 +790,24 @@ $(document).ready(function () {
 
 		//console.log(player_data);
 		if (datatype == 'proj') {
-			player_score =
+			var player_score =
 				settings['pass_yds'] * (player_data['pass_yds'] || 0) +
 				settings['pass_tds'] * (player_data['pass_tds'] || 0) +
 				settings['pass_ints'] * (player_data['pass_ints'] || 0) +
 				settings['pass_att'] * (player_data['pass_att'] || 0) +
 				settings['pass_cmp'] * (player_data['pass_cmp'] || 0) +
 				settings['pass_icmp'] * ((player_data['pass_att'] || 0) - (player_data['pass_cmp'] || 0)) +
-				settings['pass_300_bonus'] * (300 <= player_data['pass_yds'] && player_data['pass_yds'] < 400) +
-				settings['pass_400_bonus'] * ((player_data['pass_yds'] || 0) >= 400) +
 
 				settings['rush_yds'] * (player_data['rush_yds'] || 0) +
 				settings['rush_tds'] * (player_data['rush_tds'] || 0) +
 				settings['rush_att'] * (player_data['rush_att'] || 0) +
-				settings['rush_100_bonus'] * (100 <= player_data['rush_yds'] && player_data['rush_yds'] < 200) +
-				settings['rush_200_bonus'] * ((player_data['rush_yds'] || 0) >= 200) +
-
+				
 				settings['rec_yds'] * (player_data['rec_yds'] || 0) +
 				settings['rec_att'] * (player_data['rec_att'] || 0) +
 				settings['rec_tds'] * (player_data['rec_tds'] || 0) +
-				settings['rec_100_bonus'] * (100 <= player_data['rec_yds'] && player_data['rec_yds'] < 200) +
-				settings['rec_200_bonus'] * ((player_data['rec_yds'] || 0) >= 200) +
-
+				
 				settings['xpt'] * (player_data['xpt'] || 0) +
 				settings['fg'] * (player_data['fg'] || 0) +
-				((0.6 * (settings['fg_0'] || 3)) + (0.3 * (settings['fg_40'] || 3)) + (0.1 * (settings['fg_50'] || 3))) * (player_data['fg'] || 0) +
 				settings['fga'] * (player_data['fga'] || 0) +
 				settings['fgm'] * ((player_data['fga'] || 0) - (player_data['fg'] || 0)) +
 
@@ -681,25 +826,53 @@ $(document).ready(function () {
 				settings['pa0'] * (player_data['Pts Agn'] == 0) +
 				settings['pa1'] * (0 < player_data['Pts Agn'] && player_data['Pts Agn'] <= 6) +
 				settings['pa7'] * (6 < player_data['Pts Agn'] && player_data['Pts Agn'] <= 13) +
-				settings['pa14'] * (13 < player_data['Pts Agn'] && player_data['Pts Agn'] <= 17) +
-				settings['pa18'] * (17 < player_data['Pts Agn'] && player_data['Pts Agn'] <= 21) +
-				settings['pa22'] * (21 < player_data['Pts Agn'] && player_data['Pts Agn'] <= 27) +
 				settings['pa28'] * (27 < player_data['Pts Agn'] && player_data['Pts Agn'] <= 34) +
-				settings['pa35'] * (34 < player_data['Pts Agn'] && player_data['Pts Agn'] <= 45) +
-				settings['pa46'] * (45 < player_data['Pts Agn']) +
-
+				
 				settings['ya'] * (player_data['Yds Allowed'] || 0) +
 				settings['ya100'] * (0 <= player_data['Yds Allowed'] && player_data['Yds Allowed'] < 100) +
 				settings['ya199'] * (100 <= player_data['Yds Allowed'] && player_data['Yds Allowed'] < 200) +
-				settings['ya299'] * (200 <= player_data['Yds Allowed'] && player_data['Yds Allowed'] < 300) +
-				settings['ya349'] * (300 <= player_data['Yds Allowed'] && player_data['Yds Allowed'] < 350) +
-				settings['ya399'] * (350 <= player_data['Yds Allowed'] && player_data['Yds Allowed'] < 400) +
-				settings['ya449'] * (400 <= player_data['Yds Allowed'] && player_data['Yds Allowed'] < 450) +
-				settings['ya499'] * (450 <= player_data['Yds Allowed'] && player_data['Yds Allowed'] < 500) +
-				settings['ya549'] * (500 <= player_data['Yds Allowed'] && player_data['Yds Allowed'] < 550) +
-				settings['ya550'] * (550 <= player_data['Yds Allowed']);
-
-			//console.log(player_score);
+				settings['ya299'] * (200 <= player_data['Yds Allowed'] && player_data['Yds Allowed'] < 300);
+			
+			if (settings['siteType'] == 'espn') {
+				var player_adjustment =
+					settings['pass_300_bonus'] * (300 <= player_data['pass_yds'] && player_data['pass_yds'] < 400) +
+					settings['pass_400_bonus'] * ((player_data['pass_yds'] || 0) >= 400) +
+					settings['rush_100_bonus'] * (100 <= player_data['rush_yds'] && player_data['rush_yds'] < 200) +
+					settings['rush_200_bonus'] * ((player_data['rush_yds'] || 0) >= 200) +
+					settings['rec_100_bonus'] * (100 <= player_data['rec_yds'] && player_data['rec_yds'] < 200) +
+					settings['rec_200_bonus'] * ((player_data['rec_yds'] || 0) >= 200) +
+					
+					settings['pa14'] * (13 < player_data['Pts Agn'] && player_data['Pts Agn'] <= 17) +
+					settings['pa18'] * (17 < player_data['Pts Agn'] && player_data['Pts Agn'] <= 21) +
+					settings['pa22'] * (21 < player_data['Pts Agn'] && player_data['Pts Agn'] <= 27) +
+					settings['pa35'] * (34 < player_data['Pts Agn'] && player_data['Pts Agn'] <= 45) +
+					settings['pa46'] * (45 < player_data['Pts Agn']) +
+					
+					settings['ya349'] * (300 <= player_data['Yds Allowed'] && player_data['Yds Allowed'] < 350) +
+					settings['ya399'] * (350 <= player_data['Yds Allowed'] && player_data['Yds Allowed'] < 400) +
+					settings['ya449'] * (400 <= player_data['Yds Allowed'] && player_data['Yds Allowed'] < 450) +
+					settings['ya499'] * (450 <= player_data['Yds Allowed'] && player_data['Yds Allowed'] < 500) +
+					settings['ya549'] * (500 <= player_data['Yds Allowed'] && player_data['Yds Allowed'] < 550) +
+					settings['ya550'] * (550 <= player_data['Yds Allowed']);
+			}
+			else if (settings['siteType'] == 'yahoo') {
+				var player_adjustment =
+					calcBonus(settings, 'pass') +
+					calcBonus(settings, 'rush') +
+					calcBonus(settings, 'rec') +
+					
+					settings['pa14'] * (13 < player_data['Pts Agn'] && player_data['Pts Agn'] <= 20) +
+					settings['pa21'] * (20 < player_data['Pts Agn'] && player_data['Pts Agn'] <= 27) +
+					settings['pa35'] * (34 < player_data['Pts Agn']) +
+					
+					settings['ya399'] * (300 <= player_data['Yds Allowed'] && player_data['Yds Allowed'] < 400) +
+					settings['ya499'] * (400 <= player_data['Yds Allowed'] && player_data['Yds Allowed'] < 500) +
+					settings['ya500'] * (500 <= player_data['Yds Allowed']);
+			}
+				
+			console.log(player_score);
+			player_score += player_adjustment;
+			console.log(player_score);
 			return (Math.round(player_score * 10) / 10).toFixed(1);
 		}
 		else if (datatype == 'rank') {
@@ -900,7 +1073,7 @@ $(document).ready(function () {
 				}
 				else {
 					cell.text(projectedRanking[0]);
-					cell.next().text('±' + projectedRanking[1]);
+					cell.next().html('<span style="font-size: 80%;">±</span>' + projectedRanking[1]);
 					//cell.attr('data-stdev', projectedRanking[1]);
 				}
 			}
@@ -935,7 +1108,7 @@ $(document).ready(function () {
 			}
 			else {
 				cell.text(projectedRos[0]);
-				cell.next().text('±' + projectedRos[1]);
+				cell.next().html('<span style="font-size: 80%;">±</span>' + projectedRos[1]);
 			}
         });
 		
