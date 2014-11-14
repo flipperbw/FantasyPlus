@@ -10,6 +10,7 @@
 - option to disable/add
 - option for experts
 - WR1/2 from depth chart, http://www.footballoutsiders.com/stats/teamdef
+- timeout for loading gif
 */
 
 /*
@@ -20,7 +21,10 @@ document.body.appendChild(tag);
 */
 
 // GLOBALS
-window.alldata = {};
+var check_minutes = 30;
+var updated_time;
+var storage_league_data;
+var current_time = new Date().getTime();
 
 window.off_positions_proj = ['qb', 'rb', 'wr', 'te', 'k'];
 window.def_positions_proj = ['6','8','9','10'];
@@ -35,7 +39,7 @@ var loadingUrl = chrome.extension.getURL('loading.gif');
 var projDone = $.Deferred();
 var rankDone = $.Deferred();
 var rosDone = $.Deferred();
-		
+
 $(document).ready(function () {
 	if (document.URL.match(/games.espn.go.com/)) {
 		$('.games-alert-tilt').remove();
@@ -50,17 +54,31 @@ $(document).ready(function () {
 		var hasPlayerTable = document.URL.match(/ffl\/(freeagency|clubhouse|dropplayers|tradereview|rosterfix)/);
 		var onClubhousePage = document.URL.match(/ffl\/(clubhouse|dropplayers)/);
 		
+		var storageLeagueKey = 'fp_espn_league_data_' + league_id;
+		var storagePlayerKey = 'fp_espn_player_data_' + league_id;
+		var storageUpdateKey = 'fp_espn_last_updated_' + league_id;
+		
 		if (hasProjectionTable) {
 			addColumns();
-			$.get('http://games.espn.go.com/ffl/leaguesetup/sections/scoring', {"leagueId": league_id}, function(d) {
-				var settings = parseLeagueSettings(d, siteType);
-				if (onMatchupPreviewPage) {
-					getPosProjections(settings);
+			chrome.storage.local.get([storageLeagueKey, storagePlayerKey, storageUpdateKey], function(r) {
+				storage_league_data = r[storageLeagueKey];
+				updated_time = r[storageUpdateKey];
+				window.alldata = r[storagePlayerKey];
+				
+				if ((storage_league_data) && ((current_time - updated_time) < (1000 * 60 * check_minutes))) {
+					console.log('NOT grabbing league settings');
+					var settings = storage_league_data;
+					doESPNthings(settings);
 				}
 				else {
-					getData(settings);
-					$.when(projDone, rankDone, rosDone).done(function () {
-						watchForChanges(settings);
+					$.get('http://games.espn.go.com/ffl/leaguesetup/sections/scoring', {"leagueId": league_id}, function(d) {
+						console.log('grabbing league settings');
+						var settings = parseLeagueSettings(d, siteType);
+						var setLeagueData = {};
+						setLeagueData[storageLeagueKey] = settings;
+						chrome.storage.local.set(setLeagueData, function() {
+							doESPNthings(settings);
+						});
 					});
 				}
 			});
@@ -95,6 +113,48 @@ $(document).ready(function () {
 		//}
 	}
 
+	function doESPNthings(settings) {
+		if (onMatchupPreviewPage) {
+			if ((window.alldata) && ((current_time - updated_time) < (1000 * 60 * check_minutes))) {
+				addAllData(settings);
+			}
+			else {
+				window.alldata = {};
+				//chrome.storage.local.clear(function() {
+				getPosProjections(settings);
+				//});
+				$.when(projDone).done(function () {
+					var setPlayerData = {};
+					setPlayerData[storagePlayerKey] = window.alldata;
+					setPlayerData[storageUpdateKey] = current_time;
+					chrome.storage.local.set(setPlayerData);
+				});
+			}
+		}
+		else {
+			if ((window.alldata) && ((current_time - updated_time) < (1000 * 60 * check_minutes))) {
+				console.log('using cache');
+				addAllData(settings);
+				$.when(projDone, rankDone, rosDone).done(function () {
+					watchForChanges(settings);
+				});
+			}
+			else {
+				console.log('NOT using cache');
+				window.alldata = {};
+				getData(settings);
+				$.when(projDone, rankDone, rosDone).done(function () {
+					var setPlayerData = {};
+					setPlayerData[storagePlayerKey] = window.alldata;
+					setPlayerData[storageUpdateKey] = current_time;
+					chrome.storage.local.set(setPlayerData, function() {
+						watchForChanges(settings);
+					});
+				});
+			}
+		}
+	}
+	
 	function addColumns() {
         var proj_head = $('[id^=playertable_] tbody tr.playerTableBgRowSubhead').find('td:contains(PROJ), td:contains(ESPN)');
         var header_index = proj_head.first().index();
@@ -186,7 +246,7 @@ $(document).ready(function () {
 		settings['siteType'] = siteType;
 		
 		if (siteType == 'espn') {
-			function getValue(setting_name) {
+			var getValue = function(setting_name) {
 				return parseFloat($ld.find("td:contains('" + setting_name + "')").next().first().text());
 			}
 
@@ -300,7 +360,7 @@ $(document).ready(function () {
 		else if (siteType == 'yahoo') {
 			var league_table = $('#settings-stat-mod-table tbody td', $ld);
 
-			function getValue(setting_name) {
+			var getValue = function(setting_name) {
 				settingVals = [];
 				settingText = league_table.filter(function(){ return $(this).text() === setting_name; }).next().first().text();
 				if (settingText) {
@@ -747,6 +807,9 @@ $(document).ready(function () {
 			else if (player_name == 'DeMarcus Ware') {
 				player_name = 'Demarcus Ware';
 			}
+			else if (player_name == 'Robert Griffin') {
+				player_name = 'Robert Griffin III';
+			}
 			else if (player_name.split(' ')[0] == 'Chris') {
 				player_name = 'Christopher ' + player_name.split(' ').slice(1).join(' ');
 			}
@@ -870,9 +933,9 @@ $(document).ready(function () {
 					settings['ya500'] * (500 <= player_data['Yds Allowed']);
 			}
 				
-			console.log(player_score);
+			//console.log(player_score);
 			player_score += player_adjustment;
-			console.log(player_score);
+			//console.log(player_score);
 			return (Math.round(player_score * 10) / 10).toFixed(1);
 		}
 		else if (datatype == 'rank') {
@@ -900,6 +963,7 @@ $(document).ready(function () {
     function getProjectionData(settings, datatype, currRow) {
         var player_cell = currRow.find('td.playertablePlayerName');
 		var player_cell_text = '';
+		
 		//This is stupid, but.......whatever.
 		if (player_cell.find('.fantasy-finder')) {
 			player_cell = player_cell.clone();
@@ -946,7 +1010,6 @@ $(document).ready(function () {
         var header_index = proj_head.first().index();
 		
 		if (header_index > -1) {
-			addColumns();
 			addProjections(settings);
 			addRankings(settings);
 			addRos(settings);
@@ -1071,25 +1134,17 @@ $(document).ready(function () {
 					cell.text("?");
 					cell.next().text("?");
 				}
+				else if (projectedRanking == "--") {
+					cell.text("--");
+					cell.next().html("--");
+				}
 				else {
 					cell.text(projectedRanking[0]);
 					cell.next().html('<span style="font-size: 80%;">±</span>' + projectedRanking[1]);
-					//cell.attr('data-stdev', projectedRanking[1]);
 				}
 			}
         });
-		
-		/*
-		$('.FantasyPlusRankingsData').tooltip({
-			track: true,
-			items: '[data-stdev]',
-			tooltipClass: 'fp-tooltip',
-			content: function () {
-				return 'Std Dev: ' + $(this).data("stdev");
-			}
-		});
-		*/
-	
+
 		rankDone.resolve();
 	}
 	
@@ -1107,8 +1162,19 @@ $(document).ready(function () {
 				cell.next().text("?");
 			}
 			else {
-				cell.text(projectedRos[0]);
-				cell.next().html('<span style="font-size: 80%;">±</span>' + projectedRos[1]);
+				projectedRos = getProjectionData(settings, datatype, currRow);
+				if (projectedRos[0] == "?") {
+					cell.text("?");
+					cell.next().text("?");
+				}
+				else if (projectedRos == "--") {
+					cell.text("--");
+					cell.next().html("--");
+				}
+				else {
+					cell.text(projectedRos[0]);
+					cell.next().html('<span style="font-size: 80%;">±</span>' + projectedRos[1]);
+				}
 			}
         });
 		
@@ -1127,6 +1193,7 @@ $(document).ready(function () {
 				observerESPN.disconnect();
 				if (mutations.length > 0) {
                     $('.FantasyPlus').remove();
+					addColumns();
 					addAllData(settings);
 				}
 				observerESPN.observe(target_observe, observerConfig);
