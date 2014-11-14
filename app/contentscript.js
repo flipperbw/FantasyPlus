@@ -11,6 +11,7 @@
 - option for experts
 - WR1/2 from depth chart, http://www.footballoutsiders.com/stats/teamdef
 - timeout for loading gif
+- start doing things before the document is ready. https://gist.github.com/raw/2625891/waitForKeyElements.js, waitForKeyElements ("a.Inline", delinkChangeStat);
 */
 
 /*
@@ -66,13 +67,11 @@ $(document).ready(function () {
 				window.alldata = r[storagePlayerKey];
 				
 				if ((storage_league_data) && ((current_time - updated_time) < (1000 * 60 * check_minutes))) {
-					console.log('NOT grabbing league settings');
 					var settings = storage_league_data;
 					doESPNthings(settings);
 				}
 				else {
 					$.get('http://games.espn.go.com/ffl/leaguesetup/sections/scoring', {"leagueId": league_id}, function(d) {
-						console.log('grabbing league settings');
 						var settings = parseLeagueSettings(d, siteType);
 						var setLeagueData = {};
 						setLeagueData[storageLeagueKey] = settings;
@@ -133,14 +132,12 @@ $(document).ready(function () {
 		}
 		else {
 			if ((window.alldata) && ((current_time - updated_time) < (1000 * 60 * check_minutes))) {
-				console.log('using cache');
 				addAllData(settings);
 				$.when(projDone, rankDone, rosDone).done(function () {
 					watchForChanges(settings);
 				});
 			}
 			else {
-				console.log('NOT using cache');
 				window.alldata = {};
 				getData(settings);
 				$.when(projDone, rankDone, rosDone).done(function () {
