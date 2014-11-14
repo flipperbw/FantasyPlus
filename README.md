@@ -27,6 +27,9 @@ Known Issues
 
 Update Log
 ------
+* v1.3.2 (2014-11-14)
+  * Adding 30-minute caching to all data (large speedup)
+  * Fixing RG3
 * v1.3.1 (2014-11-06)
   * Improved column layout
   * Added rest of season rankings
