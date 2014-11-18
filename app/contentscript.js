@@ -2,7 +2,6 @@
 - Add injury adjusted average points, somehow adjust OPRK for shitty teams, snap %
 - Somehow do all 9 requests at once
 - debug/verbose mode
-- cache the data for a few hours
 - yahoo support / nfl / fleaflicker / myfantasyleague
 - return yardage
 - firefox/safari
@@ -131,6 +130,34 @@ $(document).ready(function () {
 			}
 		}
 		else {
+			// if we don't have injury_data, or we need to update it for last week...
+			$.get('http://www.nfl.com/inactives', {'week': '1'}, function(w) {
+				var inactive = $(w);
+				
+				scr = inactive.find('script[type="text/javascript"]:not([async],[src],[charset])');
+				console.log(scr);
+				/*
+				activity_players = inactive.find('tbody.yui3-datatable-data tr[id^="yui"]');
+				console.log(activity_players.length);
+
+				activity_players.each(function() {
+					var act_player_row = $(this);
+					act_player_status = act_player_row.find('td.yui3-datatable-col-status').text();
+					console.log(act_player_status);
+					
+					if (act_player_status == 'Inactive') {
+						act_player_name = act_player_row.find('td.yui3-datatable-col-player').text();
+						act_player_pos = act_player_row.find('td.yui3-datatable-col-position').text();
+						act_player_team = act_player_row.closest('div.data-injuries').attr('class').split(' ')[0].split('-')[2];
+						
+						act_player_full_name = act_player_name + "|" + act_player_pos + "|" + act_player_team;
+					
+						console.log(act_player_full_name);
+					}
+				});
+				*/
+			});
+			
 			if ((window.alldata) && ((current_time - updated_time) < (1000 * 60 * check_minutes))) {
 				addAllData(settings);
 				$.when(projDone, rankDone, rosDone).done(function () {
