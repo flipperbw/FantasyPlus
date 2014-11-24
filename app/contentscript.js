@@ -1,5 +1,6 @@
 /*-- TODO
 - Add injury adjusted average points, somehow adjust OPRK for shitty teams, snap %
+- median
 - Somehow do all 9 requests at once
 - debug/verbose mode
 - yahoo support / nfl / fleaflicker / myfantasyleague
@@ -11,6 +12,8 @@
 - WR1/2 from depth chart, http://www.footballoutsiders.com/stats/teamdef
 - timeout for loading gif
 - start doing things before the document is ready. https://gist.github.com/raw/2625891/waitForKeyElements.js, waitForKeyElements ("a.Inline", delinkChangeStat);
+- what about suspended players for injury data?
+- switching teams = badly aggregated inactive data
 */
 
 /*
@@ -20,11 +23,26 @@ tag.src = "http://code.jquery.com/jquery-latest.min.js";
 document.body.appendChild(tag);
 */
 
+//chrome.storage.local.remove('fp_player_activity_data');
+
 // GLOBALS
-var check_minutes = 30;
-var updated_time;
-var storage_league_data;
-var current_time = new Date().getTime();
+var check_minutes = 60;
+var updated_time,
+	storage_league_data,
+	player_activity_data,
+	storage_player_activity_data,
+	storage_player_activity_data_current,
+	total_weeks;
+
+var current_date = new Date();
+var current_year = current_date.getFullYear();
+var current_year_str = current_date.getFullYear().toString();
+var current_time = current_date.getTime();
+var seasonstart = new Date(current_year, 8, 2, 4); //change for each year
+//var current_week = Math.ceil(((current_date - seasonstart) / 86400000) / 7);
+var current_week = 9;
+
+//window.alldata = {};
 
 window.off_positions_proj = ['qb', 'rb', 'wr', 'te', 'k'];
 window.def_positions_proj = ['6','8','9','10'];
@@ -32,7 +50,9 @@ window.all_positions_proj = window.off_positions_proj.concat(window.def_position
 window.all_positions_rank = ['qb', 'rb', 'wr', 'te', 'k', 'dst', 'dl', 'lb', 'db'];
 
 window.idp_conversion = {'6': 'D/ST', '8': 'DL', '9': 'LB', '10': 'DB'};
+window.pos_conversion_nfl = {'FS':'DB', 'SS':'DB', 'SAF':'DB', 'CB':'DB', 'FB':'RB', 'ILB':'LB', 'OLB':'LB', 'MLB':'LB', 'NT':'DT', 'DE':'DT'};
 window.team_name_conversion = {'ARZ': 'ARI', 'GBP': 'GB', 'KCC': 'KC', 'NEP': 'NE', 'NOR': 'NO', 'SDC': 'SD', 'SFO': 'SF', 'TBB': 'TB', 'WAS': 'WSH'};
+window.team_conversion_nfl = {'WAS': 'WSH'};
 
 var loadingUrl = chrome.extension.getURL('loading.gif');
 
@@ -131,54 +151,153 @@ $(document).ready(function () {
 		}
 		else {
 			// if we don't have injury_data, or we need to update it for last week...
-			$.get('http://www.nfl.com/inactives', {'week': '1'}, function(w) {
-				var inactive = $(w);
+			chrome.storage.local.get('fp_player_activity_data', function(a) {
+				storage_player_activity_data = a['fp_player_activity_data'] || {};
+				storage_player_activity_data_current = storage_player_activity_data[current_year] || {};
+				//var max_player_activity_week = storage_player_activity_data_current['max_week'] || 0;
+				var max_player_activity_week = 0;
+				total_weeks = current_week - 1 - max_player_activity_week;
 				
-				scr = inactive.find('script[type="text/javascript"]:not([async],[src],[charset])');
-				console.log(scr);
-				/*
-				activity_players = inactive.find('tbody.yui3-datatable-data tr[id^="yui"]');
-				console.log(activity_players.length);
-
-				activity_players.each(function() {
-					var act_player_row = $(this);
-					act_player_status = act_player_row.find('td.yui3-datatable-col-status').text();
-					console.log(act_player_status);
-					
-					if (act_player_status == 'Inactive') {
-						act_player_name = act_player_row.find('td.yui3-datatable-col-player').text();
-						act_player_pos = act_player_row.find('td.yui3-datatable-col-position').text();
-						act_player_team = act_player_row.closest('div.data-injuries').attr('class').split(' ')[0].split('-')[2];
-						
-						act_player_full_name = act_player_name + "|" + act_player_pos + "|" + act_player_team;
-					
-						console.log(act_player_full_name);
-					}
-				});
-				*/
-			});
+				console.log('printing activity data');
+				console.log(storage_player_activity_data);
+				console.log(storage_player_activity_data_current);
+				console.log(max_player_activity_week);
 			
-			if ((window.alldata) && ((current_time - updated_time) < (1000 * 60 * check_minutes))) {
-				addAllData(settings);
-				$.when(projDone, rankDone, rosDone).done(function () {
-					watchForChanges(settings);
-				});
-			}
-			else {
-				window.alldata = {};
-				getData(settings);
-				$.when(projDone, rankDone, rosDone).done(function () {
-					var setPlayerData = {};
-					setPlayerData[storagePlayerKey] = window.alldata;
-					setPlayerData[storageUpdateKey] = current_time;
-					chrome.storage.local.set(setPlayerData, function() {
-						watchForChanges(settings);
-					});
-				});
-			}
+				if (total_weeks > 0) {
+					for (var wk = max_player_activity_week + 1; wk < current_week; wk++) {
+						console.log('iterating...');
+						console.log(wk);
+						getInactivityData(wk, settings);
+					}
+				}
+				else {
+					console.log('skipping inact');
+					window.activity_data = storage_player_activity_data_current;
+					addTimelyData(settings);
+				}
+			});
 		}
 	}
 	
+	function getInactivityData(checkwk, settings) {
+		$.get('http://www.nfl.com/inactives', {'week': checkwk}, function(inactive_html) {
+			var inactive = $(inactive_html);
+			var inactive_scripts = inactive.find('script[type="text/javascript"]:not([async],[src],[charset])');
+			
+			$.each(inactive_scripts, function(scr_in, scr) {
+				scr_text_list = scr.text.replace("\r\n", "\n").split('\n');
+				
+				var teamstatus = 'away';
+				var teamaway, teamhome;
+				
+				$.each(scr_text_list, function(scr_index, scr_line) {
+					scr_line = scr_line.trim();
+
+					if (scr_line.match(/isTeamAwayValue\s*=/)) {
+						teamaway = scr_line.split('=')[1].trim().replace(/\W/g,'');
+					}
+					else if (scr_line.match(/isTeamHomeValue\s*=/)) {
+						teamhome = scr_line.split('=')[1].trim().replace(/\W/g,'');
+					}
+					else if (scr_line.indexOf("var dataAway") > -1) {
+						teamstatus = 'away';
+					}
+					else if (scr_line.indexOf("var dataHome") > -1) {
+						teamstatus = 'home';
+					}
+					else if (scr_line.match(/esbId\s*:/)) {
+						var pdata = {};
+						var psplit = scr_line.split('",');
+						$.each(psplit, function(pi,pv) { 
+							pkey = pv.split(':')[0].replace(/\W/g,'').trim();
+							pval = pv.split(':')[1].replace(/"/g,'').trim();
+							pdata[pkey] = pval
+						});
+						
+						if (pdata.status == 'Inactive') {
+							if (teamstatus == 'away') {
+								pdata.fullname = pdata.firstName + " " + pdata.lastName + "|" + pdata.position + "|" + teamaway;
+							}
+							else if (teamstatus == 'home') {
+								pdata.fullname = pdata.firstName + " " + pdata.lastName + "|" + pdata.position + "|" + teamhome;
+							}
+							
+							if (storage_player_activity_data_current[pdata.fullname]) {
+								storage_player_activity_data_current[pdata.fullname].push(checkwk);
+							}
+							else {
+								storage_player_activity_data_current[pdata.fullname] = [checkwk];
+							}
+						}
+					}
+				});
+			});
+			
+			total_weeks = total_weeks - 1;
+			if (total_weeks == 0) {
+				storeActivityData(settings);
+			}
+			
+			/*
+			activity_players = inactive.find('tbody.yui3-datatable-data tr[id^="yui"]');
+
+			activity_players.each(function() {
+				var act_player_row = $(this);
+				act_player_status = act_player_row.find('td.yui3-datatable-col-status').text();
+				
+				if (act_player_status == 'Inactive') {
+					act_player_name = act_player_row.find('td.yui3-datatable-col-player').text();
+					act_player_pos = act_player_row.find('td.yui3-datatable-col-position').text();
+					act_player_team = act_player_row.closest('div.data-injuries').attr('class').split(' ')[0].split('-')[2];
+					
+					act_player_full_name = act_player_name + "|" + act_player_pos + "|" + act_player_team;
+				}
+			});
+			*/
+		});
+	}
+	
+	function storeActivityData(settings) {		
+		storage_player_activity_data_current['max_week'] = current_week - 1;
+		
+		var storage_player_activity_obj = {};
+		storage_player_activity_obj['fp_player_activity_data'] = {};
+		storage_player_activity_obj['fp_player_activity_data'][current_year_str] = storage_player_activity_data_current;
+		chrome.storage.local.set(storage_player_activity_obj, function() {
+			/*chrome.storage.local.get('fp_player_activity_data', function(c) {
+				console.log('new activity data');
+				console.log(c['fp_player_activity_data']);
+				player_activity_data = c['fp_player_activity_data'];
+			});*/
+			
+			console.log(storage_player_activity_data_current);
+			window.activity_data = storage_player_activity_data_current;
+			addTimelyData(settings);
+		});
+	}
+	
+	function addTimelyData(settings) {
+		if ((window.alldata) && ((current_time - updated_time) < (1000 * 60 * check_minutes))) {
+			console.log('using cache');
+			addAllData(settings);
+			$.when(projDone, rankDone, rosDone).done(function () {
+				watchForChanges(settings);
+			});
+		}
+		else {
+			console.log('NOT using cache');
+			window.alldata = {};
+			getData(settings);
+			$.when(projDone, rankDone, rosDone).done(function () {
+				var setPlayerData = {};
+				setPlayerData[storagePlayerKey] = window.alldata;
+				setPlayerData[storageUpdateKey] = current_time;
+				chrome.storage.local.set(setPlayerData, function() {
+					watchForChanges(settings);
+				});
+			});
+		}
+	}
 	function addColumns() {
         var proj_head = $('[id^=playertable_] tbody tr.playerTableBgRowSubhead').find('td:contains(PROJ), td:contains(ESPN)');
         var header_index = proj_head.first().index();
