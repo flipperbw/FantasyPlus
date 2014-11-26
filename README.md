@@ -8,7 +8,7 @@ https://chrome.google.com/webstore/detail/fantasyplus/gojndgicjncbiobejfpjpcahad
 What is this?
 ------
 
-Adds weekly projected points, rankings, and standard deviation from Fantasypros.com (CBS, ESPN, NumberFire, FFToday, Pro FootballFocus) and FantasySharks (for D/ST and IDP) to default projections. The numbers are customized for your league settings (so PPR, for example, is automatically added in). It looks like this:
+Adds weekly projected points, rankings, standard deviations, and injury-adjusted averages from Fantasypros.com (CBS, ESPN, NumberFire, FFToday, Pro FootballFocus) and FantasySharks (for D/ST and IDP) to fantasy sites. The numbers are customized for your league settings (so PPR, for example, is automatically added in). It looks like this:
 
 ![Main Preview](http://i.imgur.com/5cWmb9U.png)
 
@@ -27,6 +27,9 @@ Known Issues
 
 Update Log
 ------
+* v1.4 (2014-11-26)
+  * Adding in "true" averages, a.k.a. average points adjusted for injury, suspension, etc.
+  * Improving mutation function
 * v1.3.2 (2014-11-14)
   * Adding 30-minute caching to all data (large speedup)
   * Fixing RG3
