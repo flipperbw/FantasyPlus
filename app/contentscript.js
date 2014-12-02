@@ -1,7 +1,6 @@
 /*-- TODO
-- Add injury adjusted average points, somehow adjust OPRK for shitty teams, snap %
+- somehow adjust OPRK for shitty teams, snap %
 - median
-- Somehow do all 9 requests at once
 - debug/verbose mode
 - yahoo support / nfl / fleaflicker / myfantasyleague
 - return yardage
@@ -13,6 +12,9 @@
 - timeout for loading gif
 - start doing things before the document is ready. https://gist.github.com/raw/2625891/waitForKeyElements.js, waitForKeyElements ("a.Inline", delinkChangeStat);
 - use window temporary data instead of recalculating when changes are made
+- skin ads look like garbage, need to adjust their position
+- starting on different tab doesnt enable anything
+- insider tab
 */
 
 /*
@@ -1015,7 +1017,7 @@ $(document).ready(function () {
 				var player_stored_activity_games = player_stored_activity['games_played'] || [];
 				var player_stored_activity_league_avg = player_stored_activity[league_id];
 				
-				if ((player_stored_activity) && (current_week - player_stored_activity_updated - 1 <= 0) && ((parseFloat(player_stored_activity_league_avg)) || (player_stored_activity_league_avg == '--'))) {
+				if ((player_stored_activity) && (current_week == player_stored_activity_updated) && ((parseFloat(player_stored_activity_league_avg)) || (player_stored_activity_league_avg == '--'))) {
 					insertAdjAvg(settings, player_stored_activity_league_avg);
 				}
 				else {
@@ -1031,7 +1033,7 @@ $(document).ready(function () {
 						
 						var weeklyPointsData = $.map(points_table_rows, function(ptval) { return ptval.innerText; });
 						
-						if ((player_stored_activity_games.length > 0) && (current_week - player_stored_activity_updated - 1 <= 0)) {
+						if ((player_stored_activity_games.length > 0) && (current_week == player_stored_activity_updated)) {
 							calcAdjAvg(settings, player_id, player_stored_activity_games, weeklyPointsData);
 						}
 						else {
