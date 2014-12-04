@@ -75,6 +75,7 @@ $(document).ready(function () {
 		var onMatchupPreviewPage = document.URL.match(/ffl\/matchuppreview/);
 		var hasPlayerTable = document.URL.match(/ffl\/(freeagency|clubhouse|dropplayers|tradereview|rosterfix)/);
 		var onClubhousePage = document.URL.match(/ffl\/(clubhouse|dropplayers)/);
+		var onPlayerListPage = document.URL.match(/ffl\/freeagency/);
 		
 		var storageLeagueKey = 'fp_espn_league_data_' + league_id;
 		var storagePlayerKey = 'fp_espn_player_data_' + league_id;
@@ -171,8 +172,17 @@ $(document).ready(function () {
 				});
 			}
 		}
+
+		if (onPlayerListPage) {
+			removePlayerListAds();	
+		}
 	}
 	
+	function removePlayerListAds() {
+		var adContainer = document.getElementById("skin");
+		adContainer.parentElement.removeChild(adContainer);
+	}
+
 	function addColumns() {
         var proj_head = $('[id^=playertable_] tbody tr.playerTableBgRowSubhead').find('td:contains(PROJ), td:contains(ESPN)');
         var header_index = proj_head.first().index();
