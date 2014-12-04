@@ -46,7 +46,6 @@ var current_time = current_date.getTime();
 var seasonstart = new Date(current_year, 8, 2, 4); //change for each year
 var current_week = Math.ceil(((current_date - seasonstart) / 86400000) / 7);
 
-//window.off_positions_proj = ['qb', 'rb', 'wr', 'te', 'k'];
 var off_positions_proj = ['qb', 'rb', 'wr', 'te', 'k'];
 var def_positions_proj = ['6','8','9','10'];
 var all_positions_proj = off_positions_proj.concat(def_positions_proj);
@@ -75,11 +74,18 @@ $(document).ready(function () {
 		var onMatchupPreviewPage = document.URL.match(/ffl\/matchuppreview/);
 		var hasPlayerTable = document.URL.match(/ffl\/(freeagency|clubhouse|dropplayers|tradereview|rosterfix)/);
 		var onClubhousePage = document.URL.match(/ffl\/(clubhouse|dropplayers)/);
+		var onFreeAgencyPage = document.URL.match(/ffl\/freeagency/);
 		
 		var storageLeagueKey = 'fp_espn_league_data_' + league_id;
 		var storagePlayerKey = 'fp_espn_player_data_' + league_id;
 		var storageUpdateKey = 'fp_espn_last_updated_' + league_id;
 		var storageProjUpdateKey = 'fp_espn_last_updated_proj_' + league_id;
+		
+		
+		if (onFreeAgencyPage) {
+			$('#backgroundContainer').css('width', 'auto')
+		}
+		
 		
 		if (hasProjectionTable) {
 			addColumns();
