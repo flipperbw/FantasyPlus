@@ -26,13 +26,15 @@ tag.src = "http://code.jquery.com/jquery-latest.min.js";
 document.body.appendChild(tag);
 */
 
-//chrome.storage.local.remove('fp_player_activity_data');
+//chrome.storage.local.remove('fp_espn_player_data_');
+//chrome.storage.local.clear();
 
 // GLOBALS
 var alldata,
 	settings,
 	custom_cols,
 	updated_time,
+	updated_time_proj,
 	storage_league_data,
 	activity_data,
 	activity_data_current_year,
@@ -81,20 +83,23 @@ $(document).ready(function () {
 		var storageUpdateKey = 'fp_espn_last_updated_' + league_id;
 		var storageProjUpdateKey = 'fp_espn_last_updated_proj_' + league_id;
 		
-		
 		if (onFreeAgencyPage) {
 			$('#backgroundContainer').css('width', 'auto')
 		}
 		
-		
 		if (hasProjectionTable) {
 			addColumns();
 			chrome.storage.local.get([storageLeagueKey, storagePlayerKey, storageUpdateKey, storageProjUpdateKey], function(r) {
-				storage_league_data = r[storageLeagueKey];
-				updated_time = r[storageUpdateKey];
-				updated_time_proj = r[storageProjUpdateKey];
 				alldata = r[storagePlayerKey];
+				if (!alldata) {
+					alldata = {};
+				}
+				else {
+					updated_time = r[storageUpdateKey];
+					updated_time_proj = r[storageProjUpdateKey];
+				}
 				
+				storage_league_data = r[storageLeagueKey];
 				if ((storage_league_data) && ((current_time - updated_time) < (1000 * 60 * check_minutes))) {
 					settings = storage_league_data;
 					doESPNthings();
@@ -143,11 +148,10 @@ $(document).ready(function () {
 
 	function doESPNthings() {
 		if (onMatchupPreviewPage) {
-			if ((alldata) && ((current_time - updated_time_proj) < (1000 * 60 * check_minutes))) {
+			if ((current_time - updated_time_proj) < (1000 * 60 * check_minutes)) {
 				addProjections();
 			}
 			else {
-				alldata = {};
 				getPosProjections();
 				$.when(projDone).done(function () {
 					var setPlayerData = {};
@@ -158,19 +162,19 @@ $(document).ready(function () {
 			}
 		}
 		else {
-			if ((alldata) && ((current_time - updated_time) < (1000 * 60 * check_minutes))) {
+			if ((current_time - updated_time) < (1000 * 60 * check_minutes)) {
 				addAllData(true);
 				$.when(projDone, rankDone, rosDone, avgDone).done(function () {
 					watchForChanges();
 				});
 			}
 			else {
-				alldata = {};
 				getData();
 				$.when(projDone, rankDone, rosDone, avgDone).done(function () {
 					var setPlayerData = {};
 					setPlayerData[storagePlayerKey] = alldata;
 					setPlayerData[storageUpdateKey] = current_time;
+					setPlayerData[storageProjUpdateKey] = current_time;
 					chrome.storage.local.set(setPlayerData, function() {
 						watchForChanges();
 					});
@@ -488,7 +492,7 @@ $(document).ready(function () {
 			settings['ya499'] = getValue('Defensive Yards Allowed 400-499')[0] || 0;
 			settings['ya500'] = getValue('Defensive Yards Allowed 500+')[0] || 0;
 			
-			console.log(settings);
+			//console.log(settings);
 		}
 		
 		return settings;
