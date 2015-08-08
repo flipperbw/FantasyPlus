@@ -28,6 +28,7 @@ document.body.appendChild(tag);
 
 //chrome.storage.local.remove('fp_espn_player_data_');
 //chrome.storage.local.clear();
+//chrome.storage.local.get('fp_player_activity_data', function(d) { console.info(d); });
 
 // GLOBALS
 var alldata,
@@ -41,11 +42,27 @@ var alldata,
 	total_players;
 
 var check_minutes = 60;
+
+season_start_map = {
+	'2014': [8, 2],
+	'2015': [8, 8]
+}
+
 var current_date = new Date();
-var current_year = current_date.getFullYear();
-// do the previous year anything between september;
 var current_time = current_date.getTime();
-var seasonstart = new Date(current_year, 8, 2, 4); //change for each year
+var current_year = current_date.getFullYear();
+
+var seasonstart = new Date(2014, 8, 2, 4);
+if (!season_start_map[current_year] && season_start_map[current_year - 1]) {
+	seasonstart = new Date(current_year - 1, season_start_map[current_year - 1][0], season_start_map[current_year - 1][1], 4);
+}
+else {
+	seasonstart = new Date(current_year, season_start_map[current_year][0], season_start_map[current_year][1], 4);
+	if (current_date < seasonstart) {
+		seasonstart = new Date(current_year - 1, season_start_map[current_year - 1][0], season_start_map[current_year - 1][1], 4);
+	}
+}
+var current_season = seasonstart.getFullYear();
 var current_week = Math.ceil(((current_date - seasonstart) / 86400000) / 7);
 
 var off_positions_proj = ['qb', 'rb', 'wr', 'te', 'k'];
@@ -264,7 +281,7 @@ $(document).ready(function () {
     }
 	
 	function parseLeagueSettings(league_data, siteType) {
-        var $ld = $(league_data);
+		var $ld = $(league_data);
 		settings = {};
 		settings['siteType'] = siteType;
 		
@@ -620,7 +637,7 @@ $(document).ready(function () {
 							}
 							
 							for (var j = player_name_header + 1; j < headers.length - 1; j++) {
-								alldata[full_name][headers[j].trim()] = currentline[j].trim();
+								alldata[full_name][headers[j].trim()] = currentline[j].trim().replace(',', '');
 							}
 						}
 					}
@@ -775,15 +792,15 @@ $(document).ready(function () {
 			}
 			else {
 				activity_data = {};
-				activity_data[current_year] = {};
+				activity_data[current_season] = {};
 			}
 			
-			if (activity_data.hasOwnProperty(current_year)) {
-				activity_data_current_year = activity_data[current_year];
+			if (activity_data.hasOwnProperty(current_season)) {
+				activity_data_current_season = activity_data[current_season];
 			}
 			else {
-				activity_data[current_year] = {};
-				activity_data_current_year = activity_data[current_year];
+				activity_data[current_season] = {};
+				activity_data_current_season = activity_data[current_season];
 			}
 			
 			addAvg();
@@ -891,8 +908,9 @@ $(document).ready(function () {
 				return("?");
 			}
 		}
-
+		
 		//console.log(player_data);
+
 		if (datatype == 'proj') {
 			var player_score =
 				settings['pass_yds'] * (player_data['pass_yds'] || 0) +
@@ -1026,8 +1044,7 @@ $(document).ready(function () {
 				//ESPN sometimes assigns completely wrong playerIds in the cell. I'm serious. I'm sitting here trying to debug why Alfred Blue has completely wrong fucking numbers, and it turns out ESPN thinks he's a defensive tackle bro named Euclid Cummings. I can't make this shit up. I'm pretty sure it happens with a bunch of newer players though. God damnit ESPN.
 				var player_id = player_cell.find('a').attr('playerid');
 				
-				//i might have to fix this for next year but we'll see.
-				var player_stored_activity = activity_data_current_year[player_id] || {};
+				var player_stored_activity = activity_data_current_season[player_id] || {};
 				var player_stored_activity_updated = player_stored_activity['last_updated'] || 0;
 				var player_stored_activity_games = player_stored_activity['games_played'] || [];
 				var player_stored_activity_league_avg = player_stored_activity[league_id];
@@ -1036,8 +1053,7 @@ $(document).ready(function () {
 					insertAdjAvg(cell, player_stored_activity_league_avg);
 				}
 				else {
-					//i maybe shouldnt use current year here
-					var espn_points_data = {'leagueId': league_id, 'playerId': player_id, 'playerIdType': 'playerId', 'seasonId': current_year, 'xhr':'1'};
+					var espn_points_data = {'leagueId': league_id, 'playerId': player_id, 'playerIdType': 'playerId', 'seasonId': current_season, 'xhr':'1'};
 					$.get('http://games.espn.go.com/ffl/format/playerpop/overview', espn_points_data, function(po) {
 						var podata = $(po);
 						
@@ -1055,18 +1071,19 @@ $(document).ready(function () {
 							var playercard = $('div#tabView0 div#moreStatsView0 div.pc:not(#pcBorder)', podata);
 							var pop_player_id = playercard.find('a[href*="playerId"], a[href*="proId"]').attr('href').match(/(playerId=|proId\/)(\d+)/)[2];
 							
-							var espn_player_link = "http://espn.go.com/nfl/player/gamelog/_/id/" + pop_player_id + "/year/" + current_year;
+							var espn_player_link = "http://espn.go.com/nfl/player/gamelog/_/id/" + pop_player_id + "/year/" + current_season;
 							$.get(espn_player_link, function(p) {
 								var adata = $(p);
 								var base_games_played = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
 								
-								var gamedateindex = $('div.mod-player-stats div.mod-content table tbody tr.colhead td:contains("DATE")', adata).first().index();
+								//:first for non post season
+								var gamedateindex = $('div.mod-player-stats div.mod-content table:first tbody tr.colhead td:contains("DATE")', adata).first().index();
 								if (gamedateindex > -1) {
-									var gamedates = $('div.mod-player-stats div.mod-content table tbody tr[class*="team"]', adata);
+									var gamedates = $('div.mod-player-stats div.mod-content table:first tbody tr[class*="team"]', adata);
 									$.each(gamedates, function(gp_i, gp_v) {
 										var gp_v_parse = $(gp_v);
 										var gamedate = gp_v_parse.find('td').eq(gamedateindex).text().trim();
-										var rowDate = new Date(gamedate.split(' ')[1] + ' ' + current_year);
+										var rowDate = new Date(gamedate.split(' ')[1] + ' ' + current_season); //wont work for jan-feb
 										var rowWeek = Math.ceil(((rowDate - seasonstart) / 86400000) / 7);
 										base_games_played[rowWeek - 1] = 1;
 									});
@@ -1077,7 +1094,7 @@ $(document).ready(function () {
 								var player_activity = {};
 								player_activity['games_played'] = games_played;
 								player_activity['last_updated'] = current_week;
-								activity_data_current_year[player_id] = player_activity;
+								activity_data_current_season[player_id] = player_activity;
 								
 								calcAdjAvg(cell, player_id, games_played, weeklyPointsData);
 							});
@@ -1140,7 +1157,7 @@ $(document).ready(function () {
 			var player_adjavg_rnd = '--'
 		}
 		
-		activity_data_current_year[player_id][league_id] = player_adjavg_rnd;
+		activity_data_current_season[player_id][league_id] = player_adjavg_rnd;
 		insertAdjAvg(thiscell, player_adjavg_rnd);
 	}
 
