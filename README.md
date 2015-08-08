@@ -27,6 +27,8 @@ Known Issues
 
 Update Log
 ------
+* v1.5 (2015-08-08)
+  * Updating for 2015
 * v1.4 (2014-11-26)
   * Adding in "true" averages, a.k.a. average points adjusted for injury, suspension, etc.
   * Improving mutation function
