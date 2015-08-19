@@ -1055,49 +1055,54 @@ $(document).ready(function () {
 				else {
 					var espn_points_data = {'leagueId': league_id, 'playerId': player_id, 'playerIdType': 'playerId', 'seasonId': current_season, 'xhr':'1'};
 					$.get('http://games.espn.go.com/ffl/format/playerpop/overview', espn_points_data, function(po) {
-						var podata = $(po);
-						
-						var points_table = $('div#tabView0 div#moreStatsView0 div#pcBorder table tbody', podata);
-						var points_table_header = points_table.find('tr.pcStatHead');
-						var ptsindex = points_table_header.find('td:contains("PTS")').first().index() + 1;
-						var points_table_rows = points_table.find('tr:not(.pcStatHead) td:nth-child(' + ptsindex + ')');
-						
-						var weeklyPointsData = $.map(points_table_rows, function(ptval) { return ptval.innerText; });
-						
-						if ((player_stored_activity_games.length > 0) && (current_week == player_stored_activity_updated)) {
-							calcAdjAvg(cell, player_id, player_stored_activity_games, weeklyPointsData);
+						if (!po) {
+							insertAdjAvg(cell, '--');
 						}
 						else {
-							var playercard = $('div#tabView0 div#moreStatsView0 div.pc:not(#pcBorder)', podata);
-							var pop_player_id = playercard.find('a[href*="playerId"], a[href*="proId"]').attr('href').match(/(playerId=|proId\/)(\d+)/)[2];
+							var podata = $(po);
 							
-							var espn_player_link = "http://espn.go.com/nfl/player/gamelog/_/id/" + pop_player_id + "/year/" + current_season;
-							$.get(espn_player_link, function(p) {
-								var adata = $(p);
-								var base_games_played = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+							var points_table = $('div#tabView0 div#moreStatsView0 div#pcBorder table tbody', podata);
+							var points_table_header = points_table.find('tr.pcStatHead');
+							var ptsindex = points_table_header.find('td:contains("PTS")').first().index() + 1;
+							var points_table_rows = points_table.find('tr:not(.pcStatHead) td:nth-child(' + ptsindex + ')');
+							
+							var weeklyPointsData = $.map(points_table_rows, function(ptval) { return ptval.innerText; });
+							
+							if ((player_stored_activity_games.length > 0) && (current_week == player_stored_activity_updated)) {
+								calcAdjAvg(cell, player_id, player_stored_activity_games, weeklyPointsData);
+							}
+							else {
+								var playercard = $('div#tabView0 div#moreStatsView0 div.pc:not(#pcBorder)', podata);
+								var pop_player_id = playercard.find('a[href*="playerId"], a[href*="proId"]').attr('href').match(/(playerId=|proId\/)(\d+)/)[2];
 								
-								//:first for non post season
-								var gamedateindex = $('div.mod-player-stats div.mod-content table:first tbody tr.colhead td:contains("DATE")', adata).first().index();
-								if (gamedateindex > -1) {
-									var gamedates = $('div.mod-player-stats div.mod-content table:first tbody tr[class*="team"]', adata);
-									$.each(gamedates, function(gp_i, gp_v) {
-										var gp_v_parse = $(gp_v);
-										var gamedate = gp_v_parse.find('td').eq(gamedateindex).text().trim();
-										var rowDate = new Date(gamedate.split(' ')[1] + ' ' + current_season); //wont work for jan-feb
-										var rowWeek = Math.ceil(((rowDate - seasonstart) / 86400000) / 7);
-										base_games_played[rowWeek - 1] = 1;
-									});
-								}
-								
-								var games_played = base_games_played;
-								
-								var player_activity = {};
-								player_activity['games_played'] = games_played;
-								player_activity['last_updated'] = current_week;
-								activity_data_current_season[player_id] = player_activity;
-								
-								calcAdjAvg(cell, player_id, games_played, weeklyPointsData);
-							});
+								var espn_player_link = "http://espn.go.com/nfl/player/gamelog/_/id/" + pop_player_id + "/year/" + current_season;
+								$.get(espn_player_link, function(p) {
+									var adata = $(p);
+									var base_games_played = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+									
+									//:first for non post season
+									var gamedateindex = $('div.mod-player-stats div.mod-content table:first tbody tr.colhead td:contains("DATE")', adata).first().index();
+									if (gamedateindex > -1) {
+										var gamedates = $('div.mod-player-stats div.mod-content table:first tbody tr[class*="team"]', adata);
+										$.each(gamedates, function(gp_i, gp_v) {
+											var gp_v_parse = $(gp_v);
+											var gamedate = gp_v_parse.find('td').eq(gamedateindex).text().trim();
+											var rowDate = new Date(gamedate.split(' ')[1] + ' ' + current_season); //wont work for jan-feb
+											var rowWeek = Math.ceil(((rowDate - seasonstart) / 86400000) / 7);
+											base_games_played[rowWeek - 1] = 1;
+										});
+									}
+									
+									var games_played = base_games_played;
+									
+									var player_activity = {};
+									player_activity['games_played'] = games_played;
+									player_activity['last_updated'] = current_week;
+									activity_data_current_season[player_id] = player_activity;
+									
+									calcAdjAvg(cell, player_id, games_played, weeklyPointsData);
+								});
+							}
 						}
 					});
 				}
