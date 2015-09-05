@@ -26,8 +26,8 @@ tag.src = "http://code.jquery.com/jquery-latest.min.js";
 document.body.appendChild(tag);
 */
 
+chrome.storage.local.clear();
 //chrome.storage.local.remove('fp_espn_player_data_');
-//chrome.storage.local.clear();
 //chrome.storage.local.get('fp_player_activity_data', function(d) { console.info(d); });
 
 // GLOBALS
@@ -39,7 +39,8 @@ var alldata,
 	storage_league_data,
 	activity_data,
 	activity_data_current_year,
-	total_players;
+	total_players,
+    siteType;
 
 var check_minutes = 60;
 
@@ -85,7 +86,7 @@ if (document.URL.match(/games.espn.go.com/)) {
     jQuery('.games-alert-tilt').remove();
     jQuery('div.draftKings').remove();
     
-    var siteType = 'espn';
+    siteType = 'espn';
     
     var playerTable = jQuery('[id^=playertable_] tbody');
     var hasProjectionTable = playerTable.find('tr.playerTableBgRowSubhead td:contains(PROJ)').length > 0;
@@ -136,32 +137,53 @@ if (document.URL.match(/games.espn.go.com/)) {
     }
 }
 else if (document.URL.match(/football.fantasysports.yahoo.com/)) {
-    var siteType = 'yahoo';
+    siteType = 'yahoo';
     
     //var playerTable = jQuery('[id^=playertable_] tbody');
     //var hasProjectionTable = playerTable.find('tr.playerTableBgRowSubhead td:contains(PROJ)').length > 0;
     
     var league_id = document.URL.match(/football.fantasysports.yahoo.com\/f1\/(\d+)/)[1];
-    //var onMatchupPreviewPage = document.URL.match(/ffl\/matchuppreview/);
-    //var hasPlayerTable = document.URL.match(/ffl\/(freeagency|clubhouse|dropplayers|tradereview|rosterfix)/);
-    //var onClubhousePage = document.URL.match(/ffl\/(clubhouse|dropplayers)/);
+    /*
+    var onMatchupPreviewPage = document.URL.match(/ffl\/matchuppreview/);
+    var hasPlayerTable = document.URL.match(/ffl\/(freeagency|clubhouse|dropplayers|tradereview|rosterfix)/);
+    var onClubhousePage = document.URL.match(/ffl\/(clubhouse|dropplayers)/);
+    var onFreeAgencyPage = document.URL.match(/ffl\/freeagency/);
+    */
+
+    var storageLeagueKey = 'fp_yahoo_league_data_' + league_id;
+    var storagePlayerKey = 'fp_yahoo_player_data_' + league_id;
+    var storageUpdateKey = 'fp_yahoo_last_updated_' + league_id;
+    var storageProjUpdateKey = 'fp_yahoo_last_updated_proj_' + league_id;
     
     //if (hasProjectionTable) {
         //addColumns();
-        jQuery.get('http://football.fantasysports.yahoo.com/f1/' + league_id + '/settings', function(d) {
-            settings = parseLeagueSettings(d, siteType);
-            /*
-            if (onMatchupPreviewPage) {
-                getPosProjections();
+        chrome.storage.local.get([storageLeagueKey, storagePlayerKey, storageUpdateKey, storageProjUpdateKey], function(r) {
+            alldata = r[storagePlayerKey];
+            if (!alldata) {
+                alldata = {};
             }
             else {
-                getData();
-                jQuery.when(projDone, rankDone, rosDone).done(function () {
-                    watchForChanges();
+                updated_time = r[storageUpdateKey];
+                updated_time_proj = r[storageProjUpdateKey];
+            }
+            
+            storage_league_data = r[storageLeagueKey];
+            if ((storage_league_data) && ((current_time - updated_time) < (1000 * 60 * check_minutes))) {
+                settings = storage_league_data;
+                //doYAHOOthings();
+            }
+            else {
+                jQuery.get('http://football.fantasysports.yahoo.com/f1/' + league_id + '/settings', function(d) {
+                    var setSettings = parseLeagueSettings(d, siteType);
+                    var setLeagueData = {};
+                    setLeagueData[storageLeagueKey] = setSettings;
+                    chrome.storage.local.set(setLeagueData, function() {
+                        //doYAHOOthings();
+                    });
                 });
-            }*/
+            }
         });
-    //}
+   // }    
 }
 
 function doESPNthings() {
@@ -199,6 +221,43 @@ function doESPNthings() {
             });
         }
     }
+}
+
+function doYAHOOthings() {
+    /*if (onMatchupPreviewPage) {
+        if ((current_time - updated_time_proj) < (1000 * 60 * check_minutes)) {
+            addProjections();
+        }
+        else {
+            getPosProjections();
+            jQuery.when(projDone).done(function () {
+                var setPlayerData = {};
+                setPlayerData[storagePlayerKey] = alldata;
+                setPlayerData[storageProjUpdateKey] = current_time;
+                chrome.storage.local.set(setPlayerData);
+            });
+        }
+    }
+    else {*/
+        if ((current_time - updated_time) < (1000 * 60 * check_minutes)) {
+            addAllData(true);
+            jQuery.when(projDone, rankDone, rosDone, avgDone).done(function () {
+                watchForChanges();
+            });
+        }
+        else {
+            getData();
+            jQuery.when(projDone, rankDone, rosDone, avgDone).done(function () {
+                var setPlayerData = {};
+                setPlayerData[storagePlayerKey] = alldata;
+                setPlayerData[storageUpdateKey] = current_time;
+                setPlayerData[storageProjUpdateKey] = current_time;
+                chrome.storage.local.set(setPlayerData, function() {
+                    watchForChanges();
+                });
+            });
+        }
+    //}
 }
 
 function addColumns() {
@@ -400,12 +459,12 @@ function parseLeagueSettings(league_data, siteType) {
     }
     else if (siteType == 'yahoo') {
         var league_table = jQuery('#settings-stat-mod-table tbody td', $ld);
-
         var getValue = function(setting_name) {
             var settingVals = [];
-            var settingText = league_table.filter(function(){ return jQuery(this).text() === setting_name; }).next().first().text();
-            if (settingText) {
-                var settingList = settingText.split(';');
+            var settingText = league_table.filter(function(){ return this.childNodes[0].nodeValue === setting_name; });
+            if (settingText && settingText.length > 0) {
+                var pointText = settingText.next().first().text();
+                var settingList = pointText.split(';');
                 var bonusDict = {};
                 
                 jQuery.each(settingList, function( sindex, svalue ) {
@@ -431,6 +490,7 @@ function parseLeagueSettings(league_data, siteType) {
             return settingVals;
         }
         
+        debugger;
         var passSettings = getValue('Passing Yards');
             settings['pass_yds'] = passSettings[0] || 0;
             settings['pass_bonus'] = {};
@@ -473,14 +533,20 @@ function parseLeagueSettings(league_data, siteType) {
         settings['xpt'] = getValue('Point After Attempt Made')[0] || 0;
         settings['fga'] = 0;
         settings['fg'] =
-            (0.6 * ((getValue('Field Goals 0-19 Yards')[0] || 0) + (getValue('Field Goals 20-29 Yards')[0] || 0) + (getValue('Field Goals 30-39 Yards')[0] || 0)) / 3.0) +
+            (0.6 * ((getValue('Field Goals 0-19 Yards')[0] || 0) +
+                (getValue('Field Goals 20-29 Yards')[0] || 0) +
+                (getValue('Field Goals 30-39 Yards')[0] || 0)) / 3.0
+            ) +
             (0.3 * (getValue('Field Goals 40-49 Yards')[0] || 0)) +
             (0.1 * (getValue('Field Goals 50+ Yards')[0] || 0));
         settings['fgm'] = 
-            (0.6 * ((getValue('Field Goals Missed 0-19 Yards')[0] || 0) + (getValue('Field Goals Missed 20-29 Yards')[0] || 0) + (getValue('Field Goals Missed 30-39 Yards')[0] || 0)) / 3.0) +
+            (0.6 * ((getValue('Field Goals Missed 0-19 Yards')[0] || 0) +
+                (getValue('Field Goals Missed 20-29 Yards')[0] || 0) +
+                (getValue('Field Goals Missed 30-39 Yards')[0] || 0)) / 3.0
+            ) +
             (0.3 * (getValue('Field Goals Missed 40-49 Yards')[0] || 0)) +
             (0.1 * (getValue('Field Goals Missed 50+ Yards')[0] || 0));
-        
+
         settings['fumbles'] = getValue('Fumbles Lost')[0] || getValue('Fumbles')[0] || 0;
         
         settings['ff'] = getValue('Fumble Force')[0] || 0;
@@ -509,8 +575,6 @@ function parseLeagueSettings(league_data, siteType) {
         settings['ya399'] = getValue('Defensive Yards Allowed 300-399')[0] || 0;
         settings['ya499'] = getValue('Defensive Yards Allowed 400-499')[0] || 0;
         settings['ya500'] = getValue('Defensive Yards Allowed 500+')[0] || 0;
-        
-        //console.log(settings);
     }
     
     return settings;
