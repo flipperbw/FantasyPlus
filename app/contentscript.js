@@ -981,14 +981,29 @@ function getData() {
     if (show_avg) {
         getAvg();
     }
+    else {
+        avgDone.resolve();
+    }
+    
     if (show_proj) {
         getPosProjections();
     }
+    else {
+        projDone.resolve();
+    }
+
     if (show_rank) {
         getPosRankings();
     }
+    else {
+        rankDone.resolve();
+    }
+
     if (show_ros) {
         getRosRankings();
+    }
+    else {
+        rosDone.resolve();
     }
 }
 
