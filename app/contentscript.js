@@ -26,7 +26,7 @@ tag.src = "http://code.jquery.com/jquery-latest.min.js";
 document.body.appendChild(tag);
 */
 
-chrome.storage.local.clear();
+//chrome.storage.local.clear();
 //chrome.storage.local.remove('fp_espn_player_data_');
 //chrome.storage.local.get('fp_player_activity_data', function(d) { console.info(d); });
 
@@ -39,6 +39,7 @@ var alldata,
 	updated_time,
 	updated_time_proj,
     league_id,
+    league_settings_url,
 	storage_league_data,
 	activity_data,
 	activity_data_current_year,
@@ -58,6 +59,9 @@ var alldata,
     base_table;
 
 var check_minutes = 60;
+var ajax_timeout = 2000;
+
+var fetch_fail = false;
 
 var show_avg = true;
 var show_proj = true;
@@ -124,6 +128,7 @@ if (document.URL.match(/games.espn.go.com/)) {
     var onFreeAgencyPage = document.URL.match(/ffl\/freeagency/);
     
     league_id = document.URL.match(/leagueId=(\d+)/)[1];
+    league_settings_url = 'http://games.espn.go.com/ffl/leaguesetup/sections/scoring?leagueId=' + league_id;
     
     var storageLeagueKey = 'fp_espn_league_data_' + league_id;
     var storagePlayerKey = 'fp_espn_player_data_' + league_id;
@@ -134,40 +139,11 @@ if (document.URL.match(/games.espn.go.com/)) {
         jQuery('#backgroundContainer').css('width', 'auto')
     }
     
-    if (hasProjectionTable) {
-        addColumns();
-        chrome.storage.local.get([storageLeagueKey, storagePlayerKey, storageUpdateKey, storageProjUpdateKey], function(r) {
-            alldata = r[storagePlayerKey];
-            if (!alldata) {
-                alldata = {};
-            }
-            else {
-                updated_time = r[storageUpdateKey];
-                updated_time_proj = r[storageProjUpdateKey];
-            }
-            
-            storage_league_data = r[storageLeagueKey];
-            if ((storage_league_data) && ((current_time - updated_time) < (1000 * 60 * check_minutes))) {
-                settings = storage_league_data;
-                doESPNthings();
-            }
-            else {
-                jQuery.get('http://games.espn.go.com/ffl/leaguesetup/sections/scoring', {"leagueId": league_id}, function(d) {
-                    var setSettings = parseLeagueSettings(d, siteType);
-                    var setLeagueData = {};
-                    setLeagueData[storageLeagueKey] = setSettings;
-                    chrome.storage.local.set(setLeagueData, function() {
-                        doESPNthings();
-                    });
-                });
-            }
-        });
-    }
 }
 else if (document.URL.match(/football.fantasysports.yahoo.com/)) {
     siteType = 'yahoo';
     
-    base_table_selector = '#team-roster';
+    base_table_selector = '#team-roster'; //, #players-table
     player_table_selector = 'table[id^=statTable]';
     player_table_body_selector = 'tbody';
     player_table_header_selector = 'thead tr';
@@ -176,49 +152,23 @@ else if (document.URL.match(/football.fantasysports.yahoo.com/)) {
 
     setSelectors();
     
-    //var hasProjectionTable = player_table_header_selector.find('td:contains(PROJ)').length > 0;
-    
     var onMatchupPreviewPage = false;
-    var hasPlayerTable = true;
+    var hasPlayerTable = document.URL.match(/f1\/\d+\/\d+/);
     var onClubhousePage = false;
     var onFreeAgencyPage = false;
     
+    var hasProjectionTable = hasPlayerTable;
+    
     league_id = document.URL.match(/football.fantasysports.yahoo.com\/f1\/(\d+)/)[1];
+    league_settings_url = 'http://football.fantasysports.yahoo.com/f1/' + league_id + '/settings';
 
     var storageLeagueKey = 'fp_yahoo_league_data_' + league_id;
     var storagePlayerKey = 'fp_yahoo_player_data_' + league_id;
     var storageUpdateKey = 'fp_yahoo_last_updated_' + league_id;
     var storageProjUpdateKey = 'fp_yahoo_last_updated_proj_' + league_id;
     
-    //if (hasProjectionTable) {
-        addColumns();
-        chrome.storage.local.get([storageLeagueKey, storagePlayerKey, storageUpdateKey, storageProjUpdateKey], function(r) {
-            alldata = r[storagePlayerKey];
-            if (!alldata) {
-                alldata = {};
-            }
-            else {
-                updated_time = r[storageUpdateKey];
-                updated_time_proj = r[storageProjUpdateKey];
-            }
-            
-            storage_league_data = r[storageLeagueKey];
-            if ((storage_league_data) && ((current_time - updated_time) < (1000 * 60 * check_minutes))) {
-                settings = storage_league_data;
-                doYAHOOthings();
-            }
-            else {
-                jQuery.get('http://football.fantasysports.yahoo.com/f1/' + league_id + '/settings', function(d) {
-                    var setSettings = parseLeagueSettings(d, siteType);
-                    var setLeagueData = {};
-                    setLeagueData[storageLeagueKey] = setSettings;
-                    chrome.storage.local.set(setLeagueData, function() {
-                        doYAHOOthings();
-                    });
-                });
-            }
-        });
-   // }
+    show_avg = false;
+    show_ros = false;
 }
 
 function setSelectors() {
@@ -230,13 +180,41 @@ function setSelectors() {
     }
     player_table_header = playerTable.find(player_table_header_selector);
     proj_head = player_table_header.find(player_table_header_proj_selector);
-    console.log(player_table_header.find('td'));
-    console.log(proj_head);
     header_index = proj_head.first().index();
-    console.log(header_index);
 }
 
-function doESPNthings() {
+//MAIN
+if (hasProjectionTable) {
+    addColumns();
+    chrome.storage.local.get([storageLeagueKey, storagePlayerKey, storageUpdateKey, storageProjUpdateKey], function(r) {
+        alldata = r[storagePlayerKey];
+        if (!alldata) {
+            alldata = {};
+        }
+        else {
+            updated_time = r[storageUpdateKey];
+            updated_time_proj = r[storageProjUpdateKey];
+        }
+
+        storage_league_data = r[storageLeagueKey];
+        if ((storage_league_data) && ((current_time - updated_time) < (1000 * 60 * check_minutes))) {
+            settings = storage_league_data;
+            doLeagueThings();
+        }
+        else {
+            jQuery.get(league_settings_url, function(d) {
+                var setSettings = parseLeagueSettings(d, siteType);
+                var setLeagueData = {};
+                setLeagueData[storageLeagueKey] = setSettings;
+                chrome.storage.local.set(setLeagueData, function() {
+                    doLeagueThings();
+                });
+            });
+        }
+    });
+}
+
+function doLeagueThings() {
     if (onMatchupPreviewPage) {
         if ((current_time - updated_time_proj) < (1000 * 60 * check_minutes)) {
             addProjections();
@@ -244,10 +222,12 @@ function doESPNthings() {
         else {
             getPosProjections();
             jQuery.when(projDone).done(function () {
-                var setPlayerData = {};
-                setPlayerData[storagePlayerKey] = alldata;
-                setPlayerData[storageProjUpdateKey] = current_time;
-                chrome.storage.local.set(setPlayerData);
+                if (!fetch_fail) {
+                    var setPlayerData = {};
+                    setPlayerData[storagePlayerKey] = alldata;
+                    setPlayerData[storageProjUpdateKey] = current_time;
+                    chrome.storage.local.set(setPlayerData);
+                }
             });
         }
     }
@@ -261,56 +241,21 @@ function doESPNthings() {
         else {
             getData();
             jQuery.when(projDone, rankDone, rosDone, avgDone).done(function () {
-                var setPlayerData = {};
-                setPlayerData[storagePlayerKey] = alldata;
-                setPlayerData[storageUpdateKey] = current_time;
-                setPlayerData[storageProjUpdateKey] = current_time;
-                chrome.storage.local.set(setPlayerData, function() {
+                if (!fetch_fail) {
+                    var setPlayerData = {};
+                    setPlayerData[storagePlayerKey] = alldata;
+                    setPlayerData[storageUpdateKey] = current_time;
+                    setPlayerData[storageProjUpdateKey] = current_time;
+                    chrome.storage.local.set(setPlayerData, function() {
+                        watchForChanges();
+                    });
+                }
+                else {
                     watchForChanges();
-                });
+                }
             });
         }
     }
-}
-
-function doYAHOOthings() {
-    show_avg = false;
-    show_ros = false;
-    
-    /*if (onMatchupPreviewPage) {
-        if ((current_time - updated_time_proj) < (1000 * 60 * check_minutes)) {
-            addProjections();
-        }
-        else {
-            getPosProjections();
-            jQuery.when(projDone).done(function () {
-                var setPlayerData = {};
-                setPlayerData[storagePlayerKey] = alldata;
-                setPlayerData[storageProjUpdateKey] = current_time;
-                chrome.storage.local.set(setPlayerData);
-            });
-        }
-    }
-    else {*/
-        if ((current_time - updated_time) < (1000 * 60 * check_minutes)) {
-            addAllData(true);
-            jQuery.when(projDone, rankDone, rosDone, avgDone).done(function () {
-                watchForChanges();
-            });
-        }
-        else {
-            getData();
-            jQuery.when(projDone, rankDone, rosDone, avgDone).done(function () {
-                var setPlayerData = {};
-                setPlayerData[storagePlayerKey] = alldata;
-                setPlayerData[storageUpdateKey] = current_time;
-                setPlayerData[storageProjUpdateKey] = current_time;
-                chrome.storage.local.set(setPlayerData, function() {
-                    watchForChanges();
-                });
-            });
-        }
-    //}
 }
 
 function addColumns() {
@@ -688,12 +633,12 @@ function fetchPositionData(position, type, cb) {
     }
     
     jQuery.ajax({
-        url: source_site
+        url: source_site,
+        timeout: ajax_timeout
     }).done(function(data) {
-        console.log(source_site);
         cb(position, data.trim());
     }).fail(function() {
-        console.log(source_site);
+        fetch_fail = true;
         cb(position, 'error');
     });
 }
@@ -852,7 +797,7 @@ function getPosRankings() {
                                 var player_name_split = player_name.split(' ');
                                 player_name_split.pop();
                                 player_name = player_name_split.join(' ');
-                                pos_name = 'DEF';
+                                pos_name = 'D/ST';
                             }
                         }
                         
@@ -927,7 +872,7 @@ function getRosRankings() {
                                 var player_name_split = player_name.split(' ');
                                 player_name_split.pop();
                                 player_name = player_name_split.join(' ');
-                                pos_name = 'DEF';
+                                pos_name = 'D/ST';
                             }
                         }
                         
@@ -1032,8 +977,6 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
     // multiply it by the league settings
     var full_name = player_name + "|" + pos_name + "|" + team_name;
     var player_data = alldata[full_name];
-    
-    console.log(full_name);
     
     if (typeof(player_data) === "undefined") {
         if (player_name == 'Steve Smith Sr.') {
@@ -1370,8 +1313,17 @@ function getProjectionData(datatype, currRow, cell) {
             player_name = player_name_cell.find('a').text().trim();
             var pos_name_cell = player_name_cell.find('span').text().trim().split(' - ');
             team_name = pos_name_cell[0].toUpperCase();
+            if (team_name == 'JAX') {
+                team_name = 'JAC';
+            }
+            else if (team_name == 'WAS') {
+                team_name = 'WSH';
+            }
             pos_name = pos_name_cell[1];
-            if ((pos_name == 'DT') || (pos_name == 'DE')) {
+            if (pos_name == "DEF") {
+                pos_name = "D/ST";
+            }
+            else if ((pos_name == 'DT') || (pos_name == 'DE')) {
                 pos_name = 'DL';
             }
             else if ((pos_name == 'CB') || (pos_name == 'S')) {
@@ -1645,6 +1597,14 @@ function watchForChanges() {
             characterData: true,
             subtree: true
         };
+        /*
+        //if things are still waiting to be resolved...
+        // so also watchFOrChanges before all resolved i guess.
+        projDone.resolve();
+        rankDone.resolve();
+        rosDone.resolve();
+        avgDone.resolve();      
+*/
         var target_observe = document.querySelector(base_table_selector);
         var observerESPN = new MutationObserver(function (mutations) {
             observerESPN.disconnect();
