@@ -27,7 +27,7 @@
 		"http://games.espn.go.com/ffl/tradereview*",
 		"http://games.espn.go.com/ffl/rosterfix*",
 		"http://games.espn.go.com/ffl/playertable/prebuilt/freeagency*",
-		"http://football.fantasysports.yahoo.com/f1/*/settings"
+		"http://football.fantasysports.yahoo.com/f1/*"
 	  ],
 	  "js" : [
 		"jquery-1.11.1.min.js",
