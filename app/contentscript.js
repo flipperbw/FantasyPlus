@@ -25,6 +25,7 @@ tag.type="text/javascript";
 tag.src = "http://code.jquery.com/jquery-latest.min.js";
 document.body.appendChild(tag);
 */
+//		"http://football.fantasysports.yahoo.com/f1/*"
 
 //chrome.storage.local.clear();
 //chrome.storage.local.remove('fp_espn_player_data_');
@@ -625,7 +626,7 @@ function fetchPositionData(position, type, cb) {
         else if (siteType == "yahoo") {
             rankers = '11:44:45:71:73:152';
         }
-        source_site = 'http://www.fantasypros.com/nfl/projections/' + position + '.php?filters=' + rankers + '&export=xls';
+        source_site = 'http://www.fantasypros.com/nfl/projections/' + position + '.php?filters=' + rankers + '&export=xls&week=' + current_week;
     }
     else {
         //TODO delay fantasy sharks, maybe find some way to only loop over each position when the relevant calls are done
@@ -1005,6 +1006,9 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
         }
         else if (player_name == 'Robert Griffin') {
             player_name = 'Robert Griffin III';
+        }
+        else if (player_name == 'Ted Ginn Jr.') {
+            player_name = 'Ted Ginn';
         }
         else if (player_name.split(' ')[0] == 'Chris') {
             player_name = 'Christopher ' + player_name.split(' ').slice(1).join(' ');
