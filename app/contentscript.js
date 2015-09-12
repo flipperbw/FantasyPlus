@@ -109,9 +109,6 @@ var avgDone = jQuery.Deferred();
 if (document.URL.match(/games.espn.go.com/)) {
     siteType = 'espn';
     
-    jQuery('.games-alert-tilt').remove();
-    jQuery('div.draftKings').remove();
-    
     base_table_selector = '.playerTableContainerDiv';
     player_table_selector = '[id^=playertable_]';
     player_table_body_selector = 'tbody';
@@ -127,6 +124,25 @@ if (document.URL.match(/games.espn.go.com/)) {
     var hasPlayerTable = document.URL.match(/ffl\/(freeagency|clubhouse|dropplayers|tradereview|rosterfix)/);
     var onClubhousePage = document.URL.match(/ffl\/(clubhouse|dropplayers)/);
     var onFreeAgencyPage = document.URL.match(/ffl\/freeagency/);
+    var onLeaguePage = document.URL.match(/ffl\/leagueoffice/);
+    
+    jQuery('.games-footercol').remove();
+    jQuery('.transitional-elements').remove();
+    if (onClubhousePage) {
+        jQuery('.games-alert-tilt').remove();
+        jQuery('.games-alert-mod.alert-mod2.games-blue-alert').remove();
+        jQuery('div.draftKings').remove();
+        jQuery('iframe[src*="streak.espn.go.com"]').parent().remove();
+        jQuery('.games-bottomcol').css('margin', 0)
+    }
+    else if (onLeaguePage) {
+        jQuery('.games-rightcol-spacer').remove();
+        jQuery('img[usemap*="pizza-hut"]').parent().remove();
+        jQuery('a[href*="fantasyfootballtoolkit"]').parent().remove();
+    }
+    else if (onFreeAgencyPage) {
+        jQuery('#backgroundContainer').css('width', 'auto')
+    }
     
     league_id = document.URL.match(/leagueId=(\d+)/)[1];
     league_settings_url = 'http://games.espn.go.com/ffl/leaguesetup/sections/scoring?leagueId=' + league_id;
@@ -135,11 +151,6 @@ if (document.URL.match(/games.espn.go.com/)) {
     var storagePlayerKey = 'fp_espn_player_data_' + league_id;
     var storageUpdateKey = 'fp_espn_last_updated_' + league_id;
     var storageProjUpdateKey = 'fp_espn_last_updated_proj_' + league_id;
-
-    if (onFreeAgencyPage) {
-        jQuery('#backgroundContainer').css('width', 'auto')
-    }
-    
 }
 else if (document.URL.match(/football.fantasysports.yahoo.com/)) {
     siteType = 'yahoo';
@@ -1001,7 +1012,7 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
         else if (player_name == 'D\'Qwell Jackson') {
             player_name = 'D\'qwell Jackson';
         }
-        else if (player_name == 'DeMarcus Ware') {
+        else if (player_name == '') {
             player_name = 'Demarcus Ware';
         }
         else if (player_name == 'Robert Griffin') {
@@ -1009,6 +1020,12 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
         }
         else if (player_name == 'Ted Ginn Jr.') {
             player_name = 'Ted Ginn';
+        }
+        else if (player_name == 'Corey Brown') {
+            player_name = 'Philly Brown';
+        }
+        else if (player_name == 'NaVorro Bowman') {
+            player_name = 'Navorro Bowman';
         }
         else if (player_name.split(' ')[0] == 'Chris') {
             player_name = 'Christopher ' + player_name.split(' ').slice(1).join(' ');
@@ -1040,6 +1057,21 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
         // For multi-position players
         if (player_name == 'Dexter McCluster') {
             full_name = 'Dexter McCluster|RB|TEN';
+        }
+        if (player_name == 'Julius Peppers') {
+            full_name = 'Julius Peppers|LB|GB';
+        }
+        if (player_name == 'DeMarcus Ware') {
+            full_name = 'Demarcus Ware|LB|DEN';
+        }
+        if (player_name == 'Jared Allen') {
+            full_name = 'Jared Allen|LB|CHI';
+        }
+        if (player_name == 'Jadeveon Clowney') {
+            full_name = 'Jadeveon Clowney|LB|HOU';
+        }
+        if (player_name == 'Derrick Morgan') {
+            full_name = 'Derrick Morgan|LB|TEN';
         }
 
         player_data = alldata[full_name];
