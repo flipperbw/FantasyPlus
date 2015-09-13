@@ -121,13 +121,14 @@ if (document.URL.match(/games.espn.go.com/)) {
     
     setSelectors();
     
-    var hasProjectionTable = proj_head.length > 0;
-    
     var onMatchupPreviewPage = document.URL.match(/ffl\/matchuppreview/);
-    var hasPlayerTable = document.URL.match(/ffl\/(freeagency|clubhouse|dropplayers|tradereview|rosterfix)/);
     var onClubhousePage = document.URL.match(/ffl\/(clubhouse|dropplayers)/);
     var onFreeAgencyPage = document.URL.match(/ffl\/freeagency/);
     var onLeaguePage = document.URL.match(/ffl\/leagueoffice/);
+	
+	var hasProjectionTable = proj_head.length > 0;	
+	var hasProjTotals = document.URL.match(/ffl\/matchuppreview/);
+	var hasPlayerTable = document.URL.match(/ffl\/(freeagency|clubhouse|dropplayers|tradereview|rosterfix)/);	
     
     jQuery('.games-footercol').remove();
     jQuery('.transitional-elements').remove();
@@ -157,33 +158,39 @@ if (document.URL.match(/games.espn.go.com/)) {
 }
 else if (document.URL.match(/football.fantasysports.yahoo.com/)) {
     siteType = 'yahoo';
+	
+	var onMatchupPreviewPage = document.URL.match(/f1\/\d+\/matchup/);
+    var onClubhousePage = document.URL.match(/f1\/\d+\/\d+/);
+    var onFreeAgencyPage = document.URL.match(/f1\/\d+\/players/);
+	var onLeaguePage = document.URL.match(/f1\/\d+$/);	
     
+	var hasProjTotals = document.URL.match(/f1\/\d+\/(\d+|matchup)/);
+	var hasPlayerTable = document.URL.match(/f1\/\d+\/(\d+|players)/);
+    var hasProjectionTable = document.URL.match(/f1\/\d+\/(\d+|players|matchup)/);
+    
+    league_id = document.URL.match(/football.fantasysports.yahoo.com\/f1\/(\d+)/)[1];
+    league_settings_url = 'http://football.fantasysports.yahoo.com/f1/' + league_id + '/settings';
+	
+    var storageLeagueKey = 'fp_yahoo_league_data_' + league_id;
+    var storagePlayerKey = 'fp_yahoo_player_data_' + league_id;
+    var storageUpdateKey = 'fp_yahoo_last_updated_' + league_id;
+    var storageProjUpdateKey = 'fp_yahoo_last_updated_proj_' + league_id;
+	
     base_table_selector = '#team-roster'; //, #players-table
     player_table_selector = 'table[id^=statTable]';
     player_table_body_selector = 'tbody';
     player_table_header_selector = 'thead tr';
     player_name_selector = 'td.player';
-	
 	page_menu_selector = 'header div#full_stat_nav';
 	pts_total_selector = 'header span.proj-pts';
+	
+	if (onMatchupPreviewPage) {
+		base_table_selector = '#yspmaincontent';
+		page_menu_selector = 'header span';
+		pts_total_selector = 'section#matchup-header table tr:nth(1) td';
+	}	
 
     setSelectors();
-    
-    var onMatchupPreviewPage = document.URL.match(/f1\/\d+\/(\d+|matchup)/);
-    var hasPlayerTable = document.URL.match(/f1\/\d+\/(\d+|players)/);
-    var onClubhousePage = document.URL.match(/f1\/\d+\/\d+/);
-    var onFreeAgencyPage = document.URL.match(/f1\/\d+\/players/);
-    
-	//probably need to change
-    var hasProjectionTable = hasPlayerTable;
-    
-    league_id = document.URL.match(/football.fantasysports.yahoo.com\/f1\/(\d+)/)[1];
-    league_settings_url = 'http://football.fantasysports.yahoo.com/f1/' + league_id + '/settings';
-
-    var storageLeagueKey = 'fp_yahoo_league_data_' + league_id;
-    var storagePlayerKey = 'fp_yahoo_player_data_' + league_id;
-    var storageUpdateKey = 'fp_yahoo_last_updated_' + league_id;
-    var storageProjUpdateKey = 'fp_yahoo_last_updated_proj_' + league_id;
     
     show_avg = false;
     show_ros = false;
@@ -218,23 +225,28 @@ function setSelectors() {
     player_table_header = playerTable.find(player_table_header_selector);
 	if (siteType == "yahoo") {
 		show_proj = true;
-		player_table_header_proj_selector = 'th:contains(Proj Pts)';		
-		var selected_nav = page_menu.find('div.navlist:first li.Selected:first a').attr('id');
-		if (selected_nav == 'P' || selected_nav == 'GDD') {
-			var subid = 'subnav_' + selected_nav;
-			var selected_subnav = page_menu.find('div#statsubnav ul#' + subid + ' li.Selected:first a').attr('href');
-			var subnav_dict = getParam(selected_subnav);
-			var subnav_href = subnav_dict.hasOwnProperty('stat2') ? subnav_dict['stat2'][0] : '';
-			if (selected_nav == 'P' && subnav_href == 'PW') {
-				player_table_header_proj_selector = 'th:contains(Fan Pts)';
-			}
-			else if (selected_nav == 'GDD' && subnav_href == 'D') {
-				player_table_header_proj_selector = 'th:contains(Rank)';
-			}
+		if (onMatchupPreviewPage) {
+			player_table_header_proj_selector = 'th:contains(Proj)';
 		}
-		else if (selected_nav == 'K') {
-			show_proj = false;
-			player_table_header_proj_selector = 'th:contains(This Week)';
+		else {
+			player_table_header_proj_selector = 'th:contains(Proj Pts)';
+			var selected_nav = page_menu.find('div.navlist:first li.Selected:first a').attr('id');
+			if (selected_nav == 'P' || selected_nav == 'GDD') {
+				var subid = 'subnav_' + selected_nav;
+				var selected_subnav = page_menu.find('div#statsubnav ul#' + subid + ' li.Selected:first a').attr('href');
+				var subnav_dict = getParam(selected_subnav);
+				var subnav_href = subnav_dict.hasOwnProperty('stat2') ? subnav_dict['stat2'][0] : '';
+				if (selected_nav == 'P' && subnav_href == 'PW') {
+					player_table_header_proj_selector = 'th:contains(Fan Pts)';
+				}
+				else if (selected_nav == 'GDD' && subnav_href == 'D') {
+					player_table_header_proj_selector = 'th:contains(Rank)';
+				}
+			}
+			else if (selected_nav == 'K') {
+				show_proj = false;
+				player_table_header_proj_selector = 'th:contains(This Week)';
+			}
 		}
 	}
 	proj_head = player_table_header.find(player_table_header_proj_selector);
@@ -279,11 +291,15 @@ if (hasProjectionTable) {
 }
 
 function doLeagueThings() {
-    if (onMatchupPreviewPage && !onClubhousePage) {
+    if (onMatchupPreviewPage) {
         if ((current_time - updated_time_proj) < (1000 * 60 * check_minutes)) {
             addProjections();
         }
         else {
+			rankDone.resolve();
+			rosDone.resolve();
+			avgDone.resolve();
+			
             getPosProjections();
             jQuery.when(projDone).done(function () {
                 if (!fetch_fail) {
@@ -397,42 +413,70 @@ function addColumns() {
             }
         }
         else if (siteType == "yahoo") {
-            var celldata = '<center><img src="' + loadingUrl + '"/></center>';
-
-            //check "header" tag here for what kind we're looking at
-            // also contains " Projected)"
-
-            var projection_header = '<th style="width: 30px;" class="FantasyPlus FantasyPlusProjections FantasyPlusProjectionsHeader" title="Consensus point projections from FantasyPros (via FantasyPlus)">Proj (FP)</td>';
-            var rank_header = '<th style="width: 30px;" class="FantasyPlus FantasyPlusRankings FantasyPlusRankingsHeader" title="Projected position rank (lower is better) for *this week* from FantasyPros (via FantasyPlus)">Rank (FP)</td>';
-            //stdev_header = '<td class="playertableStat FantasyPlus FantasyPlusStdevs FantasyPlusStdevsHeader">StDev</td>';
-            //var ros_header = '<td colspan="2" style="text-align: center" class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosHeader" title="Projected position rank (lower is better) for *the rest of the season* from FantasyPros (via FantasyPlus)">REMAINING</td>';
-            
-			var projection_cell = '<td style="width: 30px;" class="Nowrap Ta-end FantasyPlus FantasyPlusProjections FantasyPlusProjectionsData">' + celldata + '</td>';
-			var rank_cell = '<td style="width: 30px;" class="Nowrap Ta-end FantasyPlus FantasyPlusRankings FantasyPlusRankingsData">' + celldata + '</td>';
-			
-            //temp hack
-            custom_cols = 2;
-            var all_header_cells = projection_header + rank_header;
-			var all_cells = projection_cell + rank_cell;
-			
-			if (!show_proj) {
-				custom_cols = 1;
-				all_header_cells = rank_header;
-				all_cells = rank_cell;
+			var celldata = '<center><img src="' + loadingUrl + '"/></center>';			
+			if (onMatchupPreviewPage) {
+				var projection_header = '<th style="width: 38px;" class="FantasyPlus FantasyPlusProjections FantasyPlusProjectionsHeader" title="Consensus point projections from FantasyPros (via FantasyPlus)"><div>Proj (FP)</div></td>';
+				var projection_cell = '<td style="width: 38px;" class="Alt Ta-end F-shade Va-top FantasyPlus FantasyPlusProjections FantasyPlusProjectionsData">' + celldata + '</td>';
+				var newprojcell = '<td style="width: 38px;" class="Alt Ta-end F-shade Va-top FantasyPlus FantasyPlusProjections FantasyPlusProjectionsTotal">-</td>'
+				var total_cell = projection_cell;
+				
+				playerTable.each(function() {
+					var currTab = jQuery(this);
+					var matchup_heads = currTab.find('thead th').filter(function() {
+						return jQuery(this).text() === 'Proj';
+					});			
+					matchup_heads.after(projection_header);
+					
+					var currRows = currTab.find('tr');
+					var currRowsLen = currRows.length;
+					currRows.each(function(l) {
+						var currRow = jQuery(this);
+						matchup_heads.each(function() {
+							var currHeader = jQuery(this);
+							var currIdx = currHeader.index();
+							
+							if ((l + 1) == currRowsLen) {
+								total_cell = newprojcell;
+							}
+							
+							currRow.find('td').eq(currIdx).after(total_cell);
+						});
+					});
+                });
+            }
+			else {
+				var projection_header = '<th style="width: 30px;" class="FantasyPlus FantasyPlusProjections FantasyPlusProjectionsHeader" title="Consensus point projections from FantasyPros (via FantasyPlus)">Proj (FP)</td>';				
+				var rank_header = '<th style="width: 30px;" class="FantasyPlus FantasyPlusRankings FantasyPlusRankingsHeader" title="Projected position rank (lower is better) for *this week* from FantasyPros (via FantasyPlus)">Rank (FP)</td>';
+				//stdev_header = '<td class="playertableStat FantasyPlus FantasyPlusStdevs FantasyPlusStdevsHeader">StDev</td>';
+				//var ros_header = '<td colspan="2" style="text-align: center" class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosHeader" title="Projected position rank (lower is better) for *the rest of the season* from FantasyPros (via FantasyPlus)">REMAINING</td>';
+				
+				var projection_cell = '<td style="width: 30px;" class="Nowrap Ta-end FantasyPlus FantasyPlusProjections FantasyPlusProjectionsData">' + celldata + '</td>';				
+				var rank_cell = '<td style="width: 30px;" class="Nowrap Ta-end FantasyPlus FantasyPlusRankings FantasyPlusRankingsData">' + celldata + '</td>';
+				
+				//temp hack
+				custom_cols = 2;
+				var all_header_cells = projection_header + rank_header;
+				var all_cells = projection_cell + rank_cell;
+				
+				if (!show_proj) {
+					custom_cols = 1;
+					all_header_cells = rank_header;
+					all_cells = rank_cell;
+				}
+				
+				var first_header_col = player_table_header.first().find('th').filter(function(i) { return jQuery(this).text().match(/^\w/); }).first();
+				var fhc_curr_cols = parseInt(first_header_col.attr('colspan'));
+				if (!isNaN(fhc_curr_cols) && !first_header_col.data('modified')) {
+					first_header_col.attr({'colspan': fhc_curr_cols + custom_cols, 'data-modified': true});
+				}
+				
+				proj_head.after(all_header_cells);
+				
+				player_table_body.find('tr:not(.empty-bench, empty-position)').each(function () {
+					var currRow = jQuery(this);
+					currRow.find('td').eq(header_index).after(all_cells);
+				});
 			}
-			
-			var first_header_col = player_table_header.first().find('th').filter(function(i) { return jQuery(this).text().match(/^\w/); }).first();
-			var fhc_curr_cols = parseInt(first_header_col.attr('colspan'));
-			if (!isNaN(fhc_curr_cols) && !first_header_col.data('modified')) {
-				first_header_col.attr({'colspan': fhc_curr_cols + custom_cols, 'data-modified': true});
-			}
-			
-            proj_head.after(all_header_cells);
-            
-            player_table_body.find('tr:not(.empty-bench, empty-position)').each(function () {
-                var currRow = jQuery(this);
-                currRow.find('td').eq(header_index).after(all_cells);
-            });
         }
     }
 }
@@ -1539,7 +1583,15 @@ function isCurrentWeek() {
 	}
 	else if (siteType == 'yahoo') {
 		if (page_menu) {
-			var proj_week = page_menu.find('#selectlist_nav span').text().replace(/\D/g, '');
+			if (onMatchupPreviewPage) {
+				var proj_txt = page_menu.contents().not(page_menu.children()).text();
+				var proj_idx = proj_txt.indexOf(':');
+				var proj_week = proj_txt.substr(0, proj_idx).split(' ').reverse()[0];
+			}
+			else {
+				var proj_week = page_menu.find('#selectlist_nav span').text().replace(/\D/g, '');
+			}
+			
 			if (!isNaN(proj_week) && (proj_week == current_week)) {
 				return true;
 			}
@@ -1629,7 +1681,7 @@ function addProjections() {
 			});
 		}
     }
-    if (onMatchupPreviewPage) {
+    if (hasProjTotals) {
 		var datapoints;		
 		if (siteType == 'espn') {			
 			var matchup_tables = jQuery('.playerTableTable');
@@ -1654,33 +1706,78 @@ function addProjections() {
 		}
 		else if (siteType == 'yahoo' && isCurrWeek) {
 			var matchup_total = 0;
-
-			datapoints = player_table_body.find('tr:not(".bench") .FantasyPlusProjectionsData');
-			
-			if (datapoints.length > 0) {
-				datapoints.each(function() {
-					var value = parseFloat(jQuery(this).text());
-					if (value) {
-						matchup_total = parseFloat(matchup_total + value);
-					}
+			if (onMatchupPreviewPage) {
+				playerTable.each(function() {
+					var currTab = jQuery(this);
+					var currTotals = jQuery('.FantasyPlusProjectionsTotal');
+					var currHeader = currTab.find(player_table_header_selector);
+					var currHs = currHeader.find('th.FantasyPlusProjectionsHeader');
+					currHs.each(function(i){
+						matchup_total = 0;						
+						var currH = jQuery(this);
+						var currIdx = currH.index();
+						var currBody = currTab.find('tbody tr');
+						datapoints = currBody.find('td:nth-child(' + currIdx + 1 + ')');
+						if (datapoints.length > 0) {
+							datapoints.each(function() {
+								var value = parseFloat(jQuery(this).text());
+								if (value) {
+									matchup_total = parseFloat(matchup_total + value);
+								}
+							});
+							
+							var thisTotal = jQuery(pts_total[i]);
+							var currTotal = parseFloat(thisTotal.text());
+							var roundTotal = Math.round(matchup_total * 100) / 100;
+							
+							if (!isNaN(roundTotal)) {
+								var cellColor;
+								if (currTotal < roundTotal) {
+									cellColor = 'green';
+								}
+								else if (currTotal > roundTotal) {
+									cellColor = 'red';
+								}
+								
+								if (cellColor) {
+									cellColor = ' style="color: ' + cellColor + '"';
+								}
+								
+								var origTot = jQuery(currTotals[i]);
+								origTot.html('<div title="Total projected points (via FantasyPlus)" class="FantasyPlus"' + cellColor + '> [' + roundTotal + ']</div>');
+							}
+						}
+					});
 				});
+			}
+			else {
+				datapoints = player_table_body.find('tr:not(".bench") .FantasyPlusProjectionsData');
 				
-				var currTotal = parseFloat(pts_total.text());
-				var roundTotal = Math.round(matchup_total * 100) / 100;
-				
-				if (!isNaN(roundTotal)) {
-					var cellColor;
-					if (currTotal < roundTotal) {
-						cellColor = 'green';
-					}
-					else if (currTotal > roundTotal) {
-						cellColor = 'red';
-					}
+				if (datapoints.length > 0) {
+					datapoints.each(function() {
+						var value = parseFloat(jQuery(this).text());
+						if (value) {
+							matchup_total = parseFloat(matchup_total + value);
+						}
+					});
 					
-					if (cellColor) {
-						cellColor = ' style="color: ' + cellColor + '"';
+					var currTotal = parseFloat(pts_total.text());
+					var roundTotal = Math.round(matchup_total * 100) / 100;
+					
+					if (!isNaN(roundTotal)) {
+						var cellColor;
+						if (currTotal < roundTotal) {
+							cellColor = 'green';
+						}
+						else if (currTotal > roundTotal) {
+							cellColor = 'red';
+						}
+						
+						if (cellColor) {
+							cellColor = ' style="color: ' + cellColor + '"';
+						}
+						pts_total.append('<span title="Total projected points (via FantasyPlus)" class="FantasyPlus"' + cellColor + '> [' + roundTotal + ']</span>');
 					}
-					pts_total.append('<span title="Total projected points (via FantasyPlus)" class="FantasyPlus"' + cellColor + '> [' + roundTotal + ']</span>');
 				}
 			}
 		}
