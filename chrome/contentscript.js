@@ -25,7 +25,6 @@ tag.type="text/javascript";
 tag.src = "http://code.jquery.com/jquery-latest.min.js";
 document.body.appendChild(tag);
 */
-//		"http://football.fantasysports.yahoo.com/f1/*"
 
 //chrome.storage.local.clear();
 //chrome.storage.local.remove('fp_espn_player_data_');
@@ -57,9 +56,13 @@ var alldata,
     header_index,
     player_name_selector,
     base_table_selector,
-    base_table;
+    base_table,
+	page_menu_selector,
+	page_menu,
+	pts_total_selector,
+	pts_total;
 
-var check_minutes = 60;
+var check_minutes = 30;
 var ajax_timeout = 2000;
 
 var fetch_fail = false;
@@ -159,16 +162,19 @@ else if (document.URL.match(/football.fantasysports.yahoo.com/)) {
     player_table_selector = 'table[id^=statTable]';
     player_table_body_selector = 'tbody';
     player_table_header_selector = 'thead tr';
-    player_table_header_proj_selector = 'th:contains(Proj Pts)';
     player_name_selector = 'td.player';
+	
+	page_menu_selector = 'header div#full_stat_nav';
+	pts_total_selector = 'header span.proj-pts';
 
     setSelectors();
     
-    var onMatchupPreviewPage = false;
-    var hasPlayerTable = document.URL.match(/f1\/\d+\/\d+/);
-    var onClubhousePage = false;
-    var onFreeAgencyPage = false;
+    var onMatchupPreviewPage = document.URL.match(/f1\/\d+\/(\d+|matchup)/);
+    var hasPlayerTable = document.URL.match(/f1\/\d+\/(\d+|players)/);
+    var onClubhousePage = document.URL.match(/f1\/\d+\/\d+/);
+    var onFreeAgencyPage = document.URL.match(/f1\/\d+\/players/);
     
+	//probably need to change
     var hasProjectionTable = hasPlayerTable;
     
     league_id = document.URL.match(/football.fantasysports.yahoo.com\/f1\/(\d+)/)[1];
@@ -183,16 +189,62 @@ else if (document.URL.match(/football.fantasysports.yahoo.com/)) {
     show_ros = false;
 }
 
+function getParam(u) {
+	var qd = {};
+	var q_loc = u.indexOf('?');
+	if (q_loc > -1) {
+		u.substr(q_loc + 1).split("&").forEach(function(item) {
+			var s = item.split("="), k = s[0], v = s[1] && decodeURIComponent(s[1]);
+			(k in qd) ? qd[k].push(v) : qd[k] = [v];
+		});
+	}
+	return qd;
+}
+
 function setSelectors() {
     base_table = jQuery(base_table_selector);
+	if (page_menu_selector) {
+		page_menu = base_table.find(page_menu_selector);
+	}
+	if (pts_total_selector) {
+		pts_total = base_table.find(pts_total_selector);
+	}	
+	
     playerTable = jQuery(player_table_selector);
     player_table_body = playerTable.find(player_table_body_selector);
     if (siteType == "espn") {
         playerTable = player_table_body;
     }
     player_table_header = playerTable.find(player_table_header_selector);
-    proj_head = player_table_header.find(player_table_header_proj_selector);
-    header_index = proj_head.first().index();
+	if (siteType == "yahoo") {
+		show_proj = true;
+		player_table_header_proj_selector = 'th:contains(Proj Pts)';		
+		var selected_nav = page_menu.find('div.navlist:first li.Selected:first a').attr('id');
+		if (selected_nav == 'P' || selected_nav == 'GDD') {
+			var subid = 'subnav_' + selected_nav;
+			var selected_subnav = page_menu.find('div#statsubnav ul#' + subid + ' li.Selected:first a').attr('href');
+			var subnav_dict = getParam(selected_subnav);
+			var subnav_href = subnav_dict.hasOwnProperty('stat2') ? subnav_dict['stat2'][0] : '';
+			if (selected_nav == 'P' && subnav_href == 'PW') {
+				player_table_header_proj_selector = 'th:contains(Fan Pts)';
+			}
+			else if (selected_nav == 'GDD' && subnav_href == 'D') {
+				player_table_header_proj_selector = 'th:contains(Rank)';
+			}
+		}
+		else if (selected_nav == 'K') {
+			show_proj = false;
+			player_table_header_proj_selector = 'th:contains(This Week)';
+		}
+	}
+	proj_head = player_table_header.find(player_table_header_proj_selector);
+	
+	var proj_first = proj_head.first();
+    header_index = proj_first.index();
+	proj_first.prevAll("th, td").each(function() {
+		header_index += this.colSpan - 1;
+	});
+	
 }
 
 //MAIN
@@ -227,7 +279,7 @@ if (hasProjectionTable) {
 }
 
 function doLeagueThings() {
-    if (onMatchupPreviewPage) {
+    if (onMatchupPreviewPage && !onClubhousePage) {
         if ((current_time - updated_time_proj) < (1000 * 60 * check_minutes)) {
             addProjections();
         }
@@ -355,15 +407,31 @@ function addColumns() {
             //stdev_header = '<td class="playertableStat FantasyPlus FantasyPlusStdevs FantasyPlusStdevsHeader">StDev</td>';
             //var ros_header = '<td colspan="2" style="text-align: center" class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosHeader" title="Projected position rank (lower is better) for *the rest of the season* from FantasyPros (via FantasyPlus)">REMAINING</td>';
             
+			var projection_cell = '<td style="width: 30px;" class="Nowrap Ta-end FantasyPlus FantasyPlusProjections FantasyPlusProjectionsData">' + celldata + '</td>';
+			var rank_cell = '<td style="width: 30px;" class="Nowrap Ta-end FantasyPlus FantasyPlusRankings FantasyPlusRankingsData">' + celldata + '</td>';
+			
             //temp hack
             custom_cols = 2;
-            
             var all_header_cells = projection_header + rank_header;
+			var all_cells = projection_cell + rank_cell;
+			
+			if (!show_proj) {
+				custom_cols = 1;
+				all_header_cells = rank_header;
+				all_cells = rank_cell;
+			}
+			
+			var first_header_col = player_table_header.first().find('th').filter(function(i) { return jQuery(this).text().match(/^\w/); }).first();
+			var fhc_curr_cols = parseInt(first_header_col.attr('colspan'));
+			if (!isNaN(fhc_curr_cols) && !first_header_col.data('modified')) {
+				first_header_col.attr({'colspan': fhc_curr_cols + custom_cols, 'data-modified': true});
+			}
+			
             proj_head.after(all_header_cells);
             
             player_table_body.find('tr:not(.empty-bench, empty-position)').each(function () {
                 var currRow = jQuery(this);
-                currRow.find('td').eq(header_index).after('<td style="width: 30px;" class="Nowrap Ta-end FantasyPlus FantasyPlusProjections FantasyPlusProjectionsData">' + celldata + '</td><td style="width: 30px;" class="Nowrap Ta-end FantasyPlus FantasyPlusRankings FantasyPlusRankingsData">' + celldata + '</td>');
+                currRow.find('td').eq(header_index).after(all_cells);
             });
         }
     }
@@ -1027,6 +1095,9 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
         else if (player_name == 'NaVorro Bowman') {
             player_name = 'Navorro Bowman';
         }
+		else if (player_name == 'DeVante Parker') {
+            player_name = 'Devante Parker';
+        }		
         else if (player_name.split(' ')[0] == 'Chris') {
             player_name = 'Christopher ' + player_name.split(' ').slice(1).join(' ');
         }
@@ -1454,94 +1525,165 @@ function addAllData(firstrun) {
             rosDone.resolve();
         }
     }
+	else {
+		avgDone.resolve();
+		projDone.resolve();
+		rankDone.resolve();
+		rosDone.resolve();
+	}
+}
+
+function isCurrentWeek() {
+	if (siteType == 'espn') {
+		return true;
+	}
+	else if (siteType == 'yahoo') {
+		if (page_menu) {
+			var proj_week = page_menu.find('#selectlist_nav span').text().replace(/\D/g, '');
+			if (!isNaN(proj_week) && (proj_week == current_week)) {
+				return true;
+			}
+			else {
+				return false;
+			}
+		}
+		else {
+			return true;
+		}
+	}
 }
 
 function addProjections() {
     var datatype = 'proj';
     
-    player_table_body.find('.FantasyPlusProjectionsData').each(function() {
-        var cell = jQuery(this);
-        var currRow = cell.parent();
+	var isCurrWeek = isCurrentWeek();
+	if (isCurrWeek) {
+		player_table_body.find('.FantasyPlusProjectionsData').each(function() {
+			var cell = jQuery(this);
+			var currRow = cell.parent();
 
-        var byeweek_text = currRow.find('td:contains("** BYE **")');
-        var isByeWeek = (byeweek_text.length > 0);
-        if (onMatchupPreviewPage) {
-            byeweek_text.html('<span style="color:#999999">BYE</span>');
-        }
-        
-        var projectedPoints = isByeWeek ? "--" : getProjectionData(datatype, currRow, cell);
-        cell.text(projectedPoints);
-    });
+			var byeweek_text = currRow.find('td:contains("** BYE **")');
+			var isByeWeek = (byeweek_text.length > 0);
+			if (onMatchupPreviewPage) {
+				byeweek_text.html('<span style="color:#999999">BYE</span>');
+			}
+			
+			var projectedPoints = isByeWeek ? "--" : getProjectionData(datatype, currRow, cell);
+			cell.text(projectedPoints);
+		});
+	}
+	else {
+		player_table_body.find('.FantasyPlusProjectionsData').each(function() {
+			var cell = jQuery(this);
+			cell.text('-');
+		});
+	}
 
     if (onClubhousePage) {
-        var header_rows = player_table_header;
-        var sumpts = 0;
-        var sumptsESPN = 0;
-        var sumTotal, sumTotalESPN, keepAdding, currHeaderRow, headerType;
+		if (siteType == 'espn') {
+			var header_rows = player_table_header;
+			var sumpts = 0;
+			var sumptsESPN = 0;
+			var sumTotal, sumTotalESPN, keepAdding, currHeaderRow, headerType;
 
-        header_rows.each(function() {
-            currHeaderRow = jQuery(this);
-            headerType = currHeaderRow.find('th.playertableSectionHeaderFirst').text();
-            keepAdding = true;
-            sumTotal = 0;
-            sumTotalESPN = 0;
+			header_rows.each(function() {
+				currHeaderRow = jQuery(this).prev();
+				headerType = currHeaderRow.find('th.playertableSectionHeaderFirst').text();
+				keepAdding = true;
+				sumTotal = 0;
+				sumTotalESPN = 0;
 
-            if (headerType == 'STARTERS' || headerType == 'BENCH') {
-                while (keepAdding) {
-                    currHeaderRow = currHeaderRow.next();
-                    if (currHeaderRow.hasClass('playerTableBgRowSubhead')) {
-                        var td_length = currHeaderRow.find('td').length;
-                    }
-                    else if (currHeaderRow.hasClass('pncPlayerRow') && !currHeaderRow.hasClass('emptyRow')) {
-                        var proj_cell = currHeaderRow.find('.FantasyPlusProjectionsData');
-                        sumpts = proj_cell.text();
-                        sumptsESPN = proj_cell.prev().text();
+				if (headerType == 'STARTERS') {
+					while (keepAdding) {
+						currHeaderRow = currHeaderRow.next();
+						if (currHeaderRow.hasClass('playerTableBgRowSubhead')) {
+							var td_length = currHeaderRow.find('td').length;
+						}
+						else if (currHeaderRow.hasClass('pncPlayerRow') && !currHeaderRow.hasClass('emptyRow')) {
+							var proj_cell = currHeaderRow.find('.FantasyPlusProjectionsData');
+							sumpts = proj_cell.text();
+							sumptsESPN = proj_cell.prev().text();
 
-                        if (parseFloat(sumpts)) {
-                            sumTotal = parseFloat(sumTotal + parseFloat(sumpts));
-                        }
-                        if (parseFloat(sumptsESPN)) {
-                            sumTotalESPN = parseFloat(sumTotalESPN + parseFloat(sumptsESPN));
-                        }
-                    }
-                    else {
-                        keepAdding = false;
-                    }
-                }
-                // I should fix this to make it more automatic for the bye week stupid nonsense
-                if (td_length == (17 + custom_cols)) {
-                  var extra_td = '<td></td>';
-                }
-                else {
-                  var extra_td = '';
-                }
-                
-                //gonna have to edit this too when its automatic
-                currHeaderRow.before('<tr class="pncPlayerRow playerTableBgRow0 FantasyPlus FantasyPlusProjections"><td class="playerSlot" style="font-weight: bold;">Total</td><td></td>' + extra_td + '<td class="sectionLeadingSpacer"></td><td></td><td></td><td class="sectionLeadingSpacer"></td><td></td><td></td><td></td><td></td><td></td><td class="sectionLeadingSpacer"></td><td class="playertableStat">' + Math.round(sumTotalESPN * 100) / 100 + '</td><td class="playertableStat">' + Math.round(sumTotal * 100) / 100 + '</td><td class="sectionLeadingSpacer"></td><td></td><td></td><td></td><td></td><td class="sectionLeadingSpacer"></td><td></td><td></td><td></td><td></td></tr>');
-            }
-        });
+							if (parseFloat(sumpts)) {
+								sumTotal = parseFloat(sumTotal + parseFloat(sumpts));
+							}
+							if (parseFloat(sumptsESPN)) {
+								sumTotalESPN = parseFloat(sumTotalESPN + parseFloat(sumptsESPN));
+							}
+						}
+						else {
+							keepAdding = false;
+						}
+					}
+					// I should fix this to make it more automatic for the bye week stupid nonsense
+					if (td_length == (17 + custom_cols)) {
+					  var extra_td = '<td></td>';
+					}
+					else {
+					  var extra_td = '';
+					}
+					
+					//gonna have to edit this too when its automatic
+					currHeaderRow.before('<tr class="pncPlayerRow playerTableBgRow0 FantasyPlus FantasyPlusProjections"><td class="playerSlot" style="font-weight: bold;">Total</td><td></td>' + extra_td + '<td class="sectionLeadingSpacer"></td><td></td><td></td><td class="sectionLeadingSpacer"></td><td></td><td></td><td></td><td></td><td></td><td class="sectionLeadingSpacer"></td><td class="playertableStat">' + Math.round(sumTotalESPN * 100) / 100 + '</td><td class="playertableStat">' + Math.round(sumTotal * 100) / 100 + '</td><td class="sectionLeadingSpacer"></td><td></td><td></td><td></td><td></td><td class="sectionLeadingSpacer"></td><td></td><td></td><td></td><td></td></tr>');
+				}
+			});
+		}
     }
-    else if (onMatchupPreviewPage) {
-        var matchup_tables = jQuery('.playerTableTable');
-        var datapoints;
-        var matchup_total;
+    if (onMatchupPreviewPage) {
+		var datapoints;		
+		if (siteType == 'espn') {			
+			var matchup_tables = jQuery('.playerTableTable');
+			var matchup_total;
 
-        matchup_tables.each(function() {
-            var currTable = jQuery(this);
-            datapoints = currTable.find('.FantasyPlusProjectionsData');
-            
-            if (datapoints.length > 0) {
-                matchup_total = 0;
-                datapoints.each(function() {
-                    var value = parseFloat(jQuery(this).text());
-                    if (value) {
-                        matchup_total = parseFloat(matchup_total + value);
-                    }
-                });
-                
-                currTable.next().prepend('<div class="danglerBox totalScore">' + Math.round(matchup_total) + '</div>');
-            }
-        });
+			matchup_tables.each(function() {
+				var currTable = jQuery(this);
+				datapoints = currTable.find('.FantasyPlusProjectionsData');
+				
+				if (datapoints.length > 0) {
+					matchup_total = 0;
+					datapoints.each(function() {
+						var value = parseFloat(jQuery(this).text());
+						if (value) {
+							matchup_total = parseFloat(matchup_total + value);
+						}
+					});
+					
+					currTable.next().prepend('<div title="Total projected points (via FantasyPlus)" class="danglerBox totalScore">' + Math.round(matchup_total) + '</div>');
+				}
+			});
+		}
+		else if (siteType == 'yahoo' && isCurrWeek) {
+			var matchup_total = 0;
+
+			datapoints = player_table_body.find('tr:not(".bench") .FantasyPlusProjectionsData');
+			
+			if (datapoints.length > 0) {
+				datapoints.each(function() {
+					var value = parseFloat(jQuery(this).text());
+					if (value) {
+						matchup_total = parseFloat(matchup_total + value);
+					}
+				});
+				
+				var currTotal = parseFloat(pts_total.text());
+				var roundTotal = Math.round(matchup_total * 100) / 100;
+				
+				if (!isNaN(roundTotal)) {
+					var cellColor;
+					if (currTotal < roundTotal) {
+						cellColor = 'green';
+					}
+					else if (currTotal > roundTotal) {
+						cellColor = 'red';
+					}
+					
+					if (cellColor) {
+						cellColor = ' style="color: ' + cellColor + '"';
+					}
+					pts_total.append('<span title="Total projected points (via FantasyPlus)" class="FantasyPlus"' + cellColor + '> [' + roundTotal + ']</span>');
+				}
+			}
+		}
     }
 
     projDone.resolve();
@@ -1549,41 +1691,50 @@ function addProjections() {
 
 function addRankings() {
     var datatype = 'rank';
-    
-    player_table_body.find('.FantasyPlusRankingsData').each(function() {
-        var cell = jQuery(this);
-        var currRow = cell.parent();
+	
+	var isCurrWeek = isCurrentWeek();	
+	if (isCurrWeek) {
+		player_table_body.find('.FantasyPlusRankingsData').each(function() {
+			var cell = jQuery(this);
+			var currRow = cell.parent();
 
-        var byeweek_text = currRow.find('td:contains("** BYE **")');
-        var isByeWeek = (byeweek_text.length > 0);
-        
-        var projectedRanking = "--";
-        if (isByeWeek) {
-            cell.text(projectedRanking);
-            cell.next().text(projectedRanking);
-        }
-        else {
-            projectedRanking = getProjectionData(datatype, currRow, cell);
-            if (projectedRanking[0] == "?") {
-                cell.text("?");
-                if (siteType == "espn") { //change this in the future for "is enabled column"
-                    cell.next().text("?");
-                }
-            }
-            else if (projectedRanking == "--") {
-                cell.text("--");
-                if (siteType == "espn") {
-                    cell.next().html("--");
-                }
-            }
-            else {
-                cell.text(projectedRanking[0]);
-                if (siteType == "espn") {
-                    cell.next().html('<span style="font-size: 80%;">±</span>' + projectedRanking[1]);
-                }
-            }
-        }
-    });
+			var byeweek_text = currRow.find('td:contains("** BYE **")');
+			var isByeWeek = (byeweek_text.length > 0);
+			
+			var projectedRanking = "--";
+			if (isByeWeek) {
+				cell.text(projectedRanking);
+				cell.next().text(projectedRanking);
+			}
+			else {
+				projectedRanking = getProjectionData(datatype, currRow, cell);
+				if (projectedRanking[0] == "?") {
+					cell.text("?");
+					if (siteType == "espn") { //change this in the future for "is enabled column"
+						cell.next().text("?");
+					}
+				}
+				else if (projectedRanking == "--") {
+					cell.text("--");
+					if (siteType == "espn") {
+						cell.next().html("--");
+					}
+				}
+				else {
+					cell.text(projectedRanking[0]);
+					if (siteType == "espn") {
+						cell.next().html('<span style="font-size: 80%;">±</span>' + projectedRanking[1]);
+					}
+				}
+			}
+		});
+	}
+	else {
+		player_table_body.find('.FantasyPlusRankingsData').each(function() {
+			var cell = jQuery(this);
+			cell.text('-');
+		});
+	}	
 
     rankDone.resolve();
 }
@@ -1645,11 +1796,25 @@ function watchForChanges() {
         var observerESPN = new MutationObserver(function (mutations) {
             observerESPN.disconnect();
             if (mutations.length > 0) {
-                jQuery('.FantasyPlus').remove();
-                setSelectors();
-                reDefer();
-                addColumns();
-                addAllData(false);
+				var acceptedChange = true;
+				if (siteType == 'yahoo') {
+					m = mutations[0];
+					var thisMutTgt = m['target'];
+					if (thisMutTgt) {
+						var thisMutTgtId = thisMutTgt['id'];
+						var thisMutTgtClass = thisMutTgt['className'];
+						if (thisMutTgtId == 'selectlist_nav' || thisMutTgtClass == 'flyout-title') {
+							acceptedChange = false;
+						}
+					}
+				}
+				if (acceptedChange) {
+					jQuery('.FantasyPlus').remove();
+					setSelectors();
+					reDefer();
+					addColumns();
+					addAllData(false);
+				}
             }
             jQuery.when(projDone, rankDone, rosDone, avgDone).done(function () {
                 observerESPN.observe(target_observe, observerConfig);
