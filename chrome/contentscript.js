@@ -2022,7 +2022,6 @@ function addAvg() {
 }
 
 function watchForChanges() {
-    window.onpopstate=function() { console.log("foo"); };
     if (hasPlayerTable) {
         var observerConfig = {
             childList: true,
