@@ -113,21 +113,18 @@ var avgDone = jQuery.Deferred();
 if (document.URL.match(/games.espn.go.com/)) {
     siteType = 'espn';
     
+	var onMatchupPreviewPage = document.URL.match(/ffl\/matchuppreview/);
+    var onClubhousePage = document.URL.match(/ffl\/(clubhouse|dropplayers)/);
+    var onFreeAgencyPage = document.URL.match(/ffl\/freeagency/);
+    var onLeaguePage = document.URL.match(/ffl\/leagueoffice/);
+	
     base_table_selector = '.playerTableContainerDiv';
     player_table_selector = '[id^=playertable_]';
     player_table_body_selector = 'tbody';
     player_table_header_selector = 'tr.playerTableBgRowSubhead';
     player_table_header_proj_selector = 'td:contains(PROJ), td:contains(ESPN)';
     player_name_selector = 'td.playertablePlayerName';
-    
-    setSelectors();
-    
-    var onMatchupPreviewPage = document.URL.match(/ffl\/matchuppreview/);
-    var onClubhousePage = document.URL.match(/ffl\/(clubhouse|dropplayers)/);
-    var onFreeAgencyPage = document.URL.match(/ffl\/freeagency/);
-    var onLeaguePage = document.URL.match(/ffl\/leagueoffice/);
-	
-	var hasProjectionTable = proj_head.length > 0;	
+    	
 	var hasProjTotals = document.URL.match(/ffl\/matchuppreview/);
 	var hasPlayerTable = document.URL.match(/ffl\/(freeagency|clubhouse|dropplayers|tradereview|rosterfix)/);	
     
@@ -158,6 +155,10 @@ if (document.URL.match(/games.espn.go.com/)) {
     var storageProjUpdateKey = 'fp_espn_last_updated_proj_' + league_id;
     
     var storageKeys = [storageLeagueKey, storagePlayerKey, storageUpdateKey, storageProjUpdateKey];
+	
+	setSelectors();
+	
+	var hasProjectionTable = proj_head.length > 0;	
 }
 else if (document.URL.match(/football.fantasysports.yahoo.com/)) {
     siteType = 'yahoo';
@@ -235,7 +236,12 @@ function setSelectors() {
 		pts_total = base_table.find(pts_total_selector);
 	}	
 	
-    playerTable = base_table.find(player_table_selector);
+	if (siteType == 'espn' && onMatchupPreviewPage) {
+		playerTable = jQuery(player_table_selector);
+	}
+	else {
+		playerTable = base_table.find(player_table_selector);
+	}
     player_table_body = playerTable.find(player_table_body_selector);
     if (siteType == "espn") {
         playerTable = player_table_body;
@@ -346,6 +352,7 @@ function doLeagueThings() {
 			rosDone.resolve();
 			avgDone.resolve();
 			
+			alldata = {};
             getPosProjections();
             jQuery.when(projDone).done(function () {
                 if (!fetch_fail) {
@@ -365,6 +372,8 @@ function doLeagueThings() {
             });
         }
         else {
+			//TODO: dont clear the iavg. in fact, store that somewhere else.
+			alldata = {};
             getData();
             jQuery.when(projDone, rankDone, rosDone, avgDone).done(function () {
                 if (!fetch_fail) {
@@ -907,9 +916,9 @@ function getPosProjections() {
                         // Add team and position to player_name for differentiating duplicate names
                         var full_name = player_name + "|" + pos_name + "|" + team_name;
                         
-                        if (!alldata.hasOwnProperty(full_name)) {
-                            alldata[full_name] = {};
-                        }
+						if (!alldata.hasOwnProperty(full_name)) {
+							alldata[full_name] = {};
+						}
                         
                         for (var j = player_name_header + 1; j < headers.length - 1; j++) {
                             alldata[full_name][headers[j].trim()] = currentline[j].trim().replace(',', '');
@@ -1243,30 +1252,6 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
         }
 
         player_data = alldata[full_name];
-
-        // Come on Yahoo. You couldn't put the whole first name on the free agent page? Really? REALLY? You had to save all that space by abbreviating it?
-        // And ONLY for offense positions?
-        // That's okay, it's not like there are multiple players in the NFL who already have the same name, much less the same abbreviated name.
-        // I have an idea for even more space savings! Just eliminate the name altogether and just say "QB2 - Titans". That works.
-        if (typeof(player_data) === "undefined") {
-            for(var k in alldata) {
-                var knames = k.split('|');
-                if (knames && knames.length == 3) {
-                    var kname = knames[0];
-                    var ksplit = kname.split(" ");
-                    var f_name = ksplit.shift();
-                    var new_f_name = f_name.substring(0,1) + '.';
-                    var rest_name = ksplit.join(' ');
-                    var new_name = new_f_name + ' ' + rest_name;
-                    var new_full = new_name + "|" + pos_name + "|" + team_name;
-                    if (new_full == full_name && alldata.hasOwnProperty(k)) {
-                        player_data = alldata[k];
-                        alldata[new_full] = player_data;
-                        break;
-                    }
-                }
-            }
-        }
 
         if (typeof(player_data) === "undefined") {
             return("--");
@@ -1728,7 +1713,7 @@ function addProjections() {
     var datatype = 'proj';
     
 	var isCurrWeek;
-    if (onFreeAgencyPage) {
+    if (siteType == 'yahoo' && onFreeAgencyPage) {
         isCurrWeek = is_FA_current;
     }
     else {
@@ -1941,7 +1926,7 @@ function addRankings() {
     var datatype = 'rank';
 	
     var isCurrWeek;
-    if (onFreeAgencyPage) {
+    if (siteType == 'yahoo' && onFreeAgencyPage) {
         isCurrWeek = is_FA_current;
     }
     else {
