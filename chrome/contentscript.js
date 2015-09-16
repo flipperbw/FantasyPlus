@@ -1507,7 +1507,7 @@ function getProjectionData(datatype, currRow, cell) {
         }
         else if (siteType == "yahoo") {
             var player_name_cell = player_cell.find('.ysf-player-name');
-            var pos_name_cell = player_name_cell.find('span').text().trim().split(' - ');
+            var pos_name_cell = player_name_cell.find('span').not('[id^="ysf-keeper"]').text().trim().split(' - ');
             team_name = pos_name_cell[0].toUpperCase();
             if (team_name == 'JAX') {
                 team_name = 'JAC';
