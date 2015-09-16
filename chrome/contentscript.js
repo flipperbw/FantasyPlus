@@ -2,7 +2,7 @@
 - somehow adjust OPRK for shitty teams, snap %
 - median
 - debug/verbose mode
-- yahoo support / nfl / fleaflicker / myfantasyleague
+- nfl / fleaflicker / myfantasyleague
 - return yardage
 - firefox/safari
 - sortable? doubt it
