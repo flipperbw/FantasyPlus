@@ -1203,6 +1203,9 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
         }
 		else if (player_name == 'DeVante Parker') {
             player_name = 'Devante Parker';
+        }
+		else if (player_name == 'Duke Johnson Jr.') {
+            player_name = 'Duke Johnson';
         }		
         else if (player_name.split(' ')[0] == 'Chris') {
             player_name = 'Christopher ' + player_name.split(' ').slice(1).join(' ');
@@ -1235,21 +1238,24 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
         if (player_name == 'Dexter McCluster') {
             full_name = 'Dexter McCluster|RB|TEN';
         }
-        if (player_name == 'Julius Peppers') {
+        else if (player_name == 'Julius Peppers') {
             full_name = 'Julius Peppers|LB|GB';
         }
-        if (player_name == 'DeMarcus Ware') {
+        else if (player_name == 'DeMarcus Ware') {
             full_name = 'Demarcus Ware|LB|DEN';
         }
-        if (player_name == 'Jared Allen') {
+        else if (player_name == 'Jared Allen') {
             full_name = 'Jared Allen|LB|CHI';
         }
-        if (player_name == 'Jadeveon Clowney') {
+        else if (player_name == 'Jadeveon Clowney') {
             full_name = 'Jadeveon Clowney|LB|HOU';
         }
-        if (player_name == 'Derrick Morgan') {
+        else if (player_name == 'Derrick Morgan') {
             full_name = 'Derrick Morgan|LB|TEN';
         }
+		else if (player_name == 'Khalil Mack') {
+            full_name = 'Khalil Mack|LB|OAK';
+        }		
 
         player_data = alldata[full_name];
 
