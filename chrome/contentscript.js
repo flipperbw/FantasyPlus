@@ -140,7 +140,7 @@ if (document.URL.match(/games.espn.go.com/)) {
     else if (onLeaguePage) {
         jQuery('.games-rightcol-spacer').remove();
         jQuery('img[usemap*="pizza-hut"]').parent().remove();
-        jQuery('a[href*="fantasyfootballtoolkit"]').parent().remove();
+        //jQuery('a[href*="fantasyfootballtoolkit"]').parent().remove();
     }
     else if (onFreeAgencyPage) {
         jQuery('#backgroundContainer').css('width', 'auto')
@@ -470,7 +470,7 @@ function addColumns() {
         else if (siteType == "yahoo") {
 			var celldata = '<center><img src="' + loadingUrl + '"/></center>';			
 			if (onMatchupPreviewPage) {
-				var projection_header = '<th style="width: 38px;" class="FantasyPlus FantasyPlusProjections FantasyPlusProjectionsHeader" title="Consensus point projections from FantasyPros (via FantasyPlus)"><div>Proj (FP)</div></td>';
+				var projection_header = '<th style="width: 38px;" class="Ta-end FantasyPlus FantasyPlusProjections FantasyPlusProjectionsHeader" title="Consensus point projections from FantasyPros (via FantasyPlus)"><div>Proj (FP)</div></td>';
 				var projection_cell = '<td style="width: 38px;" class="Alt Ta-end F-shade Va-top FantasyPlus FantasyPlusProjections FantasyPlusProjectionsData">' + celldata + '</td>';
 				var newprojcell = '<td style="width: 38px;" class="Alt Ta-end F-shade Va-top FantasyPlus FantasyPlusProjections FantasyPlusProjectionsTotal">-</td>'
 				
@@ -489,6 +489,13 @@ function addColumns() {
 						matchup_heads.each(function() {
 							var currHeader = jQuery(this);
 							var currIdx = currHeader.index();
+                            
+                            var currplayers = currRow.find('td.player');
+                            if (currplayers.text().indexOf('(Empty)') > -1) {
+                                if (currRow.find('td.player:contains("(Empty)")').index() > jQuery(currplayers).index()) {
+                                    currIdx--;
+                                }
+                            }
 							
 							if ((l + 1) == currRowsLen) {
 								total_cell = newprojcell;
@@ -1472,7 +1479,17 @@ function getProjectionData(datatype, currRow, cell) {
     
     else {
         if (!player_cell_text || player_cell_text == "(Empty)") {
-            return "--";
+            if (siteType == "yahoo" && onMatchupPreviewPage) {
+                cell.text('--');
+                total_player_ids--;
+                if (total_player_ids <= 0) {
+                    fetchYahooIds.resolve();
+                }
+                return;
+            }
+            else {
+                return "--";
+            }
         }
         
         else if (player_cell_text.match(/(TQB|HC)$/)) { // can't project head coaches or TQB's
