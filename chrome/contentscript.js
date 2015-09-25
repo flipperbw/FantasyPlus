@@ -143,7 +143,10 @@ if (document.URL.match(/games.espn.go.com/)) {
         //jQuery('a[href*="fantasyfootballtoolkit"]').parent().remove();
     }
     else if (onFreeAgencyPage) {
-        jQuery('#backgroundContainer').css('width', 'auto')
+        jQuery('#backgroundContainer').css('width', 'auto');
+        if (jQuery('.addButton').css('background-position-x') == '-38px') {
+            jQuery('.addButton').css('background-position-x', '-39px');
+        }
     }
     
     league_id = document.URL.match(/leagueId=(\d+)/)[1];
