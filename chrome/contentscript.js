@@ -147,6 +147,9 @@ if (document.URL.match(/games.espn.go.com/)) {
         if (jQuery('.addButton').css('background-position-x') == '-38px') {
             jQuery('.addButton').css('background-position-x', '-39px');
         }
+        if (jQuery('.dropButton').css('width') == '14px') {
+            jQuery('.dropButton').css('width', '15px');
+        }
     }
     
     league_id = document.URL.match(/leagueId=(\d+)/)[1];
@@ -312,7 +315,7 @@ if (hasProjectionTable) {
     addColumns();
     chrome.storage.local.get(storageKeys, function(r) {
         alldata = r[storagePlayerKey];
-        if (!alldata) {
+        if (!alldata || Object.keys(alldata).length <= 0) {
             alldata = {};
         }
         else {
@@ -1216,7 +1219,10 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
         }
 		else if (player_name == 'Duke Johnson Jr.') {
             player_name = 'Duke Johnson';
-        }		
+        }
+        else if (player_name == 'Mike Vick') {
+            player_name = 'Michael Vick';
+        }
         else if (player_name.split(' ')[0] == 'Chris') {
             player_name = 'Christopher ' + player_name.split(' ').slice(1).join(' ');
         }
@@ -1240,6 +1246,12 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
         }
         else if (player_name.split(' ')[0] == 'Robert') {
             player_name = 'Rob ' + player_name.split(' ').slice(1).join(' ');
+        }
+        else if (player_name.split(' ')[0] == 'Mike') {
+            player_name = 'Michael ' + player_name.split(' ').slice(1).join(' ');
+        }
+        else if (player_name.split(' ')[0] == 'Michael') {
+            player_name = 'Mike ' + player_name.split(' ').slice(1).join(' ');
         }
         
         full_name = player_name + "|" + pos_name + "|" + team_name;
@@ -1508,11 +1520,14 @@ function getProjectionData(datatype, currRow, cell) {
                 team_name = "-";
                 pos_name = 'D/ST';
             }
-
             else {
                 player_name = player_cell_text.split(",")[0];
                 var team_pos = player_cell_text.split(",")[1].split(/\s|\xa0/);
                 team_name = team_pos[1].toUpperCase();
+                if (team_name == 'JAX') {
+                    team_name = 'JAC';
+                }
+
                 pos_name = team_pos[2];
                 if ((pos_name == 'DT') || (pos_name == 'DE')) {
                     pos_name = 'DL';
