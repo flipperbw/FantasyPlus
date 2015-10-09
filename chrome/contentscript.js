@@ -427,6 +427,7 @@ function addColumns() {
             else {
                 //make these options that are set above, add to a custom_cols array when each is enabled)
                 var adjavg_header = '<td class="playertableStat FantasyPlus FantasyPlusAvg FantasyPlusAvgHeader" title="Injury/Suspension-adjusted average points for the season (via FantasyPlus)">iAVG</td>';
+                //var spark_header = '<td class="playertableStat FantasyPlus FantasyPlusSpark FantasyPlusSparkHeader" title="Graph of fantasy points over previous weeks (via FantasyPlus)">Trend</td>';
                 var rank_header = '<td colspan="2" style="text-align: center" class="playertableStat FantasyPlus FantasyPlusRankings FantasyPlusRankingsHeader" title="Projected position rank (lower is better) for *this week* from FantasyPros (via FantasyPlus)">THIS WEEK</td>'; //say wk 9 or this week
                 //stdev_header = '<td class="playertableStat FantasyPlus FantasyPlusStdevs FantasyPlusStdevsHeader">StDev</td>';
                 var ros_header = '<td colspan="2" style="text-align: center" class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosHeader" title="Projected position rank (lower is better) for *the rest of the season* from FantasyPros (via FantasyPlus)">REMAINING</td>';
@@ -458,6 +459,10 @@ function addColumns() {
                 var avg_head = player_table_header.find('td:contains(AVG)');
                 var avg_header_index = avg_head.first().index();
                 avg_head.after(adjavg_header);
+                
+                //var last_head = player_table_header.find('td:contains(LAST)');
+                //var last_header_index = last_head.first().index();
+                //last_head.after(spark_header);
 
                 var byeweek = player_table_body.find('tr.playerTableBgRowSubhead td:contains(OPP)').first().index();
                 player_table_body.find('tr.pncPlayerRow:not(.emptyRow)').each(function () {
@@ -466,8 +471,10 @@ function addColumns() {
                     var byeweek_text = currRow.find('td').eq(byeweek).text();
                     var adj_header_index = (byeweek_text == "** BYE **" ? header_index - 1 : header_index);
                     var adj_avg_header_index = (byeweek_text == "** BYE **" ? avg_header_index - 1 : avg_header_index);
+                    //var adj_last_header_index = (byeweek_text == "** BYE **" ? last_header_index - 1 : last_header_index);
                 
                     currRow.find('td').eq(adj_avg_header_index).after('<td class="playertableStat FantasyPlus FantasyPlusAvg FantasyPlusAvgData">' + celldata + '</td>');
+                    //currRow.find('td').eq(adj_last_header_index).after('<td class="playertableStat FantasyPlus FantasyPlusSpark FantasyPlusSparkData">' + celldata + '</td>');
                     //make this look at the array instead of this garbage hardcoding bullshitigans
                     currRow.find('td').eq(adj_header_index + 1).after('<td class="playertableStat FantasyPlus FantasyPlusProjections FantasyPlusProjectionsData">' + celldata + '</td><td class="FantasyPlus sectionLeadingSpacer"></td><td class="playertableStat FantasyPlus FantasyPlusRankings FantasyPlusRankingsData">' + celldata + '</td><td class="playertableStat FantasyPlus FantasyPlusRankings FantasyPlusRankingsStdevData"></td><td class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosData">' + celldata + '</td><td class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosStdevData"></td><td class="FantasyPlus sectionLeadingSpacer"></td>');
                 });
@@ -1222,6 +1229,9 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
         }
         else if (player_name == 'Mike Vick') {
             player_name = 'Michael Vick';
+        }
+        else if (player_name == 'Boobie Dixon') {
+            player_name = 'Anthony Dixon';
         }
         else if (player_name.split(' ')[0] == 'Chris') {
             player_name = 'Christopher ' + player_name.split(' ').slice(1).join(' ');
