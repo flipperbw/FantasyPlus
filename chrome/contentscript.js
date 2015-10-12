@@ -27,7 +27,7 @@ document.body.appendChild(tag);
 */
 
 //chrome.storage.local.clear();
-//chrome.storage.local.remove('fp_espn_player_data_');
+//chrome.storage.local.remove('fp_player_activity_data');
 //chrome.storage.local.get('fp_player_activity_data', function(d) { console.info(d); });
 
 jQuery.noConflict();
@@ -427,13 +427,14 @@ function addColumns() {
             else {
                 //make these options that are set above, add to a custom_cols array when each is enabled)
                 var adjavg_header = '<td class="playertableStat FantasyPlus FantasyPlusAvg FantasyPlusAvgHeader" title="Injury/Suspension-adjusted average points for the season (via FantasyPlus)">iAVG</td>';
-                var spark_header = '<td class="playertableStat FantasyPlus FantasyPlusSpark FantasyPlusSparkHeader" title="Graph of fantasy points over previous weeks (via FantasyPlus)">Trend</td>';
+                var current_header = '<td class="playertableStat FantasyPlus FantasyPlusCurrent FantasyPlusCurrentHeader" title="Points scored this week (via FantasyPlus)">CURR</td>';
+                var spark_header = '<td class="playertableStat FantasyPlus FantasyPlusSpark FantasyPlusSparkHeader" title="Graph of fantasy points over previous weeks (via FantasyPlus)">TREND</td>';
                 var rank_header = '<td colspan="2" style="text-align: center" class="playertableStat FantasyPlus FantasyPlusRankings FantasyPlusRankingsHeader" title="Projected position rank (lower is better) for *this week* from FantasyPros (via FantasyPlus)">THIS WEEK</td>'; //say wk 9 or this week
                 //stdev_header = '<td class="playertableStat FantasyPlus FantasyPlusStdevs FantasyPlusStdevsHeader">StDev</td>';
                 var ros_header = '<td colspan="2" style="text-align: center" class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosHeader" title="Projected position rank (lower is better) for *the rest of the season* from FantasyPros (via FantasyPlus)">REMAINING</td>';
                 
                 //temp hack
-                custom_cols = 7;
+                custom_cols = 8;
                 
                 var all_header_cells = projection_header + '<td class="FantasyPlus sectionLeadingSpacer"></td>' + rank_header + ros_header + '<td class="FantasyPlus sectionLeadingSpacer"></td>';
                 
@@ -454,7 +455,7 @@ function addColumns() {
                 }
                 
                 var avg_header_col = jQuery('.playerTableBgRowHead.tableHead.playertableSectionHeader').find('th:contains(SEASON)');
-                avg_header_col.attr({'colspan': 6, 'title': 'Season statistics'});
+                avg_header_col.attr({'colspan': 7, 'title': 'Season statistics'});
                 
                 var avg_head = player_table_header.find('td:contains(AVG)');
                 var avg_header_index = avg_head.first().index();
@@ -463,6 +464,8 @@ function addColumns() {
                 var last_head = player_table_header.find('td:contains(LAST)');
                 var last_header_index = last_head.first().index();
                 last_head.after(spark_header);
+                
+				last_head.after(current_header);
 
                 var byeweek = player_table_body.find('tr.playerTableBgRowSubhead td:contains(OPP)').first().index();
                 player_table_body.find('tr.pncPlayerRow:not(.emptyRow)').each(function () {
@@ -474,9 +477,10 @@ function addColumns() {
                     var adj_last_header_index = (byeweek_text == "** BYE **" ? last_header_index - 1 : last_header_index);
                 
                     currRow.find('td').eq(adj_avg_header_index).after('<td class="playertableStat FantasyPlus FantasyPlusAvg FantasyPlusAvgData">' + celldata + '</td>');
-                    currRow.find('td').eq(adj_last_header_index).after('<td class="playertableStat FantasyPlus FantasyPlusSpark FantasyPlusSparkData">' + celldata + '</td>');
+                    currRow.find('td').eq(adj_last_header_index).after('<td class="playertableStat FantasyPlus FantasyPlusCurrent FantasyPlusCurrentData">' + celldata + '</td>');
+                    currRow.find('td').eq(adj_last_header_index + 1).after('<td class="playertableStat FantasyPlus FantasyPlusSpark FantasyPlusSparkData">' + celldata + '</td>');
                     //make this look at the array instead of this garbage hardcoding bullshitigans
-                    currRow.find('td').eq(adj_header_index + 2).after('<td class="playertableStat FantasyPlus FantasyPlusProjections FantasyPlusProjectionsData">' + celldata + '</td><td class="FantasyPlus sectionLeadingSpacer"></td><td class="playertableStat FantasyPlus FantasyPlusRankings FantasyPlusRankingsData">' + celldata + '</td><td class="playertableStat FantasyPlus FantasyPlusRankings FantasyPlusRankingsStdevData"></td><td class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosData">' + celldata + '</td><td class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosStdevData"></td><td class="FantasyPlus sectionLeadingSpacer"></td>');
+                    currRow.find('td').eq(adj_header_index + 3).after('<td class="playertableStat FantasyPlus FantasyPlusProjections FantasyPlusProjectionsData">' + celldata + '</td><td class="FantasyPlus sectionLeadingSpacer"></td><td class="playertableStat FantasyPlus FantasyPlusRankings FantasyPlusRankingsData">' + celldata + '</td><td class="playertableStat FantasyPlus FantasyPlusRankings FantasyPlusRankingsStdevData"></td><td class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosData">' + celldata + '</td><td class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosStdevData"></td><td class="FantasyPlus sectionLeadingSpacer"></td>');
                 });
             }
         }
@@ -1465,7 +1469,7 @@ function getProjectionData(datatype, currRow, cell) {
                         var points_table_rows = points_table.find('tr:not(.pcStatHead) td:nth-child(' + ptsindex + ')');
                         
                         var weeklyPointsData = jQuery.map(points_table_rows, function(ptval) { return ptval.innerText; });
-                        weeklyPointsData = weeklyPointsData.splice(0, current_week - 1);
+                        weeklyPointsData = weeklyPointsData.splice(0, current_week);
                         for (var i=0; i < weeklyPointsData.length; i++) {
                             if (weeklyPointsData[i] == '-') {
                                 weeklyPointsData[i] = null;
@@ -1653,7 +1657,7 @@ function calcAdjAvg(thiscell, player_id, games_played, weekly_points_data) {
     var playertotpts=0;
     var totalplayergames=0;
     
-    for (var g=0; g < weekly_points_data.length; g++){
+    for (var g=0; g < weekly_points_data.length - 1; g++){
         if (games_played[g] == 1) {
             var weekpt = parseFloat(weekly_points_data[g]) || 0;
             playertotpts += weekpt;
@@ -1683,13 +1687,32 @@ function insertAdjAvg(thiscell, p_avg, weekly_points_data) {
     else {
         thiscell.text(p_avg);
     }
+	
+	var weekly_points_data_cut = weekly_points_data;
+	
+	var thisCurrent = thiscell.siblings('.FantasyPlusCurrentData');
+	if (weekly_points_data_cut && weekly_points_data_cut.length > 0) {
+		var curr_score = weekly_points_data_cut[current_week - 1];
+		weekly_points_data_cut = weekly_points_data_cut.slice(0, current_week - 1);
+		
+		//add a green or red if above/below projection
+		if (parseFloat(curr_score) || curr_score == 0) {
+			thisCurrent.text(curr_score);
+		}
+		else {
+			thisCurrent.text('--');
+		}
+	}
+	else {
+		thisCurrent.text('--');
+	}
     
     var thisSpark = thiscell.siblings('.FantasyPlusSparkData');
-    if (weekly_points_data && weekly_points_data.length > 0) {
-        thisSpark.sparkline(weekly_points_data, {
+    if (weekly_points_data_cut && weekly_points_data_cut.length > 0) {
+        thisSpark.sparkline(weekly_points_data_cut, {
             type: 'line',
             disableHiddenCheck: true,
-            width: '30px',
+            width: '100%',
             height: '20px',
             fillColor: false,
             lineColor: 'gray',
@@ -1894,7 +1917,7 @@ function addProjections() {
 					}
 					
 					//gonna have to edit this too when its automatic
-					currHeaderRow.before('<tr class="pncPlayerRow playerTableBgRow0 FantasyPlus FantasyPlusProjections"><td class="playerSlot" style="font-weight: bold;">Total</td><td></td>' + extra_td + '<td class="sectionLeadingSpacer"></td><td></td><td></td><td class="sectionLeadingSpacer"></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="sectionLeadingSpacer"></td><td class="playertableStat">' + Math.round(sumTotalESPN * 100) / 100 + '</td><td class="playertableStat">' + Math.round(sumTotal * 100) / 100 + '</td><td class="sectionLeadingSpacer"></td><td></td><td></td><td></td><td></td><td class="sectionLeadingSpacer"></td><td></td><td></td><td></td><td></td></tr>');
+					currHeaderRow.before('<tr class="pncPlayerRow playerTableBgRow0 FantasyPlus FantasyPlusProjections"><td class="playerSlot" style="font-weight: bold;">Total</td><td></td>' + extra_td + '<td class="sectionLeadingSpacer"></td><td></td><td></td><td class="sectionLeadingSpacer"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="sectionLeadingSpacer"></td><td class="playertableStat">' + Math.round(sumTotalESPN * 100) / 100 + '</td><td class="playertableStat">' + Math.round(sumTotal * 100) / 100 + '</td><td class="sectionLeadingSpacer"></td><td></td><td></td><td></td><td></td><td class="sectionLeadingSpacer"></td><td></td><td></td><td></td><td></td></tr>');
 				}
 			});
 		}
