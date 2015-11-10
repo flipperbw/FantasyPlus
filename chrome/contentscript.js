@@ -63,6 +63,15 @@ var alldata,
 	pts_total_selector,
 	pts_total;
 
+
+var debug_mode = false;
+
+function dlog(o) {
+    if (debug_mode) {
+        console.log(o);
+    }
+}
+
 var check_minutes = 30;
 var ajax_timeout = 2000;
 
@@ -115,7 +124,7 @@ if (document.URL.match(/games.espn.go.com/)) {
     
 	var onMatchupPreviewPage = document.URL.match(/ffl\/matchuppreview/);
     var onClubhousePage = document.URL.match(/ffl\/(clubhouse|dropplayers)/);
-    var onFreeAgencyPage = document.URL.match(/ffl\/freeagency/);
+    var onFreeAgencyPage = document.URL.match(/ffl\/(freeagency|watchlist)/);
     var onLeaguePage = document.URL.match(/ffl\/leagueoffice/);
 	
     base_table_selector = '.playerTableContainerDiv';
@@ -126,7 +135,7 @@ if (document.URL.match(/games.espn.go.com/)) {
     player_name_selector = 'td.playertablePlayerName';
     	
 	var hasProjTotals = document.URL.match(/ffl\/matchuppreview/);
-	var hasPlayerTable = document.URL.match(/ffl\/(freeagency|clubhouse|dropplayers|tradereview|rosterfix)/);	
+	var hasPlayerTable = document.URL.match(/ffl\/(freeagency|clubhouse|dropplayers|tradereview|rosterfix|watchlist)/);	
     
     jQuery('.games-footercol').remove();
     jQuery('.transitional-elements').remove();
@@ -307,7 +316,6 @@ function setSelectors() {
 	proj_first.prevAll("th, td").each(function() {
 		header_index += this.colSpan - 1;
 	});
-	
 }
 
 //MAIN
@@ -332,10 +340,12 @@ if (hasProjectionTable) {
         
         storage_league_data = r[storageLeagueKey];
         if ((storage_league_data) && ((current_time - updated_time) < (1000 * 60 * check_minutes))) {
+            dlog('Using cache');
             settings = storage_league_data;
             doLeagueThings();
         }
         else {
+            dlog('Fetching data, Updated time: ' + updated_time + ', Current Time: ' + current_time);
             jQuery.get(league_settings_url, function(d) {
                 var setSettings = parseLeagueSettings(d, siteType);
                 var setLeagueData = {};
@@ -1445,7 +1455,7 @@ function getProjectionData(datatype, currRow, cell) {
             var player_stored_activity_pts = player_stored_activity_league['weekly_points'];
             var player_stored_activity_league_avg = player_stored_activity_league['pts_avg'];
 
-            if ((player_stored_activity) && (current_week == player_stored_activity_updated) && ((parseFloat(player_stored_activity_league_avg)) || (player_stored_activity_league_avg == '--')) && player_stored_activity_pts) {
+            if ((player_stored_activity) && ((current_time - player_stored_activity_updated) < (1000 * 60 * check_minutes)) && ((parseFloat(player_stored_activity_league_avg)) || (player_stored_activity_league_avg == '--')) && player_stored_activity_pts) {
                 insertAdjAvg(cell, player_stored_activity_league_avg, player_stored_activity_pts);
             }
             else {
@@ -1455,7 +1465,7 @@ function getProjectionData(datatype, currRow, cell) {
                     if (!po) {
                         var player_activity = {};
                         player_activity['games_played'] = [];
-                        player_activity['last_updated'] = current_week;
+                        player_activity['last_updated'] = current_time;
                         activity_data_current_season[player_id] = player_activity;
                         
                         calcAdjAvg(cell, player_id, [], []);
@@ -1482,7 +1492,7 @@ function getProjectionData(datatype, currRow, cell) {
                         if (player_cell_text.match(/(D\/ST|TQB|HC)$/)) {
                             var player_activity = {};
                             player_activity['games_played'] = [];
-                            player_activity['last_updated'] = current_week;
+                            player_activity['last_updated'] = current_time;
                             player_activity[league_id] = {};
                             player_activity[league_id]['weekly_points'] = weeklyPointsData;
                             player_activity[league_id]['pts_avg'] = normavg;
@@ -1520,7 +1530,7 @@ function getProjectionData(datatype, currRow, cell) {
                                 
                                 var player_activity = {};
                                 player_activity['games_played'] = games_played;
-                                player_activity['last_updated'] = current_week;
+                                player_activity['last_updated'] = current_time;
                                 activity_data_current_season[player_id] = player_activity;
                                 
                                 calcAdjAvg(cell, player_id, games_played, weeklyPointsData);
@@ -1693,7 +1703,8 @@ function insertAdjAvg(thiscell, p_avg, weekly_points_data) {
 	var thisCurrent = thiscell.siblings('.FantasyPlusCurrentData');
 	if (weekly_points_data_cut && weekly_points_data_cut.length > 0) {
 		var curr_score = weekly_points_data_cut[current_week - 1];
-		weekly_points_data_cut = weekly_points_data_cut.slice(0, current_week - 1);
+        var week_modifier = Math.max(0, current_week - 7);
+		weekly_points_data_cut = weekly_points_data_cut.slice(week_modifier, Math.max(0, current_week - 1));
 		
 		//add a green or red if above/below projection
 		if (parseFloat(curr_score) || curr_score == 0) {
@@ -1712,7 +1723,7 @@ function insertAdjAvg(thiscell, p_avg, weekly_points_data) {
         thisSpark.sparkline(weekly_points_data_cut, {
             type: 'line',
             disableHiddenCheck: true,
-            width: '100%',
+            width: '35px',
             height: '20px',
             fillColor: false,
             lineColor: 'gray',
@@ -1720,7 +1731,7 @@ function insertAdjAvg(thiscell, p_avg, weekly_points_data) {
             minSpotColor: false,
             maxSpotColor: false,
             spotColor: false,
-            tooltipFormatter: function(a,b,c) { return c.x + 1 + ': ' + c.y; }
+            tooltipFormatter: function(a,b,c) { return 'W' + (c.x + week_modifier + 1) + ': ' + c.y; }
         } );
     }
     else {
