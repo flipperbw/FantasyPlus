@@ -16,7 +16,7 @@ And supports IDP's as well (which ESPN does not project at all).
 
 Future Ideas
 ------
-* Support Yahoo, NFL, and Fleaflicker
+* Support NFL, Fleaflicker, and others
 * Give the option to select which experts you want
 * Add more projected sources, especially for defense
 
@@ -27,6 +27,11 @@ Known Issues
 
 Update Log
 ------
+* v2.1.4 (2016-06-21)
+  * Updating for 2016
+  * Many timing changes
+  * General bug fixes
+  * Yahoo support
 * v1.5 (2015-08-08)
   * Updating for 2015
 * v1.4 (2014-11-26)
