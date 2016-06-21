@@ -64,7 +64,7 @@ var alldata,
 	pts_total;
 
 
-var debug_mode = false;
+var debug_mode = true;
 
 function dlog(o) {
     if (debug_mode) {
@@ -84,25 +84,37 @@ var show_ros = true;
 
 season_start_map = {
 	'2014': [8, 2],
-	'2015': [8, 8]
+	'2015': [8, 8],
+	'2016': [8, 8]
 }
 
 var current_date = new Date();
 var current_time = current_date.getTime();
+var current_month = current_date.getMonth();
 var current_year = current_date.getFullYear();
 
-var seasonstart = new Date(2014, 8, 2, 4);
-if (!season_start_map[current_year] && season_start_map[current_year - 1]) {
-	seasonstart = new Date(current_year - 1, season_start_map[current_year - 1][0], season_start_map[current_year - 1][1], 4);
+var current_season = current_year;
+var current_season_avg = current_year;
+
+if (current_month < 5 || !season_start_map[current_year] && season_start_map[current_year]) {
+    current_season -= 1;
 }
-else {
-	seasonstart = new Date(current_year, season_start_map[current_year][0], season_start_map[current_year][1], 4);
-	if (current_date < seasonstart) {
-		seasonstart = new Date(current_year - 1, season_start_map[current_year - 1][0], season_start_map[current_year - 1][1], 4);
-	}
+
+try {
+    var seasonstart = new Date(current_season, season_start_map[current_season][0], season_start_map[current_season][1], 4);
 }
-var current_season = seasonstart.getFullYear();
-var current_week = Math.ceil(((current_date - seasonstart) / 86400000) / 7);
+catch(e) {
+    throw('FantasyPlus: Season ' + current_season + ' does not exist in records');
+}
+
+var seasonstart_avg = seasonstart;
+if (current_date < seasonstart) {
+    current_season_avg -= 1;
+    seasonstart_avg = new Date(current_season_avg, season_start_map[current_season_avg][0], season_start_map[current_season_avg][1], 4);
+}
+
+var current_week = Math.max(Math.ceil(((current_date - seasonstart) / 86400000) / 7), 1);
+var current_week_avg = Math.max(Math.ceil(((current_date - seasonstart_avg) / 86400000) / 7), 1);
 
 var off_positions_proj = ['qb', 'rb', 'wr', 'te', 'k'];
 var def_positions_proj = ['6','8','9','10'];
@@ -145,6 +157,9 @@ if (document.URL.match(/games.espn.go.com/)) {
         jQuery('div.draftKings').remove();
         jQuery('iframe[src*="streak.espn.go.com"]').parent().remove();
         jQuery('.games-bottomcol').css('margin', 0)
+        if (jQuery('.games-dates-mod').css('margin-left') == '7px') {
+            jQuery('.games-dates-mod').css('margin-left', '6px');
+        }
     }
     else if (onLeaguePage) {
         jQuery('.games-rightcol-spacer').remove();
@@ -192,6 +207,10 @@ else if (document.URL.match(/football.fantasysports.yahoo.com/)) {
 	var hasProjTotals = document.URL.match(/f1\/\d+\/(\d+|matchup)/);
 	var hasPlayerTable = document.URL.match(/f1\/\d+\/(\d+|players)/);
     var hasProjectionTable = document.URL.match(/f1\/\d+\/(\d+|players|matchup)/);
+    
+    jQuery('.df-ad').remove();
+    jQuery('#fantasyhero').remove();
+    jQuery('#gamepromo').remove();
     
     league_id = document.URL.match(/football.fantasysports.yahoo.com\/f1\/(\d+)/)[1];
     league_settings_url = 'http://football.fantasysports.yahoo.com/f1/' + league_id + '/settings';
@@ -834,7 +853,7 @@ function fetchPositionData(position, type, cb) {
             ros_url = 'ros-';
         }
         //TODO: filters here?
-        source_site = 'http://www.fantasypros.com/nfl/rankings/' + ros_url + rank_ppr + position + '.php?export=xls';
+        source_site = 'https://www.fantasypros.com/nfl/rankings/' + ros_url + rank_ppr + position + '.php?export=xls';
     }
     else if (off_positions_proj.indexOf(position) > -1) {
         //TODO: doublecheck this on season start. cant just exclude people.
@@ -845,7 +864,7 @@ function fetchPositionData(position, type, cb) {
         else if (siteType == "yahoo") {
             rankers = '11:44:45:71:73:152';
         }
-        source_site = 'http://www.fantasypros.com/nfl/projections/' + position + '.php?filters=' + rankers + '&export=xls&week=' + current_week;
+        source_site = 'https://www.fantasypros.com/nfl/projections/' + position + '.php?filters=' + rankers + '&export=xls&week=' + current_week;
     }
     else {
         //TODO delay fantasy sharks, maybe find some way to only loop over each position when the relevant calls are done
@@ -1127,15 +1146,15 @@ function getAvg() {
         }
         else {
             activity_data = {};
-            activity_data[current_season] = {};
+            activity_data[current_season_avg] = {};
         }
         
-        if (activity_data.hasOwnProperty(current_season)) {
-            activity_data_current_season = activity_data[current_season];
+        if (activity_data.hasOwnProperty(current_season_avg)) {
+            activity_data_current_season = activity_data[current_season_avg];
         }
         else {
-            activity_data[current_season] = {};
-            activity_data_current_season = activity_data[current_season];
+            activity_data[current_season_avg] = {};
+            activity_data_current_season = activity_data[current_season_avg];
         }
         
         addAvg();
@@ -1193,8 +1212,7 @@ function calcBonus(bonus_type) {
 }
 
 function calculateProjections(datatype, player_name, pos_name, team_name) {
-    // get their projected data
-    // multiply it by the league settings
+    // get their projected data, multiply it by the league settings
     var full_name = player_name + "|" + pos_name + "|" + team_name;
     var player_data = alldata[full_name];
     
@@ -1460,7 +1478,7 @@ function getProjectionData(datatype, currRow, cell) {
             }
             else {
                 //TODO: change this bs in the future i guess, espn sucks super hard. if you request 2014 data (which is correct), it sets your season to 2014. COME ON (gob bluth voice). I don't know when to make this switch though since it was working before.
-                var espn_points_data = {'leagueId': league_id, 'playerId': player_id, 'playerIdType': 'playerId', 'seasonId': '2015', 'xhr': '1'};
+                var espn_points_data = {'leagueId': league_id, 'playerId': player_id, 'playerIdType': 'playerId', 'seasonId': current_season_avg, 'xhr': '1'};
                 jQuery.get('http://games.espn.go.com/ffl/format/playerpop/overview', espn_points_data, function(po) {
                     if (!po) {
                         var player_activity = {};
@@ -1479,7 +1497,7 @@ function getProjectionData(datatype, currRow, cell) {
                         var points_table_rows = points_table.find('tr:not(.pcStatHead) td:nth-child(' + ptsindex + ')');
                         
                         var weeklyPointsData = jQuery.map(points_table_rows, function(ptval) { return ptval.innerText; });
-                        weeklyPointsData = weeklyPointsData.splice(0, current_week);
+                        weeklyPointsData = weeklyPointsData.splice(0, current_week_avg);
                         for (var i=0; i < weeklyPointsData.length; i++) {
                             if (weeklyPointsData[i] == '-') {
                                 weeklyPointsData[i] = null;
@@ -1501,14 +1519,14 @@ function getProjectionData(datatype, currRow, cell) {
                             
                             insertAdjAvg(cell, normavg, weeklyPointsData);
                         }
-                        else if ((player_stored_activity_games.length > 0) && (current_week == player_stored_activity_updated)) {
+                        else if ((player_stored_activity_games.length > 0) && (current_week_avg == player_stored_activity_updated)) {
                             calcAdjAvg(cell, player_id, player_stored_activity_games, weeklyPointsData);
                         }
                         else {
                             var playercard = jQuery('div#tabView0 div#moreStatsView0 div.pc:not(#pcBorder)', podata);
                             var pop_player_id = playercard.find('a[href*="playerId"], a[href*="proId"]').attr('href').match(/(playerId=|proId\/)(\d+)/)[2];
                             
-                            var espn_player_link = "http://espn.go.com/nfl/player/gamelog/_/id/" + pop_player_id + "/year/" + current_season;
+                            var espn_player_link = "http://espn.go.com/nfl/player/gamelog/_/id/" + pop_player_id + "/year/" + current_season_avg;
                             jQuery.get(espn_player_link, function(p) {
                                 var adata = jQuery(p);
                                 var base_games_played = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
@@ -1520,8 +1538,11 @@ function getProjectionData(datatype, currRow, cell) {
                                     jQuery.each(gamedates, function(gp_i, gp_v) {
                                         var gp_v_parse = jQuery(gp_v);
                                         var gamedate = gp_v_parse.find('td').eq(gamedateindex).text().trim();
-                                        var rowDate = new Date(gamedate.split(' ')[1] + ' ' + current_season); //wont work for jan-feb
-                                        var rowWeek = Math.ceil(((rowDate - seasonstart) / 86400000) / 7);
+                                        var rowDate = rowDate = new Date(gamedate.split(' ')[1] + ' ' + current_season_avg);
+                                        if (rowDate.getMonth() < 5) {
+                                            rowDate = new Date(gamedate.split(' ')[1] + ' ' + (current_season_avg + 1));
+                                        }
+                                        var rowWeek = Math.ceil(((rowDate - seasonstart_avg) / 86400000) / 7);
                                         base_games_played[rowWeek - 1] = 1;
                                     });
                                 }
@@ -1667,7 +1688,11 @@ function calcAdjAvg(thiscell, player_id, games_played, weekly_points_data) {
     var playertotpts=0;
     var totalplayergames=0;
     
-    for (var g=0; g < weekly_points_data.length - 1; g++){
+    if (weekly_points_data.length == current_week_avg) {
+        weekly_points_data = weekly_points_data.slice(0, weekly_points_data.length - 1);
+    }
+    
+    for (var g=0; g < weekly_points_data.length; g++){
         if (games_played[g] == 1) {
             var weekpt = parseFloat(weekly_points_data[g]) || 0;
             playertotpts += weekpt;
@@ -1682,7 +1707,7 @@ function calcAdjAvg(thiscell, player_id, games_played, weekly_points_data) {
     else {
         var player_adjavg_rnd = '--';
     }
-        
+    
     activity_data_current_season[player_id][league_id] = {};
     activity_data_current_season[player_id][league_id]['pts_avg'] = player_adjavg_rnd;
     activity_data_current_season[player_id][league_id]['weekly_points'] = weekly_points_data;
@@ -1701,21 +1726,26 @@ function insertAdjAvg(thiscell, p_avg, weekly_points_data) {
 	var weekly_points_data_cut = weekly_points_data;
 	
 	var thisCurrent = thiscell.siblings('.FantasyPlusCurrentData');
+    var curr_score = "--";
 	if (weekly_points_data_cut && weekly_points_data_cut.length > 0) {
-		var curr_score = weekly_points_data_cut[current_week - 1];
-        var week_modifier = Math.max(0, current_week - 7);
-		weekly_points_data_cut = weekly_points_data_cut.slice(week_modifier, Math.max(0, current_week - 1));
+        if (current_season == current_season_avg) {
+            curr_score = weekly_points_data_cut[current_week - 1];
+        }
+        
+        //for sparklines
+        var week_modifier = Math.max(0, Math.min(17, current_week_avg) - 7);
+		weekly_points_data_cut = weekly_points_data_cut.slice(week_modifier, Math.min(Math.max(0, current_week_avg - 1), 17));
 		
-		//add a green or red if above/below projection
+		//TODO: add a green or red if above/below projection
 		if (parseFloat(curr_score) || curr_score == 0) {
 			thisCurrent.text(curr_score);
 		}
 		else {
-			thisCurrent.text('--');
+			thisCurrent.text(curr_score);
 		}
 	}
 	else {
-		thisCurrent.text('--');
+		thisCurrent.text(curr_score);
 	}
     
     var thisSpark = thiscell.siblings('.FantasyPlusSparkData');

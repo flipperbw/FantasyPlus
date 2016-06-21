@@ -1,7 +1,7 @@
 {
   "name": "FantasyPlus",
   "short_name": "FantasyPlus",
-  "version": "2.1.2",
+  "version": "2.1.4",
   "manifest_version": 2,
   "description": "Adds weekly projections/stats from FantasyPros (PFF, CBS, NumberFire, etc.) and FantasySharks (for D/ST and IDP) to fantasy sites.",
   "icons": {
@@ -11,6 +11,7 @@
   },
   "permissions": [
     "http://*/*",
+    "https://*/*",
     "webRequest",
 	"storage"
   ],
@@ -28,6 +29,7 @@
 		"http://games.espn.go.com/ffl/rosterfix*",
 		"http://games.espn.go.com/ffl/leagueoffice*",
 		"http://games.espn.go.com/ffl/watchlist*",
+		"http://games.espn.go.com/ffl/tools/waiverorder*",
 		"http://games.espn.go.com/ffl/playertable/prebuilt/freeagency*",
 		"http://football.fantasysports.yahoo.com/f1/*"
 	  ],
