@@ -1951,14 +1951,21 @@ function addProjections() {
 					}
 					// I should fix this to make it more automatic for the bye week stupid nonsense
 					if (td_length == (17 + custom_cols)) {
-					  var extra_td = '<td></td>';
+                        var extra_td = '<td></td>';
 					}
 					else {
-					  var extra_td = '';
+                        var extra_td = '';
 					}
+                    
+                    if (td_length == 21) {
+                        var week_tds = '';
+                    }
+                    else {
+                        var week_tds = '<td></td><td></td><td class="sectionLeadingSpacer">';
+                    }
 					
 					//gonna have to edit this too when its automatic
-					currHeaderRow.before('<tr class="pncPlayerRow playerTableBgRow0 FantasyPlus FantasyPlusProjections"><td class="playerSlot" style="font-weight: bold;">Total</td><td></td>' + extra_td + '<td class="sectionLeadingSpacer"></td><td></td><td></td><td class="sectionLeadingSpacer"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="sectionLeadingSpacer"></td><td class="playertableStat">' + Math.round(sumTotalESPN * 100) / 100 + '</td><td class="playertableStat">' + Math.round(sumTotal * 100) / 100 + '</td><td class="sectionLeadingSpacer"></td><td></td><td></td><td></td><td></td><td class="sectionLeadingSpacer"></td><td></td><td></td><td></td><td></td></tr>');
+					currHeaderRow.before('<tr class="pncPlayerRow playerTableBgRow0 FantasyPlus FantasyPlusProjections"><td class="playerSlot" style="font-weight: bold;">Total</td><td></td>' + extra_td + '<td class="sectionLeadingSpacer"></td>' + week_tds + '</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="sectionLeadingSpacer"></td><td class="playertableStat">' + Math.round(sumTotalESPN * 100) / 100 + '</td><td class="playertableStat">' + Math.round(sumTotal * 100) / 100 + '</td><td class="sectionLeadingSpacer"></td><td></td><td></td><td></td><td></td><td class="sectionLeadingSpacer"></td><td></td><td></td><td></td><td></td></tr>');
 				}
 			});
 		}
