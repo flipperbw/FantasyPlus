@@ -27,6 +27,8 @@ Known Issues
 
 Update Log
 ------
+* v2.1.5 (2016-08-07)
+  * Updating .go.com
 * v2.1.4 (2016-06-21)
   * Updating for 2016
   * Many timing changes

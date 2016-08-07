@@ -1,7 +1,7 @@
 {
   "name": "FantasyPlus",
   "short_name": "FantasyPlus",
-  "version": "2.1.4",
+  "version": "2.1.5",
   "manifest_version": 2,
   "description": "Adds weekly projections/stats from FantasyPros (PFF, CBS, NumberFire, etc.) and FantasySharks (for D/ST and IDP) to fantasy sites.",
   "icons": {
@@ -21,16 +21,16 @@
   "content_scripts": [
     {
       "matches": [
-		"http://games.espn.go.com/ffl/clubhouse*",
-		"http://games.espn.go.com/ffl/freeagency*",
-		"http://games.espn.go.com/ffl/matchuppreview*", 
-		"http://games.espn.go.com/ffl/dropplayers*",
-		"http://games.espn.go.com/ffl/tradereview*",
-		"http://games.espn.go.com/ffl/rosterfix*",
-		"http://games.espn.go.com/ffl/leagueoffice*",
-		"http://games.espn.go.com/ffl/watchlist*",
-		"http://games.espn.go.com/ffl/tools/waiverorder*",
-		"http://games.espn.go.com/ffl/playertable/prebuilt/freeagency*",
+		"http://games.espn.com/ffl/clubhouse*",
+		"http://games.espn.com/ffl/freeagency*",
+		"http://games.espn.com/ffl/matchuppreview*", 
+		"http://games.espn.com/ffl/dropplayers*",
+		"http://games.espn.com/ffl/tradereview*",
+		"http://games.espn.com/ffl/rosterfix*",
+		"http://games.espn.com/ffl/leagueoffice*",
+		"http://games.espn.com/ffl/watchlist*",
+		"http://games.espn.com/ffl/tools/waiverorder*",
+		"http://games.espn.com/ffl/playertable/prebuilt/freeagency*",
 		"http://football.fantasysports.yahoo.com/f1/*"
 	  ],
 	  "js" : [

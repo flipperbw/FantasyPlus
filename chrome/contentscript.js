@@ -15,7 +15,7 @@
 - skin ads look like garbage, need to adjust their position
 - starting on different tab doesnt enable anything
 - insider tab
-- use this "prebuilt" thing inside, intercept it and reput it in? http://games.espn.go.com/ffl/playertable/prebuilt/manageroster?leagueId=1496143&teamId=4&seasonId=2014&scoringPeriodId=12&view=overview&context=clubhouse&ajaxPath=playertable/prebuilt/manageroster&managingIr=false&droppingPlayers=false&asLM=false
+- use this "prebuilt" thing inside, intercept it and reput it in? http://games.espn.com/ffl/playertable/prebuilt/manageroster?leagueId=1496143&teamId=4&seasonId=2014&scoringPeriodId=12&view=overview&context=clubhouse&ajaxPath=playertable/prebuilt/manageroster&managingIr=false&droppingPlayers=false&asLM=false
 - clicking too fast disables it until the next click...
 */
 
@@ -64,7 +64,8 @@ var alldata,
 	pts_total;
 
 
-var debug_mode = true;
+//var debug_mode = true;
+var debug_mode = false;
 
 function dlog(o) {
     if (debug_mode) {
@@ -131,7 +132,7 @@ var rankDone = jQuery.Deferred();
 var rosDone = jQuery.Deferred();
 var avgDone = jQuery.Deferred();
 
-if (document.URL.match(/games.espn.go.com/)) {
+if (document.URL.match(/games.espn.com/)) {
     siteType = 'espn';
     
 	var onMatchupPreviewPage = document.URL.match(/ffl\/matchuppreview/);
@@ -155,7 +156,7 @@ if (document.URL.match(/games.espn.go.com/)) {
         jQuery('.games-alert-tilt').remove();
         jQuery('.games-alert-mod.alert-mod2.games-blue-alert').remove();
         jQuery('div.draftKings').remove();
-        jQuery('iframe[src*="streak.espn.go.com"]').parent().remove();
+        jQuery('iframe[src*="streak.espn.com"]').parent().remove();
         jQuery('.games-bottomcol').css('margin', 0)
         if (jQuery('.games-dates-mod').css('margin-left') == '7px') {
             jQuery('.games-dates-mod').css('margin-left', '6px');
@@ -177,7 +178,7 @@ if (document.URL.match(/games.espn.go.com/)) {
     }
     
     league_id = document.URL.match(/leagueId=(\d+)/)[1];
-    league_settings_url = 'http://games.espn.go.com/ffl/leaguesetup/sections/scoring?leagueId=' + league_id;
+    league_settings_url = 'http://games.espn.com/ffl/leaguesetup/sections/scoring?leagueId=' + league_id;
     
     var storageLeagueKey = 'fp_espn_league_data_' + league_id;
     var storagePlayerKey = 'fp_espn_player_data_' + league_id;
@@ -1479,7 +1480,7 @@ function getProjectionData(datatype, currRow, cell) {
             else {
                 //TODO: change this bs in the future i guess, espn sucks super hard. if you request 2014 data (which is correct), it sets your season to 2014. COME ON (gob bluth voice). I don't know when to make this switch though since it was working before.
                 var espn_points_data = {'leagueId': league_id, 'playerId': player_id, 'playerIdType': 'playerId', 'seasonId': current_season_avg, 'xhr': '1'};
-                jQuery.get('http://games.espn.go.com/ffl/format/playerpop/overview', espn_points_data, function(po) {
+                jQuery.get('http://games.espn.com/ffl/format/playerpop/overview', espn_points_data, function(po) {
                     if (!po) {
                         var player_activity = {};
                         player_activity['games_played'] = [];
@@ -1526,7 +1527,7 @@ function getProjectionData(datatype, currRow, cell) {
                             var playercard = jQuery('div#tabView0 div#moreStatsView0 div.pc:not(#pcBorder)', podata);
                             var pop_player_id = playercard.find('a[href*="playerId"], a[href*="proId"]').attr('href').match(/(playerId=|proId\/)(\d+)/)[2];
                             
-                            var espn_player_link = "http://espn.go.com/nfl/player/gamelog/_/id/" + pop_player_id + "/year/" + current_season_avg;
+                            var espn_player_link = "http://espn.com/nfl/player/gamelog/_/id/" + pop_player_id + "/year/" + current_season_avg;
                             jQuery.get(espn_player_link, function(p) {
                                 var adata = jQuery(p);
                                 var base_games_played = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
