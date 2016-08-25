@@ -405,13 +405,15 @@ function addLeagueSettings() {
                         matching_td = matching_td.filter(function () {
                             return jQuery(this).parents('td').eq(0).prev().text() == j;
                         });
-                        var $td_cell = matching_td.next();
-                        var td_num = getCellVal($td_cell);
-                        
-                        var def_val = second_obj[k];
-                        colorizeCell(td_num, def_val, $td_cell);
-                         
-                        $scoring_tds.splice($scoring_tds.index(matching_td), 1);
+                        if (matching_td.length) {
+                            var $td_cell = matching_td.next();
+                            var td_num = getCellVal($td_cell);
+                            
+                            var def_val = second_obj[k];
+                            colorizeCell(td_num, def_val, $td_cell);
+                             
+                            $scoring_tds.splice($scoring_tds.index(matching_td), 1);
+                        }
                     }
                     else {
                         var missing_tuple = {'typ': j, 'val': k};
@@ -434,14 +436,16 @@ function addLeagueSettings() {
                         matching_td = matching_td.filter(function () {
                             return jQuery(this).parents('td').eq(0).prev().text() == j;
                         });
-                        is_standard = true;
-                        var $td_cell = matching_td.next();
-                        var td_num = getCellVal($td_cell);
+                        if (matching_td.length) {
+                            is_standard = true;
+                            var $td_cell = matching_td.next();
+                            var td_num = getCellVal($td_cell);
 
-                        var def_val = second_obj[k];
-                        colorizeCell(td_num, def_val, $td_cell);
-                        
-                        $scoring_tds.splice($scoring_tds.index(matching_td), 1);
+                            var def_val = second_obj[k];
+                            colorizeCell(td_num, def_val, $td_cell);
+                            
+                            $scoring_tds.splice($scoring_tds.index(matching_td), 1);
+                        }
                     }
                     else {
                         var missing_tuple = {'typ': j, 'val': k};
@@ -451,7 +455,7 @@ function addLeagueSettings() {
             }
         }
     }
-    
+
     var missing_frac_tds = [];
     var is_frac = false;
     for (var j in default_fractional_settings) {
@@ -464,14 +468,16 @@ function addLeagueSettings() {
                         matching_td = matching_td.filter(function () {
                             return jQuery(this).parents('td').eq(0).prev().text() == j;
                         });
-                        is_frac = true;
-                        var $td_cell = matching_td.next();
-                        var td_num = getCellVal($td_cell);
+                        if (matching_td.length) {
+                            is_frac = true;
+                            var $td_cell = matching_td.next();
+                            var td_num = getCellVal($td_cell);
 
-                        var def_val = second_obj[k];
-                        colorizeCell(td_num, def_val, $td_cell);
-                        
-                        $scoring_tds.splice($scoring_tds.index(matching_td), 1);
+                            var def_val = second_obj[k];
+                            colorizeCell(td_num, def_val, $td_cell);
+                            
+                            $scoring_tds.splice($scoring_tds.index(matching_td), 1);
+                        }
                     }
                     else {
                         var missing_tuple = {'typ': j, 'val': k};
