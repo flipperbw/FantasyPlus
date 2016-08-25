@@ -64,8 +64,8 @@ var alldata,
 	pts_total;
 
 
-//var debug_mode = true;
-var debug_mode = false;
+var debug_mode = true;
+//var debug_mode = false;
 
 function dlog(o) {
     if (debug_mode) {
@@ -139,6 +139,7 @@ if (document.URL.match(/games.espn.com/)) {
     var onClubhousePage = document.URL.match(/ffl\/(clubhouse|dropplayers)/);
     var onFreeAgencyPage = document.URL.match(/ffl\/(freeagency|watchlist)/);
     var onLeaguePage = document.URL.match(/ffl\/leagueoffice/);
+    var onLeagueSettingsPage = document.URL.match(/ffl\/leaguesetup\/settings/);
 	
     base_table_selector = '.playerTableContainerDiv';
     player_table_selector = '[id^=playertable_]';
@@ -175,6 +176,9 @@ if (document.URL.match(/games.espn.com/)) {
         if (jQuery('.dropButton').css('width') == '14px') {
             jQuery('.dropButton').css('width', '15px');
         }
+    }
+    else if (onLeagueSettingsPage) {
+        addLeagueSettings();
     }
     
     league_id = document.URL.match(/leagueId=(\d+)/)[1];
@@ -260,6 +264,369 @@ function getParams(u) {
 		});
 	}
 	return qd;
+}
+
+function addLeagueSettings() {
+    var $ld = jQuery('div.games-fullcol');
+    var $allsettings = jQuery('#settings-content', $ld);
+
+    var default_settings = {
+        'Passing': {
+            'TD Pass (PTD)' : 4,
+            '2pt Passing Conversion (2PC)' : 2,
+            'Interceptions Thrown (INT)' : -2
+        },
+        'Rushing': {
+            'TD Rush (RTD)' : 6,
+            '2pt Rushing Conversion (2PR)' : 2
+        },
+        'Receiving': {
+            'TD Reception (RETD)' : 6,
+            '2pt Receiving Conversion (2PRE)' : 2
+        },
+        'Miscellaneous': {
+            'Kickoff Return TD (KRTD)' : 6,
+            'Punt Return TD (PRTD)' : 6,
+            'Fumble Recovered for TD (FTD)' : 6,
+            'Total Fumbles Lost (FUML)' : -2,
+            'Interception Return TD (INTTD)' : 6,
+            'Fumble Return TD (FRTD)' : 6,
+            'Blocked Punt or FG return for TD (BLKKRTD)' : 6,
+            '2pt Return (2PTRET)' : 2,
+            '1pt Safety (1PSF)' : 1
+        },
+        'Kicking': {
+            'Each PAT Made (PAT)' : 1,
+            'Total FG Missed (FGM)' : -1,
+            'FG Made (0-39 yards) (FG0)' : 3,
+            'FG Made (40-49 yards) (FG40)' : 4,
+            'FG Made (50+ yards) (FG50)' : 5
+        },
+        'Team Defense / Special Teams' : {
+            'Each Sack (SK)' : 1,
+            'Interception Return TD (INTTD)' : 6,
+            'Fumble Return TD (FRTD)' : 6,
+            'Kickoff Return TD (KRTD)' : 6,
+            'Punt Return TD (PRTD)' : 6,
+            'Blocked Punt or FG return for TD (BLKKRTD)' : 6,
+            'Blocked Punt, PAT or FG (BLKK)' : 2,
+            'Each Interception (INT)' : 2,
+            'Each Fumble Recovered (FR)' : 2,
+            'Each Safety (SF)' : 2,
+            '0 points allowed (PA0)' : 5,
+            '1-6 points allowed (PA1)' : 4,
+            '7-13 points allowed (PA7)' : 3,
+            '14-17 points allowed (PA14)' : 1,
+            '28-34 points allowed (PA28)' : -1,
+            '35-45 points allowed (PA35)' : -3,
+            '46+ points allowed (PA46)' : -5,
+            'Less than 100 total yards allowed (YA100)' : 5,
+            '100-199 total yards allowed (YA199)' : 3,
+            '200-299 total yards allowed (YA299)' : 2,
+            '350-399 total yards allowed (YA399)' : -1,
+            '400-449 total yards allowed (YA449)' : -3,
+            '450-499 total yards allowed (YA499)' : -5,
+            '500-549 total yards allowed (YA549)' : -6,
+            '550+ total yards allowed (YA550)' : -7,
+            '2pt Return (2PTRET)' : 2,
+            '1pt Safety (1PSF)' : 1
+        }
+    }
+    
+    //dumb double space here
+    var default_standard_settings = {
+        'Passing': {
+            'Every 25 passing yards  (PY25)' : 1
+        },
+        'Rushing': {
+            'Every 10 rushing yards (RY10)' : 1
+        },
+        'Receiving': {
+            'Every 10 receiving yards (REY10)' : 1
+        }
+    }
+    
+    var default_fractional_settings = {
+        'Passing': {
+            'Passing Yards (PY)' : 0.04
+        },
+        'Rushing': {
+            'Rushing Yards (RY)' : 0.1
+        },
+        'Receiving': {
+            'Receiving Yards (REY)' : 0.1
+        }
+    }
+    
+    var default_all_settings = jQuery.extend(true, {}, default_settings, default_standard_settings, default_fractional_settings);
+
+    //add click event or maybe watcher
+    
+    //for each div under allsettings, do something. diff for rosters
+    
+    //adjust mising elements if missing roster
+    
+    //defensive players not showing bllue
+    
+    var $scoring = $allsettings.find("[name='scoring']");
+    var $scoring_body = $scoring.find('tbody').find('tbody');
+    var $scoring_tds = $scoring_body.find('td.statName');
+       
+    function getCellVal(cell) {
+        var td_val = cell.text();
+        try {
+            var td_num = parseFloat(td_val);
+        } catch(err) {
+            var td_num = 0;
+        }
+        return td_num;
+    }
+    
+    function colorizeCell(td_num, def_val, $td_cell) {
+        if (td_num != def_val) {
+            if (td_num < def_val) {
+                $td_cell.css({'background-color': 'pink'});
+            }
+            else if (td_num > def_val) {
+                $td_cell.css({'background-color': 'lightgreen'});
+            }
+            $td_cell.attr('title', 'Default: ' + def_val);
+        }
+    }
+
+    var missing_tds = [];
+    for (var j in default_settings) {
+        if (default_settings.hasOwnProperty(j)) {
+            var second_obj = default_settings[j];
+            for (var k in second_obj) {
+                if (second_obj.hasOwnProperty(k)) {
+                    var matching_td = $scoring_body.find("td:contains('" + k + "')");
+                    if (matching_td.length) {
+                        matching_td = matching_td.filter(function () {
+                            return jQuery(this).parents('td').eq(0).prev().text() == j;
+                        });
+                        var $td_cell = matching_td.next();
+                        var td_num = getCellVal($td_cell);
+                        
+                        var def_val = second_obj[k];
+                        colorizeCell(td_num, def_val, $td_cell);
+                         
+                        $scoring_tds.splice($scoring_tds.index(matching_td), 1);
+                    }
+                    else {
+                        var missing_tuple = {'typ': j, 'val': k};
+                        missing_tds.push(missing_tuple);
+                    }
+                }
+            }
+        }
+    }
+
+    var missing_stand_tds = [];
+    var is_standard = false;
+    for (var j in default_standard_settings) {
+        if (default_standard_settings.hasOwnProperty(j)) {
+            var second_obj = default_standard_settings[j];
+            for (var k in second_obj) {
+                if (second_obj.hasOwnProperty(k)) {
+                    var matching_td = $scoring_body.find("td:contains('" + k + "')");
+                    if (matching_td.length) {
+                        matching_td = matching_td.filter(function () {
+                            return jQuery(this).parents('td').eq(0).prev().text() == j;
+                        });
+                        is_standard = true;
+                        var $td_cell = matching_td.next();
+                        var td_num = getCellVal($td_cell);
+
+                        var def_val = second_obj[k];
+                        colorizeCell(td_num, def_val, $td_cell);
+                        
+                        $scoring_tds.splice($scoring_tds.index(matching_td), 1);
+                    }
+                    else {
+                        var missing_tuple = {'typ': j, 'val': k};
+                        missing_stand_tds.push(missing_tuple);
+                    }
+                }
+            }
+        }
+    }
+    
+    var missing_frac_tds = [];
+    var is_frac = false;
+    for (var j in default_fractional_settings) {
+        if (default_fractional_settings.hasOwnProperty(j)) {
+            var second_obj = default_fractional_settings[j];
+            for (var k in second_obj) {
+                if (second_obj.hasOwnProperty(k)) {
+                    var matching_td = $scoring_body.find("td:contains('" + k + "')");
+                    if (matching_td.length) {
+                        matching_td = matching_td.filter(function () {
+                            return jQuery(this).parents('td').eq(0).prev().text() == j;
+                        });
+                        is_frac = true;
+                        var $td_cell = matching_td.next();
+                        var td_num = getCellVal($td_cell);
+
+                        var def_val = second_obj[k];
+                        colorizeCell(td_num, def_val, $td_cell);
+                        
+                        $scoring_tds.splice($scoring_tds.index(matching_td), 1);
+                    }
+                    else {
+                        var missing_tuple = {'typ': j, 'val': k};
+                        missing_frac_tds.push(missing_tuple);
+                    }
+                }
+            }
+        }
+    }
+
+    //put RY5 for example in a small diff color
+    var $scoring_header = $scoring.find('tr').first().find('td').first();
+    if (is_standard && is_frac) {
+         $scoring_header.append(' (Mixture)');
+         //slightly inaccurate, but this is an edge case
+         missing_frac_tds.splice(0, missing_frac_tds.length);
+         missing_stand_tds.splice(0, missing_stand_tds.length);
+    }
+    else if (is_standard) {
+         $scoring_header.append(' (Standard)');
+         missing_frac_tds.splice(0, missing_frac_tds.length);
+    }
+    else if (is_frac) {
+         $scoring_header.append(' (Fractional)');
+         missing_stand_tds.splice(0, missing_stand_tds.length);
+    }
+    else {
+         $scoring_header.append(' (None)');
+    }
+    
+    function check_denom(td_num, denom_str, expected_val, $td_cell) {
+        if (denom_str.length > 0) {
+                var denom = parseFloat(denom_str);
+            }
+            else {
+                var denom = 1.0;
+            }
+            var converted_val = expected_val * denom;
+            colorizeCell(td_num, converted_val, $td_cell);
+            if (td_num == converted_val) {
+                return true;
+            }
+            else {
+                return false;
+            }
+    }
+    
+    $scoring_tds.each(function(i) {
+        var $thistd = jQuery(this);
+
+        var $td_cell = $thistd.next().first();
+        var td_num = getCellVal($td_cell);
+        
+        var thistd_text = $thistd.text();
+        
+        var frac_cell = false;
+        var cell_indexof = thistd_text.indexOf('(PY');
+        if (cell_indexof !== -1) {
+            frac_cell = true;
+            var expected_val = default_fractional_settings['Passing']['Passing Yards (PY)'];
+            var denom_str = '';
+            var denom_reg = thistd_text.match(/\([A-Z]+(\d+)\)/);
+            if (denom_reg.length) {
+                var denom_str = thistd_text.match(/\([A-Z]+(\d+)\)/)[1];
+            }
+            var same_val = check_denom(td_num, denom_str, expected_val, $td_cell);
+            if (same_val) {
+                missing_frac_tds.splice(missing_frac_tds.indexOf(' (PY'), 1);
+                missing_stand_tds.splice(missing_stand_tds.indexOf(' (PY'), 1);
+            }
+        }
+        var cell_indexof = thistd_text.indexOf('(RY');
+        if (cell_indexof !== -1) {
+            frac_cell = true;
+            var expected_val = default_fractional_settings['Rushing']['Rushing Yards (RY)'];
+            var denom_str = '';
+            var denom_reg = thistd_text.match(/\([A-Z]+(\d+)\)/);
+            if (denom_reg.length) {
+                var denom_str = thistd_text.match(/\([A-Z]+(\d+)\)/)[1];
+            }            var same_val = check_denom(td_num, denom_str, expected_val, $td_cell);
+            if (same_val) {
+                missing_frac_tds.splice(missing_frac_tds.indexOf(' (RY'), 1);
+                missing_stand_tds.splice(missing_stand_tds.indexOf(' (RY'), 1);
+            }
+
+        }
+        var cell_indexof = thistd_text.indexOf('(REY');
+        if (cell_indexof !== -1) {
+            frac_cell = true;
+            var expected_val = default_fractional_settings['Receiving']['Receiving Yards (REY)'];
+            var denom_str = '';
+            var denom_reg = thistd_text.match(/\([A-Z]+(\d+)\)/);
+            if (denom_reg.length) {
+                var denom_str = thistd_text.match(/\([A-Z]+(\d+)\)/)[1];
+            }
+            var same_val = check_denom(td_num, denom_str, expected_val, $td_cell);
+            if (same_val) {
+                missing_frac_tds.splice(missing_frac_tds.indexOf(' (REY'), 1);
+                missing_stand_tds.splice(missing_stand_tds.indexOf(' (REY'), 1);
+            }
+
+        }
+        
+        if (!frac_cell) {
+            $thistd.css({'background-color': 'lightblue'});
+            $td_cell.css({'background-color': 'lightblue'});
+        }
+    });
+
+    // these should really go in their respective setting areas
+    var all_missing_tds = missing_tds.concat(missing_stand_tds).concat(missing_frac_tds);
+    
+    if (all_missing_tds.length > 0) {
+        var $last_section = $scoring.find('tbody').first().children('tr').last();
+        var trclassname = 'Even';
+        if ($last_section.attr("class").indexOf('Even') != -1) {
+            trclassname = 'Odd';
+        }
+        var $missing_section = jQuery('<tr class="row' + trclassname + '"><td class="categoryName settingLabel">Missing Entries</td><td><table width="100%" cellspacing="0" cellpadding="0" border="0"><tbody></tbody></table></td></tr>');
+        var $missing_section_body = $missing_section.find('tbody');
+        
+        var missing_length = all_missing_tds.length;
+        var rows_list = [];
+        var new_row = '';
+        for (var i=0; i < missing_length; i++) {
+            var td_val = all_missing_tds[i];
+            var td_val_typ = td_val['typ'];
+            var td_val_str = td_val['val'];
+
+            if (i % 2 == 0) {
+                new_row = '<tr>';
+            }
+            else {
+                new_row += '<td class="spacer"></td>';
+            }
+            //instead of this, put in the correct section
+            new_row += '<td class="statName" style="background-color: pink;">' + td_val_str + ' [' + td_val_typ + '] ' + '</td><td class="statPoints" style="background-color: pink;">' + default_all_settings[td_val_typ][td_val_str] + '</td>';
+            if (i % 2 != 0) {
+                new_row += '</tr>';
+            }
+            else if (i == missing_length - 1) {
+                new_row += '<td class="spacer"></td><td colspan="2"></td></tr>';
+            }
+            
+            if (i % 2 == 0) {
+                rows_list.push(new_row);
+            }
+        }
+        
+        for (var j=0; j < rows_list.length; j++) {
+            $missing_section_body.append(rows_list[j]);
+        }
+        
+        $missing_section.insertAfter($last_section);
+    }
 }
 
 function setSelectors() {
