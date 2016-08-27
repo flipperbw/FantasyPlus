@@ -64,8 +64,8 @@ var alldata,
 	pts_total;
 
 
-var debug_mode = true;
-//var debug_mode = false;
+//var debug_mode = true;
+var debug_mode = false;
 
 function dlog(o) {
     if (debug_mode) {
@@ -97,7 +97,7 @@ var current_year = current_date.getFullYear();
 var current_season = current_year;
 var current_season_avg = current_year;
 
-if (current_month < 5 || !season_start_map[current_year] && season_start_map[current_year]) {
+if (current_month < 5 || (!season_start_map[current_year] && season_start_map[current_year - 1])) {
     current_season -= 1;
 }
 
@@ -2147,6 +2147,11 @@ function insertAdjAvg(thiscell, p_avg, weekly_points_data) {
         var new_activity_data = {};
         new_activity_data['fp_player_activity_data'] = activity_data;
         chrome.storage.local.set(new_activity_data, function() {
+            if (current_season != current_season_avg) {
+                //doing this to reset back to current season
+                var espn_points_data = {'leagueId': league_id, 'seasonId': current_season, 'xhr': '1'};
+                jQuery.get('http://games.espn.com/ffl/freeagency', espn_points_data);
+            }
             avgDone.resolve();
         });
     }
