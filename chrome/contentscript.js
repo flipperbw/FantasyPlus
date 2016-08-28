@@ -61,7 +61,8 @@ var alldata,
 	page_menu_selector,
 	page_menu,
 	pts_total_selector,
-	pts_total;
+	pts_total,
+    ld_selector;
 
 
 //var debug_mode = true;
@@ -147,6 +148,7 @@ if (document.URL.match(/games.espn.com/)) {
     player_table_header_selector = 'tr.playerTableBgRowSubhead';
     player_table_header_proj_selector = 'td:contains(PROJ), td:contains(ESPN)';
     player_name_selector = 'td.playertablePlayerName';
+    ld_selector = 'div.games-fullcol';
     	
 	var hasProjTotals = document.URL.match(/ffl\/matchuppreview/);
 	var hasPlayerTable = document.URL.match(/ffl\/(freeagency|clubhouse|dropplayers|tradereview|rosterfix|watchlist)/);	
@@ -267,7 +269,7 @@ function getParams(u) {
 }
 
 function addLeagueSettings() {
-    var $ld = jQuery('div.games-fullcol');
+    var $ld = jQuery(ld_selector);
     var $allsettings = jQuery('#settings-content', $ld);
 
     var default_settings = {
@@ -331,7 +333,7 @@ function addLeagueSettings() {
             '2pt Return (2PTRET)' : 2,
             '1pt Safety (1PSF)' : 1
         }
-    }
+    };
     
     //dumb double space here
     var default_standard_settings = {
@@ -344,7 +346,7 @@ function addLeagueSettings() {
         'Receiving': {
             'Every 10 receiving yards (REY10)' : 1
         }
-    }
+    };
     
     var default_fractional_settings = {
         'Passing': {
@@ -356,28 +358,54 @@ function addLeagueSettings() {
         'Receiving': {
             'Receiving Yards (REY)' : 0.1
         }
-    }
+    };
     
     var default_all_settings = jQuery.extend(true, {}, default_settings, default_standard_settings, default_fractional_settings);
 
+    var default_roster = {
+        'Quarterback (QB)': {
+            'num': 1,
+            'max': 4
+        },
+        'Running Back (RB)': {
+            'num': 2,
+            'max': 8
+        },
+        'Wide Receiver (WR)': {
+            'num': 2,
+            'max': 8
+        },
+        'Tight End (TE)': {
+            'num': 1,
+            'max': 3
+        },
+        'Flex (RB/WR/TE)': {
+            'num': 1,
+            'max': null
+        },
+        'Team Defense/Special Teams (D/ST)': {
+            'num': 1,
+            'max': 3
+        },
+        'Place Kicker (K)': {
+            'num': 1,
+            'max': 3
+        },
+        'Bench (BE)': {
+            'num': 7,
+            'max': null
+        },
+    };
+    
     //add click event or maybe watcher
     
-    //for each div under allsettings, do something. diff for rosters
-    
-    //adjust mising elements if missing roster
-    
-    //defensive players not showing bllue
-    
-    var $scoring = $allsettings.find("[name='scoring']");
-    var $scoring_body = $scoring.find('tbody').find('tbody');
-    var $scoring_tds = $scoring_body.find('td.statName');
-       
+    //finish other headings
+           
     function getCellVal(cell) {
         var td_val = cell.text();
-        try {
-            var td_num = parseFloat(td_val);
-        } catch(err) {
-            var td_num = 0;
+        var td_num = parseFloat(td_val);
+        if (isNaN(td_num)) {
+            td_num = td_val;
         }
         return td_num;
     }
@@ -387,22 +415,88 @@ function addLeagueSettings() {
             if (td_num < def_val) {
                 $td_cell.css({'background-color': 'pink'});
             }
-            else if (td_num > def_val) {
+            else if ((td_num > def_val) || td_num == 'No Limit') {
                 $td_cell.css({'background-color': 'lightgreen'});
             }
-            $td_cell.attr('title', 'Default: ' + def_val);
+            if (td_num != 'N/A') {
+                $td_cell.attr('title', 'Default: ' + def_val);
+            }
         }
     }
 
-    var missing_tds = [];
-    for (var j in default_settings) {
-        if (default_settings.hasOwnProperty(j)) {
-            var second_obj = default_settings[j];
-            for (var k in second_obj) {
-                if (second_obj.hasOwnProperty(k)) {
-                    var matching_td = $scoring_body.find("td:contains('" + k + "')");
-                    if (matching_td.length) {
-                        matching_td = matching_td.filter(function () {
+    // - ROSTER SETTINGS -
+    var missing_positions = [];
+    
+    function doRosterSettings($roster) {
+        var $roster_body = $roster.find('tbody').find('tbody');
+        var $roster_tds = $roster_body.find('tr[class^=row]').find('td:first');
+
+        for (var j in default_roster) {
+            if (default_roster.hasOwnProperty(j)) {
+                var second_obj = default_roster[j];
+                var matching_td = $roster_body.find("td:contains('" + j + "')");
+                if (matching_td.length) {
+                    var $td_start = matching_td.next();
+                    var $td_max = $td_start.next();
+                    var td_start_num = getCellVal($td_start);
+                    var td_max_num = getCellVal($td_max);
+                    
+                    var def_start_val = second_obj['num'];
+                    colorizeCell(td_start_num, def_start_val, $td_start);
+                    var def_max_val = second_obj['max'];
+                    colorizeCell(td_max_num, def_max_val, $td_max);
+                     
+                    $roster_tds.splice($roster_tds.index(matching_td), 1);
+                }
+                else {
+                    missing_positions.push(j);
+                }
+            }
+        }
+        
+        $roster_tds.each(function(i) {
+            var $thistd = jQuery(this);
+            var $td_row = $thistd.parent();
+            $td_row.css({'background-color': 'lightblue'});
+        });
+
+        if (missing_positions.length > 0) {
+            var $last_section = $roster.find('tbody').first().children('tr').last();
+            var trclassname = 'Even';
+            if ($last_section.attr("class").indexOf('Even') != -1) {
+                trclassname = 'Odd';
+            }
+            var $last_td = $last_section.find('tr:nth(1)').find('td:first');
+            var td_width = $last_td.width() || 250;
+            var $missing_section = jQuery('<tr class="row' + trclassname + '"><td class="dataSummary settingLabel">Missing Positions</td><td><table border="0" cellpadding="2" cellspacing="1" class="leagueSettingsTable tableBody"><tbody></tbody></table></td></tr>');
+            var $missing_section_body = $missing_section.find('tbody');
+            
+            var missing_length = missing_positions.length;
+            for (var i=0; i < missing_length; i++) {
+                var td_val = missing_positions[i];
+
+                var new_row = '<tr style="background-color: pink;"><td style="width: ' + td_width + 'px">' + td_val + '</td><td><strong>' + default_roster[td_val]['num'] + '</strong></td><td><strong>' + default_roster[td_val]['max'] + '</strong></td></tr>';
+                $missing_section_body.append(new_row);
+            }
+            
+            $missing_section.insertAfter($last_section);
+        }
+        
+        rosterDone.resolve();
+    }
+        
+    // - SCORING SETTINGS -
+    function doScoringSettings($scoring) {
+        var $scoring_body = $scoring.find('table.viewable').find('tbody').find('tbody');
+        var $scoring_tds = $scoring_body.find('td.statName');
+
+        var missing_tds = [];
+        for (var j in default_settings) {
+            if (default_settings.hasOwnProperty(j)) {
+                var second_obj = default_settings[j];
+                for (var k in second_obj) {
+                    if (second_obj.hasOwnProperty(k)) {
+                        var matching_td = $scoring_body.find("td:contains('" + k + "')").filter(function () {
                             return jQuery(this).parents('td').eq(0).prev().text() == j;
                         });
                         if (matching_td.length) {
@@ -414,26 +508,23 @@ function addLeagueSettings() {
                              
                             $scoring_tds.splice($scoring_tds.index(matching_td), 1);
                         }
-                    }
-                    else {
-                        var missing_tuple = {'typ': j, 'val': k};
-                        missing_tds.push(missing_tuple);
+                        else {
+                            var missing_tuple = {'typ': j, 'val': k};
+                            missing_tds.push(missing_tuple);
+                        }
                     }
                 }
             }
         }
-    }
 
-    var missing_stand_tds = [];
-    var is_standard = false;
-    for (var j in default_standard_settings) {
-        if (default_standard_settings.hasOwnProperty(j)) {
-            var second_obj = default_standard_settings[j];
-            for (var k in second_obj) {
-                if (second_obj.hasOwnProperty(k)) {
-                    var matching_td = $scoring_body.find("td:contains('" + k + "')");
-                    if (matching_td.length) {
-                        matching_td = matching_td.filter(function () {
+        var missing_stand_tds = [];
+        var is_standard = false;
+        for (var j in default_standard_settings) {
+            if (default_standard_settings.hasOwnProperty(j)) {
+                var second_obj = default_standard_settings[j];
+                for (var k in second_obj) {
+                    if (second_obj.hasOwnProperty(k)) {
+                        var matching_td = $scoring_body.find("td:contains('" + k + "')").filter(function () {
                             return jQuery(this).parents('td').eq(0).prev().text() == j;
                         });
                         if (matching_td.length) {
@@ -446,26 +537,23 @@ function addLeagueSettings() {
                             
                             $scoring_tds.splice($scoring_tds.index(matching_td), 1);
                         }
-                    }
-                    else {
-                        var missing_tuple = {'typ': j, 'val': k};
-                        missing_stand_tds.push(missing_tuple);
+                        else {
+                            var missing_tuple = {'typ': j, 'val': k};
+                            missing_stand_tds.push(missing_tuple);
+                        }
                     }
                 }
             }
         }
-    }
 
-    var missing_frac_tds = [];
-    var is_frac = false;
-    for (var j in default_fractional_settings) {
-        if (default_fractional_settings.hasOwnProperty(j)) {
-            var second_obj = default_fractional_settings[j];
-            for (var k in second_obj) {
-                if (second_obj.hasOwnProperty(k)) {
-                    var matching_td = $scoring_body.find("td:contains('" + k + "')");
-                    if (matching_td.length) {
-                        matching_td = matching_td.filter(function () {
+        var missing_frac_tds = [];
+        var is_frac = false;
+        for (var j in default_fractional_settings) {
+            if (default_fractional_settings.hasOwnProperty(j)) {
+                var second_obj = default_fractional_settings[j];
+                for (var k in second_obj) {
+                    if (second_obj.hasOwnProperty(k)) {
+                        var matching_td = $scoring_body.find("td:contains('" + k + "')").filter(function () {
                             return jQuery(this).parents('td').eq(0).prev().text() == j;
                         });
                         if (matching_td.length) {
@@ -478,161 +566,245 @@ function addLeagueSettings() {
                             
                             $scoring_tds.splice($scoring_tds.index(matching_td), 1);
                         }
-                    }
-                    else {
-                        var missing_tuple = {'typ': j, 'val': k};
-                        missing_frac_tds.push(missing_tuple);
+                        else {
+                            var missing_tuple = {'typ': j, 'val': k};
+                            missing_frac_tds.push(missing_tuple);
+                        }
                     }
                 }
             }
         }
-    }
-
-    //put RY5 for example in a small diff color
-    var $scoring_header = $scoring.find('tr').first().find('td').first();
-    if (is_standard && is_frac) {
-         $scoring_header.append(' (Mixture)');
-         //slightly inaccurate, but this is an edge case
-         missing_frac_tds.splice(0, missing_frac_tds.length);
-         missing_stand_tds.splice(0, missing_stand_tds.length);
-    }
-    else if (is_standard) {
-         $scoring_header.append(' (Standard)');
-         missing_frac_tds.splice(0, missing_frac_tds.length);
-    }
-    else if (is_frac) {
-         $scoring_header.append(' (Fractional)');
-         missing_stand_tds.splice(0, missing_stand_tds.length);
-    }
-    else {
-         $scoring_header.append(' (None)');
-    }
-    
-    function check_denom(td_num, denom_str, expected_val, $td_cell) {
-        if (denom_str.length > 0) {
-                var denom = parseFloat(denom_str);
-            }
-            else {
-                var denom = 1.0;
-            }
-            var converted_val = expected_val * denom;
-            colorizeCell(td_num, converted_val, $td_cell);
-            if (td_num == converted_val) {
-                return true;
-            }
-            else {
-                return false;
-            }
-    }
-    
-    $scoring_tds.each(function(i) {
-        var $thistd = jQuery(this);
-
-        var $td_cell = $thistd.next().first();
-        var td_num = getCellVal($td_cell);
         
-        var thistd_text = $thistd.text();
-        
-        var frac_cell = false;
-        var cell_indexof = thistd_text.indexOf('(PY');
-        if (cell_indexof !== -1) {
-            frac_cell = true;
-            var expected_val = default_fractional_settings['Passing']['Passing Yards (PY)'];
-            var denom_str = '';
-            var denom_reg = thistd_text.match(/\([A-Z]+(\d+)\)/);
-            if (denom_reg.length) {
-                var denom_str = thistd_text.match(/\([A-Z]+(\d+)\)/)[1];
+        //To identify nonstandard yard scoring
+        for (var c=0; c < $scoring_tds.length; c++) {
+            var s_text = jQuery($scoring_tds[c]).text();
+            var nonstand = false;
+            if ((s_text.search(/ards\s+\(PY\d+/) > -1) && (s_text.indexOf('ards (PY25)') == -1)) {
+                var nonmissing_tuple = {'typ': 'Passing', 'val': 'Passing Yards (PY)'};
+                nonstand = true;
             }
-            var same_val = check_denom(td_num, denom_str, expected_val, $td_cell);
-            if (same_val) {
-                missing_frac_tds.splice(missing_frac_tds.indexOf(' (PY'), 1);
-                missing_stand_tds.splice(missing_stand_tds.indexOf(' (PY'), 1);
+            else if ((s_text.search(/ards\s+\(RY\d+/) > -1) && (s_text.indexOf('ards (RY10)') == -1)) {
+                var nonmissing_tuple = {'typ': 'Rushing', 'val': 'Rushing Yards (PY)'};
+                nonstand = true;
             }
-        }
-        var cell_indexof = thistd_text.indexOf('(RY');
-        if (cell_indexof !== -1) {
-            frac_cell = true;
-            var expected_val = default_fractional_settings['Rushing']['Rushing Yards (RY)'];
-            var denom_str = '';
-            var denom_reg = thistd_text.match(/\([A-Z]+(\d+)\)/);
-            if (denom_reg.length) {
-                var denom_str = thistd_text.match(/\([A-Z]+(\d+)\)/)[1];
-            }            var same_val = check_denom(td_num, denom_str, expected_val, $td_cell);
-            if (same_val) {
-                missing_frac_tds.splice(missing_frac_tds.indexOf(' (RY'), 1);
-                missing_stand_tds.splice(missing_stand_tds.indexOf(' (RY'), 1);
-            }
-
-        }
-        var cell_indexof = thistd_text.indexOf('(REY');
-        if (cell_indexof !== -1) {
-            frac_cell = true;
-            var expected_val = default_fractional_settings['Receiving']['Receiving Yards (REY)'];
-            var denom_str = '';
-            var denom_reg = thistd_text.match(/\([A-Z]+(\d+)\)/);
-            if (denom_reg.length) {
-                var denom_str = thistd_text.match(/\([A-Z]+(\d+)\)/)[1];
-            }
-            var same_val = check_denom(td_num, denom_str, expected_val, $td_cell);
-            if (same_val) {
-                missing_frac_tds.splice(missing_frac_tds.indexOf(' (REY'), 1);
-                missing_stand_tds.splice(missing_stand_tds.indexOf(' (REY'), 1);
-            }
-
-        }
-        
-        if (!frac_cell) {
-            $thistd.css({'background-color': 'lightblue'});
-            $td_cell.css({'background-color': 'lightblue'});
-        }
-    });
-
-    // these should really go in their respective setting areas
-    var all_missing_tds = missing_tds.concat(missing_stand_tds).concat(missing_frac_tds);
-    
-    if (all_missing_tds.length > 0) {
-        var $last_section = $scoring.find('tbody').first().children('tr').last();
-        var trclassname = 'Even';
-        if ($last_section.attr("class").indexOf('Even') != -1) {
-            trclassname = 'Odd';
-        }
-        var $missing_section = jQuery('<tr class="row' + trclassname + '"><td class="categoryName settingLabel">Missing Entries</td><td><table width="100%" cellspacing="0" cellpadding="0" border="0"><tbody></tbody></table></td></tr>');
-        var $missing_section_body = $missing_section.find('tbody');
-        
-        var missing_length = all_missing_tds.length;
-        var rows_list = [];
-        var new_row = '';
-        for (var i=0; i < missing_length; i++) {
-            var td_val = all_missing_tds[i];
-            var td_val_typ = td_val['typ'];
-            var td_val_str = td_val['val'];
-
-            if (i % 2 == 0) {
-                new_row = '<tr>';
-            }
-            else {
-                new_row += '<td class="spacer"></td>';
-            }
-            //instead of this, put in the correct section
-            new_row += '<td class="statName" style="background-color: pink;">' + td_val_str + ' [' + td_val_typ + '] ' + '</td><td class="statPoints" style="background-color: pink;">' + default_all_settings[td_val_typ][td_val_str] + '</td>';
-            if (i % 2 != 0) {
-                new_row += '</tr>';
-            }
-            else if (i == missing_length - 1) {
-                new_row += '<td class="spacer"></td><td colspan="2"></td></tr>';
+            else if ((s_text.search(/ards\s+\(REY\d+/) > -1) && (s_text.indexOf('ards (REY10)') == -1)) {
+                var nonmissing_tuple = {'typ': 'Receiving', 'val': 'Receiving Yards (REY)'};
+                nonstand = true;
             }
             
-            if (i % 2 == 0) {
-                rows_list.push(new_row);
+            if (nonstand) {
+                is_standard = true;
+                missing_frac_tds.splice(nonmissing_tuple, 1);
+            }
+        }
+
+        //put RY5 for example in a small diff color
+        var $scoring_header = $scoring.find('tr').first().find('td').first();
+        if (is_standard && is_frac) {
+             $scoring_header.append(' (Mixture)');
+             //slightly inaccurate, but this is an edge case
+             missing_frac_tds.splice(0, missing_frac_tds.length);
+             missing_stand_tds.splice(0, missing_stand_tds.length);
+        }
+        else if (is_standard) {
+             $scoring_header.append(' (Standard)');
+             missing_frac_tds.splice(0, missing_frac_tds.length);
+        }
+        else if (is_frac) {
+             $scoring_header.append(' (Fractional)');
+             missing_stand_tds.splice(0, missing_stand_tds.length);
+        }
+        else {
+             $scoring_header.append(' (None)');
+        }
+        
+        function check_denom(td_num, denom_str, expected_val, $td_cell) {
+            if (denom_str.length > 0) {
+                    var denom = parseFloat(denom_str);
+                }
+                else {
+                    var denom = 1.0;
+                }
+                var converted_val = expected_val * denom;
+                colorizeCell(td_num, converted_val, $td_cell);
+                if (td_num == converted_val) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+        }
+        
+        $scoring_tds.each(function(i) {
+            var $thistd = jQuery(this);
+
+            var $td_cell = $thistd.next().first();
+            var td_num = getCellVal($td_cell);
+            
+            var thistd_text = $thistd.text();
+            
+            var frac_cell = false;
+            //again, espn adds a dumb extra space
+            var cell_indexof = thistd_text.search(/ards\s+\(PY/);
+            if (cell_indexof !== -1) {
+                frac_cell = true;
+                var expected_val = default_fractional_settings['Passing']['Passing Yards (PY)'];
+                var denom_str = '';
+                var denom_reg = thistd_text.match(/\([A-Z]+(\d+)\)/);
+                if (denom_reg.length) {
+                    var denom_str = denom_reg[1];
+                }
+                var same_val = check_denom(td_num, denom_str, expected_val, $td_cell);
+                if (same_val) {
+                    missing_frac_tds.splice(missing_frac_tds.indexOf(' (PY'), 1);
+                    missing_stand_tds.splice(missing_stand_tds.indexOf(' (PY'), 1);
+                }
+            }
+            var cell_indexof = thistd_text.indexOf('ards (RY');
+            if (cell_indexof !== -1) {
+                frac_cell = true;
+                var expected_val = default_fractional_settings['Rushing']['Rushing Yards (RY)'];
+                var denom_str = '';
+                var denom_reg = thistd_text.match(/\([A-Z]+(\d+)\)/);
+                if (denom_reg.length) {
+                    var denom_str = denom_reg[1];
+                }            var same_val = check_denom(td_num, denom_str, expected_val, $td_cell);
+                if (same_val) {
+                    missing_frac_tds.splice(missing_frac_tds.indexOf(' (RY'), 1);
+                    missing_stand_tds.splice(missing_stand_tds.indexOf(' (RY'), 1);
+                }
+
+            }
+            var cell_indexof = thistd_text.indexOf('ards (REY');
+            if (cell_indexof !== -1) {
+                frac_cell = true;
+                var expected_val = default_fractional_settings['Receiving']['Receiving Yards (REY)'];
+                var denom_str = '';
+                var denom_reg = thistd_text.match(/\([A-Z]+(\d+)\)/);
+                if (denom_reg.length) {
+                    var denom_str = denom_reg[1];
+                }
+                var same_val = check_denom(td_num, denom_str, expected_val, $td_cell);
+                if (same_val) {
+                    missing_frac_tds.splice(missing_frac_tds.indexOf(' (REY'), 1);
+                    missing_stand_tds.splice(missing_stand_tds.indexOf(' (REY'), 1);
+                }
+            }
+            
+            if (!frac_cell) {
+                $thistd.css({'background-color': 'lightblue'});
+                $td_cell.css({'background-color': 'lightblue'});
+            }
+        });
+
+        // these should really go in their respective setting areas
+        var all_missing_tds = missing_tds.concat(missing_stand_tds).concat(missing_frac_tds);
+        var new_missing_tds = all_missing_tds.slice();
+        for (var p=0; p < all_missing_tds.length; p++) {
+            var miss_pos = all_missing_tds[p];
+            var miss_pos_typ = miss_pos['typ'];
+            var miss_pos_trans = [];
+            if (miss_pos_typ == 'Team Defense / Special Teams') {
+                miss_pos_trans = ['Team Defense/Special Teams (D/ST)'];
+            }
+            else if (miss_pos_typ == 'Passing') {
+                miss_pos_trans = ['Quarterback (QB)', 'Team Quarterback (TQB)'];
+            }
+            else if (miss_pos_typ == 'Kicking') {
+                miss_pos_trans = ['Place Kicker (K)'];
+            }
+            
+            if (miss_pos_trans.length > 0) {
+                var found_pos = 0;
+                for (var f=0; f < miss_pos_trans.length; f++) {
+                    if (missing_positions.indexOf(miss_pos_trans[f]) > -1) {
+                        found_pos += 1;
+                    }
+                }
+                if (found_pos == miss_pos_trans.length) {
+                    new_missing_tds.splice(new_missing_tds.indexOf(miss_pos), 1);
+                }
             }
         }
         
-        for (var j=0; j < rows_list.length; j++) {
-            $missing_section_body.append(rows_list[j]);
+        if (new_missing_tds.length > 0) {
+            var $last_section = $scoring.find('table.viewable').find('tbody').first().children('tr').last();
+            var trclassname = 'Even';
+            if ($last_section.attr("class").indexOf('Even') != -1) {
+                trclassname = 'Odd';
+            }
+            var $missing_section = jQuery('<tr class="row' + trclassname + '"><td class="categoryName settingLabel">Missing Entries</td><td><table width="100%" cellspacing="0" cellpadding="0" border="0"><tbody></tbody></table></td></tr>');
+            var $missing_section_body = $missing_section.find('tbody');
+            
+            var missing_length = new_missing_tds.length;
+            for (var i=0; i < missing_length; i++) {
+                var td_val = new_missing_tds[i];
+                var td_val_typ = td_val['typ'];
+                var td_val_str = td_val['val'];
+
+                //instead of this, put in the correct section
+                var new_row = '<tr><td class="statName" style="background-color: pink;">' + td_val_str + ' [' + td_val_typ + '] ' + '</td><td class="statPoints" style="background-color: pink;">' + default_all_settings[td_val_typ][td_val_str] + '</td></tr>';
+                
+                $missing_section_body.append(new_row);
+            }
+            
+            $missing_section.insertAfter($last_section);
         }
-        
-        $missing_section.insertAfter($last_section);
     }
+    
+    var rosterDone = jQuery.Deferred();
+    
+    var $roster = $allsettings.find("div[name='roster']");
+    var $scoring = $allsettings.find("div[name='scoring']");
+    
+    if ($roster.length == 0) {
+        if ($scoring.length > 0) {
+            var roster_fetch = {'xhr': 1, 'edit': 'false', 'leagueId': league_id};
+            jQuery.get('http://games.espn.com/ffl/leaguesetup/sections/roster', roster_fetch, function(po) {
+                $roster = jQuery(po);
+                doRosterSettings($roster);
+            });
+        }
+        else {
+            rosterDone.resolve();
+        }
+    }
+    else {
+        doRosterSettings($roster);
+    }
+    
+    if ($scoring.length > 0) {
+        jQuery.when(rosterDone).done(function() {
+            doScoringSettings($scoring);
+        });
+    }
+
+    // Watch for changes
+    function watchLeagueForChanges() {
+        var observerConfig = {
+            childList: true,
+            characterData: true,
+            subtree: true
+        };
+
+        var target_observe = document.querySelector(ld_selector);
+        var leagueObserver = new MutationObserver(function (mutations) {
+            if (mutations.length > 0) {
+                var new_target_observe = jQuery(ld_selector);
+                var submit_btn = new_target_observe.find('input.submitSettings:visible');
+				if (submit_btn.length == 0) {
+                    leagueObserver.disconnect();
+                    addLeagueSettings();
+                }
+            }
+        });
+
+        leagueObserver.observe(target_observe, observerConfig);
+    }
+    
+    jQuery.when(rosterDone).done(function() {
+        watchLeagueForChanges();
+    });
 }
 
 function setSelectors() {
