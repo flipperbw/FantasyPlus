@@ -397,9 +397,7 @@ function addLeagueSettings() {
         },
     };
     
-    //add click event or maybe watcher
-    
-    //finish other headings
+    //TODO: finish other headings
            
     function getCellVal(cell) {
         var td_val = cell.text();
@@ -598,7 +596,7 @@ function addLeagueSettings() {
             }
         }
 
-        //put RY5 for example in a small diff color
+        //TODO: put RY5 for example in a small diff color
         var $scoring_header = $scoring.find('tr').first().find('td').first();
         if (is_standard && is_frac) {
              $scoring_header.append(' (Mixture)');
@@ -697,7 +695,7 @@ function addLeagueSettings() {
             }
         });
 
-        // these should really go in their respective setting areas
+        //TODO: these should really go in their respective setting areas
         var all_missing_tds = missing_tds.concat(missing_stand_tds).concat(missing_frac_tds);
         var new_missing_tds = all_missing_tds.slice();
         for (var p=0; p < all_missing_tds.length; p++) {
