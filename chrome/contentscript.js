@@ -1402,15 +1402,7 @@ function fetchPositionData(position, type, cb) {
         source_site = 'https://www.fantasypros.com/nfl/rankings/' + ros_url + rank_ppr + position + '.php?export=xls';
     }
     else if (off_positions_proj.indexOf(position) > -1) {
-        //TODO: doublecheck this on season start. cant just exclude people.
-        var rankers = '11:44:45:71:73:152:469';
-        if (siteType == "espn") {
-            rankers = '11:44:45:73:152:469';
-        }
-        else if (siteType == "yahoo") {
-            rankers = '11:44:45:71:73:152';
-        }
-        source_site = 'https://www.fantasypros.com/nfl/projections/' + position + '.php?filters=' + rankers + '&export=xls&week=' + current_week;
+        source_site = 'https://www.fantasypros.com/nfl/projections/' + position + '.php?export=xls&week=' + current_week;
     }
     else {
         //TODO delay fantasy sharks, maybe find some way to only loop over each position when the relevant calls are done
