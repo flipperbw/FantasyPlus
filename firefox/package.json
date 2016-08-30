@@ -1,7 +1,7 @@
 {
   "title": "FantasyPlus",
   "name": "FantasyPlus",
-  "version": "2.0",
+  "version": "2.0.1",
   "description": "Adds weekly projections/stats from FantasyPros (PFF, CBS, NumberFire, etc.) and FantasySharks (for D/ST and IDP) to fantasy sites.",
   "main": "contentscript.js",
   "author": "Brett Woodward",
