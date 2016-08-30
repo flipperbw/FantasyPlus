@@ -793,16 +793,12 @@ function fetchPositionData(position, type, cb) {
         //TODO: filters here?
         source_site = 'http://www.fantasypros.com/nfl/rankings/' + ros_url + rank_ppr + position + '.php?export=xls';
     }
-    else if (off_positions_proj.indexOf(position) > -1) {
-        //TODO: doublecheck this on season start. cant just exclude people.
-        var rankers = '11:44:45:71:73:152:469';
-        if (siteType == "espn") {
-            rankers = '11:44:45:73:152:469';
+    else if (off_positions_proj.indexOf(position) > -1 || position == '6') {
+        if (position == '6') {
+            source_site = 'https://www.fantasypros.com/nfl/projections/dst.php?export=xls&week=' + current_week;
+        } else {
+            source_site = 'https://www.fantasypros.com/nfl/projections/' + position + '.php?export=xls&week=' + current_week;
         }
-        else if (siteType == "yahoo") {
-            rankers = '11:44:45:71:73:152';
-        }
-        source_site = 'http://www.fantasypros.com/nfl/projections/' + position + '.php?filters=' + rankers + '&export=xls&week=' + current_week;
     }
     else {
         //TODO delay fantasy sharks, maybe find some way to only loop over each position when the relevant calls are done
@@ -851,7 +847,7 @@ function getPosProjections() {
             var player_heading, pos_name, retrieved_proj, parsed_proj;
             
             if (!(raw_data == 'error')) {
-                if (off_positions_proj.indexOf(p_name) > -1) {
+                if (off_positions_proj.indexOf(p_name) > -1 || p_name == '6') {
                     player_heading = 'Player Name';
                     pos_name = p_name.toUpperCase();
                     retrieved_proj = raw_data.split('\n').splice(4);
@@ -889,12 +885,13 @@ function getPosProjections() {
                             //DST
                             if (p_name == '6') {
                                 if (siteType == "espn") {
-                                    player_name = player_name.split(',')[0] + ' D/ST';
+                                    player_name = player_name.split(' ').reverse()[0] + ' D/ST';
                                     team_name = "-";
                                 }
                                 else if (siteType == "yahoo") {
-                                    player_name = player_name.split(',')[1];
+                                    player_name = player_name.split(' ').reverse()[0];
                                 }
+                                pos_name = 'D/ST';
                             }
                             //Other IDPs, reversing names
                             else {
@@ -1308,16 +1305,22 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
             settings['deftd'] * (player_data['DefTD'] || 0) +
             settings['fr'] * (player_data['Fum'] || 0) +
 
-            settings['pa'] * (player_data['Pts Agn'] || 0) +
-            settings['pa0'] * (player_data['Pts Agn'] == 0) +
-            settings['pa1'] * (0 < player_data['Pts Agn'] && player_data['Pts Agn'] <= 6) +
-            settings['pa7'] * (6 < player_data['Pts Agn'] && player_data['Pts Agn'] <= 13) +
-            settings['pa28'] * (27 < player_data['Pts Agn'] && player_data['Pts Agn'] <= 34) +
+            settings['sk'] * (player_data['def_sack'] || 0) +
+            settings['ff'] * (player_data['def_ff'] || 0) +
+            settings['int'] * (player_data['def_int'] || 0) +
+            settings['deftd'] * (player_data['def_td'] || 0) +
+            settings['fr'] * (player_data['def_fr'] || 0) +
+
+            settings['pa'] * (player_data['def_pa'] || 0) +
+            settings['pa0'] * (player_data['def_pa'] == 0) +
+            settings['pa1'] * (0 < player_data['def_pa'] && player_data['def_pa'] <= 6) +
+            settings['pa7'] * (6 < player_data['def_pa'] && player_data['def_pa'] <= 13) +
+            settings['pa28'] * (27 < player_data['def_pa'] && player_data['def_pa'] <= 34) +
             
-            settings['ya'] * (player_data['Yds Allowed'] || 0) +
-            settings['ya100'] * (0 <= player_data['Yds Allowed'] && player_data['Yds Allowed'] < 100) +
-            settings['ya199'] * (100 <= player_data['Yds Allowed'] && player_data['Yds Allowed'] < 200) +
-            settings['ya299'] * (200 <= player_data['Yds Allowed'] && player_data['Yds Allowed'] < 300);
+            settings['ya'] * (player_data['def_tyda'] || 0) +
+            settings['ya100'] * (0 <= player_data['def_tyda'] && player_data['def_tyda'] < 100) +
+            settings['ya199'] * (100 <= player_data['def_tyda'] && player_data['def_tyda'] < 200) +
+            settings['ya299'] * (200 <= player_data['def_tyda'] && player_data['def_tyda'] < 300);
         
         if (settings['siteType'] == 'espn') {
             var player_adjustment =
@@ -1328,18 +1331,18 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
                 settings['rec_100_bonus'] * (100 <= player_data['rec_yds'] && player_data['rec_yds'] < 200) +
                 settings['rec_200_bonus'] * ((player_data['rec_yds'] || 0) >= 200) +
                 
-                settings['pa14'] * (13 < player_data['Pts Agn'] && player_data['Pts Agn'] <= 17) +
-                settings['pa18'] * (17 < player_data['Pts Agn'] && player_data['Pts Agn'] <= 21) +
-                settings['pa22'] * (21 < player_data['Pts Agn'] && player_data['Pts Agn'] <= 27) +
-                settings['pa35'] * (34 < player_data['Pts Agn'] && player_data['Pts Agn'] <= 45) +
-                settings['pa46'] * (45 < player_data['Pts Agn']) +
+                settings['pa14'] * (13 < player_data['def_pa'] && player_data['def_pa'] <= 17) +
+                settings['pa18'] * (17 < player_data['def_pa'] && player_data['def_pa'] <= 21) +
+                settings['pa22'] * (21 < player_data['def_pa'] && player_data['def_pa'] <= 27) +
+                settings['pa35'] * (34 < player_data['def_pa'] && player_data['def_pa'] <= 45) +
+                settings['pa46'] * (45 < player_data['def_pa']) +
                 
-                settings['ya349'] * (300 <= player_data['Yds Allowed'] && player_data['Yds Allowed'] < 350) +
-                settings['ya399'] * (350 <= player_data['Yds Allowed'] && player_data['Yds Allowed'] < 400) +
-                settings['ya449'] * (400 <= player_data['Yds Allowed'] && player_data['Yds Allowed'] < 450) +
-                settings['ya499'] * (450 <= player_data['Yds Allowed'] && player_data['Yds Allowed'] < 500) +
-                settings['ya549'] * (500 <= player_data['Yds Allowed'] && player_data['Yds Allowed'] < 550) +
-                settings['ya550'] * (550 <= player_data['Yds Allowed']);
+                settings['ya349'] * (300 <= player_data['def_tyda'] && player_data['def_tyda'] < 350) +
+                settings['ya399'] * (350 <= player_data['def_tyda'] && player_data['def_tyda'] < 400) +
+                settings['ya449'] * (400 <= player_data['def_tyda'] && player_data['def_tyda'] < 450) +
+                settings['ya499'] * (450 <= player_data['def_tyda'] && player_data['def_tyda'] < 500) +
+                settings['ya549'] * (500 <= player_data['def_tyda'] && player_data['def_tyda'] < 550) +
+                settings['ya550'] * (550 <= player_data['def_tyda']);
         }
         else if (settings['siteType'] == 'yahoo') {
             var player_adjustment =
@@ -1347,13 +1350,13 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
                 calcBonus(settings, 'rush') +
                 calcBonus(settings, 'rec') +
                 
-                settings['pa14'] * (13 < player_data['Pts Agn'] && player_data['Pts Agn'] <= 20) +
-                settings['pa21'] * (20 < player_data['Pts Agn'] && player_data['Pts Agn'] <= 27) +
-                settings['pa35'] * (34 < player_data['Pts Agn']) +
+                settings['pa14'] * (13 < player_data['def_pa'] && player_data['def_pa'] <= 20) +
+                settings['pa21'] * (20 < player_data['def_pa'] && player_data['def_pa'] <= 27) +
+                settings['pa35'] * (34 < player_data['def_pa']) +
                 
-                settings['ya399'] * (300 <= player_data['Yds Allowed'] && player_data['Yds Allowed'] < 400) +
-                settings['ya499'] * (400 <= player_data['Yds Allowed'] && player_data['Yds Allowed'] < 500) +
-                settings['ya500'] * (500 <= player_data['Yds Allowed']);
+                settings['ya399'] * (300 <= player_data['def_tyda'] && player_data['def_tyda'] < 400) +
+                settings['ya499'] * (400 <= player_data['def_tyda'] && player_data['def_tyda'] < 500) +
+                settings['ya500'] * (500 <= player_data['def_tyda']);
         }
             
         player_score += player_adjustment;
