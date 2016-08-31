@@ -1384,6 +1384,8 @@ function fetchPositionData(position, type, cb) {
     var source_site = '';
     var rank_ppr = '';
     var ros_url = '';
+    //var experts = [11, 44, 45, 71, 73, 120, 152, 469, 859];
+    
     if ((type == 'rank') || (type == 'ros')) {
         if (position == 'rb' || position == 'wr' || position == 'te') {
             if (settings['rec_att'] == 0.5) {
@@ -1400,11 +1402,21 @@ function fetchPositionData(position, type, cb) {
         source_site = 'https://www.fantasypros.com/nfl/rankings/' + ros_url + rank_ppr + position + '.php?export=xls';
     }
     else if (off_positions_proj.indexOf(position) > -1 || position == '6') {
+        //TODO: add back the filters as form data:
         if (position == '6') {
             source_site = 'https://www.fantasypros.com/nfl/projections/dst.php?export=xls&week=' + current_week;
         } else {
             source_site = 'https://www.fantasypros.com/nfl/projections/' + position + '.php?export=xls&week=' + current_week;
         }
+        /*
+        if (siteType == "espn") {		
+            experts.splice(experts.indexOf(71), 1);
+        }		
+        else if (siteType == "yahoo") {		
+            experts.splice(experts.indexOf(73), 1);
+        }
+        source_site += '&expert%5B%5D=' + experts.join('&expert%5B%5D=');
+        */
     }
     else {
         //TODO delay fantasy sharks, maybe find some way to only loop over each position when the relevant calls are done
