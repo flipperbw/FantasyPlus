@@ -2358,7 +2358,7 @@ function insertAdjAvg(thiscell, p_avg, weekly_points_data) {
 	var thisCurrent = thiscell.siblings('.FantasyPlusCurrentData');
     var curr_score = "--";
 	if (weekly_points_data_cut && weekly_points_data_cut.length > 0) {
-        if (current_season == current_season_avg) {
+        if (current_season == current_season_avg_week) {
             curr_score = weekly_points_data_cut[current_week - 1];
         }
         
