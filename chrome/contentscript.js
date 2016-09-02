@@ -97,6 +97,7 @@ var current_year = current_date.getFullYear();
 
 var current_season = current_year;
 var current_season_avg = current_year;
+var current_season_avg_week = current_year;
 
 if (current_month < 5 || (!season_start_map[current_year] && season_start_map[current_year - 1])) {
     current_season -= 1;
@@ -109,14 +110,23 @@ catch(e) {
     throw('FantasyPlus: Season ' + current_season + ' does not exist in records');
 }
 
+//maybe espn has some variable I can access for what it thinks the current season is, since it doesn't really make much sense right now. it switched over one week before the season starts this time.
 var seasonstart_avg = seasonstart;
-if (current_date < seasonstart) {
+var seasonstart_avg_week = seasonstart;
+var oneweekbefore = new Date(seasonstart.getTime());
+oneweekbefore.setDate(oneweekbefore.getDate() - 7);
+
+if (current_date < oneweekbefore) {
     current_season_avg -= 1;
     seasonstart_avg = new Date(current_season_avg, season_start_map[current_season_avg][0], season_start_map[current_season_avg][1], 4);
 }
+if (current_date < seasonstart) {
+    current_season_avg_week -= 1;
+    seasonstart_avg_week = new Date(current_season_avg_week, season_start_map[current_season_avg_week][0], season_start_map[current_season_avg_week][1], 4);
+}
 
 var current_week = Math.max(Math.ceil(((current_date - seasonstart) / 86400000) / 7), 1);
-var current_week_avg = Math.max(Math.ceil(((current_date - seasonstart_avg) / 86400000) / 7), 1);
+var current_week_avg = Math.max(Math.ceil(((current_date - seasonstart_avg_week) / 86400000) / 7), 1);
 
 var off_positions_proj = ['qb', 'rb', 'wr', 'te', 'k'];
 var def_positions_proj = ['6','8','9','10'];
@@ -2093,7 +2103,7 @@ function getProjectionData(datatype, currRow, cell) {
                                 weeklyPointsData[i] = parseFloat(weeklyPointsData[i]);
                             }
                         }
-                        
+
                         if (player_cell_text.match(/(D\/ST|TQB|HC)$/)) {
                             var player_activity = {};
                             player_activity['games_played'] = [];
@@ -2113,11 +2123,11 @@ function getProjectionData(datatype, currRow, cell) {
                             var playercard = jQuery('div#tabView0 div#moreStatsView0 div.pc:not(#pcBorder)', podata);
                             var pop_player_id = playercard.find('a[href*="playerId"], a[href*="proId"]').attr('href').match(/(playerId=|proId\/)(\d+)/)[2];
                             
-                            var espn_player_link = "//espn.com/nfl/player/gamelog/_/id/" + pop_player_id + "/year/" + current_season_avg;
+                            var espn_player_link = "//espn.com/nfl/player/gamelog/_/id/" + pop_player_id + "/year/" + current_season_avg_week;
                             jQuery.get(espn_player_link, function(p) {
                                 var adata = jQuery(p);
                                 var base_games_played = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
-                                
+
                                 //:first for non post season
                                 var gamedateindex = jQuery('div.mod-player-stats div.mod-content table:first tbody tr.colhead td:contains("DATE")', adata).first().index();
                                 if (gamedateindex > -1) {
@@ -2125,11 +2135,11 @@ function getProjectionData(datatype, currRow, cell) {
                                     jQuery.each(gamedates, function(gp_i, gp_v) {
                                         var gp_v_parse = jQuery(gp_v);
                                         var gamedate = gp_v_parse.find('td').eq(gamedateindex).text().trim();
-                                        var rowDate = rowDate = new Date(gamedate.split(' ')[1] + ' ' + current_season_avg);
+                                        var rowDate = rowDate = new Date(gamedate.split(' ')[1] + ' ' + current_season_avg_week);
                                         if (rowDate.getMonth() < 5) {
-                                            rowDate = new Date(gamedate.split(' ')[1] + ' ' + (current_season_avg + 1));
+                                            rowDate = new Date(gamedate.split(' ')[1] + ' ' + (current_season_avg_week + 1));
                                         }
-                                        var rowWeek = Math.ceil(((rowDate - seasonstart_avg) / 86400000) / 7);
+                                        var rowWeek = Math.ceil(((rowDate - seasonstart_avg_week) / 86400000) / 7);
                                         base_games_played[rowWeek - 1] = 1;
                                     });
                                 }
@@ -2393,7 +2403,7 @@ function insertAdjAvg(thiscell, p_avg, weekly_points_data) {
         var new_activity_data = {};
         new_activity_data['fp_player_activity_data'] = activity_data;
         chrome.storage.local.set(new_activity_data, function() {
-            if (current_season != current_season_avg) {
+            if ((current_season != current_season_avg) || (current_season != current_season_avg_week)) {
                 //doing this to reset back to current season
                 var espn_points_data = {'leagueId': league_id, 'seasonId': current_season, 'xhr': '1'};
                 jQuery.get('//games.espn.com/ffl/freeagency', espn_points_data);
