@@ -144,6 +144,14 @@ var rankDone = jQuery.Deferred();
 var rosDone = jQuery.Deferred();
 var avgDone = jQuery.Deferred();
 
+// Temporary clearing of cache, not sure if this is needed every season or not.
+chrome.storage.local.get('fp_reset_2016', function(d) { 
+    if (!d.hasOwnProperty('fp_reset_2016') || (d['fp_reset_2016'] !== true)) {
+        chrome.storage.local.clear();
+        chrome.storage.local.set({'fp_reset_2016': true});
+    }
+});
+
 if (document.URL.match(/games.espn.com/)) {
     siteType = 'espn';
     
