@@ -38,6 +38,7 @@
 	  "js" : [
 		"jquery.min.js",
 		"jquery.sparkline.min.js",
+		"table2CSV.js",
 		"contentscript.js"
 	  ]
     }

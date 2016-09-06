@@ -128,6 +128,41 @@ if (current_date < seasonstart) {
 var current_week = Math.max(Math.ceil(((current_date - seasonstart) / 86400000) / 7), 1);
 var current_week_avg = Math.max(Math.ceil(((current_date - seasonstart_avg_week) / 86400000) / 7), 1);
 
+var team_abbrevs = {
+    'Seattle Seahawks': 'SEA',
+    'Carolina Panthers': 'CAR',
+    'Arizona Cardinals': 'ARI',
+    'Denver Broncos': 'DEN',
+    'Los Angeles Rams': 'LA',
+    'Houston Texans': 'HOU',
+    'Kansas City Chiefs': 'KC',
+    'Cincinnati Bengals': 'CIN',
+    'New England Patriots': 'NE',
+    'Minnesota Vikings': 'MIN',
+    'New York Jets': 'NYJ',
+    'Philadelphia Eagles': 'PHI',
+    'Green Bay Packers': 'GB',
+    'Buffalo Bills': 'BUF',
+    'Pittsburgh Steelers': 'PIT',
+    'Baltimore Ravens': 'BAL',
+    'Oakland Raiders': 'OAK',
+    'Jacksonville Jaguars': 'JAC',
+    'Miami Dolphins': 'MIA',
+    'Detroit Lions': 'DET',
+    'Tennessee Titans': 'TEN',
+    'Cleveland Browns': 'CLE',
+    'San Francisco 49ers': 'SF',
+    'New York Giants': 'NYG',
+    'Chicago Bears': 'CHI',
+    'Tampa Bay Buccaneers': 'TB',
+    'Washington Redskins': 'WSH',
+    'Atlanta Falcons': 'ATL',
+    'San Diego Chargers': 'SD',
+    'Indianapolis Colts': 'IND',
+    'New Orleans Saints': 'NO',
+    'Dallas Cowboys': 'DAL'
+};
+
 var off_positions_proj = ['qb', 'rb', 'wr', 'te', 'k'];
 var def_positions_proj = ['6','8','9','10'];
 var all_positions_proj = off_positions_proj.concat(def_positions_proj);
@@ -1436,14 +1471,15 @@ function fetchPositionData(position, type, cb) {
             ros_url = 'ros-';
         }
         //TODO: filters here?
-        source_site = 'https://www.fantasypros.com/nfl/rankings/' + ros_url + rank_ppr + position + '.php?export=xls';
+        source_site = 'https://www.fantasypros.com/nfl/rankings/' + ros_url + rank_ppr + position + '.php';
     }
     else if (off_positions_proj.indexOf(position) > -1 || position == '6') {
         //TODO: add back the filters as form data:
         if (position == '6') {
-            source_site = 'https://www.fantasypros.com/nfl/projections/dst.php?export=xls&week=' + current_week;
+            //todo dunno if i need week anymore
+            source_site = 'https://www.fantasypros.com/nfl/projections/dst.php?week=' + current_week;
         } else {
-            source_site = 'https://www.fantasypros.com/nfl/projections/' + position + '.php?export=xls&week=' + current_week;
+            source_site = 'https://www.fantasypros.com/nfl/projections/' + position + '.php?week=' + current_week;
         }
         /*
         if (siteType == "espn") {		
@@ -1499,30 +1535,87 @@ function parsesiteCSV(str) {
     return arr;
 }
 
+var fpros_proj_headers = {
+    'QB':  ['Player', 'Team', 'pass_att', 'pass_cmp', 'pass_yds', 'pass_tds', 'pass_ints', 'rush_att', 'rush_yds', 'rush_tds', 'fumbles', 'fpts'],
+    'RB':  ['Player', 'Team', 'rush_att', 'rush_yds', 'rush_tds', 'rec_att', 'rec_yds', 'rec_tds', 'fumbles', 'fpts'],
+    'WR':  ['Player', 'Team', 'rush_att', 'rush_yds', 'rush_tds', 'rec_att', 'rec_yds', 'rec_tds', 'fumbles', 'fpts'],
+    'TE':  ['Player', 'Team', 'rec_att', 'rec_yds', 'rec_tds','fumbles', 'fpts'],
+    'K':   ['Player', 'Team', 'fg', 'fga', 'xpt', 'fpts'],
+    'DST': ['Player', 'Team', 'def_sack', 'def_int', 'def_fr', 'def_ff', 'def_td', 'def_assist', 'def_safety', 'def_pa', 'def_tyda', 'fpts'] 
+};
+
+var fpros_rank_headers = ['Rank', 'Player', 'Team', 'Matchup', 'Best Rank', 'Worst Rank', 'Avg Rank', 'Std Dev'];
+
+function convertFProsToCSV(raw_data, type, pos_name) {
+    var new_raw_data = jQuery(raw_data);
+    new_raw_data.find('thead tr:has(td)').remove();
+    new_raw_data.find('tbody tr:not([class^="mpb-player"])').remove();
+    var new_data = jQuery('table#data', new_raw_data);
+    
+    var header_cell = new_data.find('thead th:contains("Player")')
+    var new_header_cell = header_cell.clone();
+    new_header_cell.text('Team');
+    new_header_cell.insertAfter(header_cell);
+    
+    var data_rows = new_data.find('tbody tr');
+    data_rows.each(function(i, v) {
+        var jv = jQuery(v);
+        var player_cell = jv.find('td.player-label');
+        var new_player_name = player_cell.find('a[href^="/nfl"]').first().text().trim();
+        
+        var team_text = '';
+        if (type == 'proj') {
+            team_text = player_cell.contents().filter(function() { return this.nodeType === 3; }).text().trim();
+        }
+        else {
+            team_text = player_cell.find('small:first').text().trim();
+        }
+        if (!team_text) {
+            team_text = 'FA';
+        }
+        var new_team_cell = jQuery('<td>' + team_text + '</td>');
+        
+        player_cell.text(new_player_name);
+        new_team_cell.insertAfter(player_cell);
+    });
+    
+    var new_headers = fpros_rank_headers;
+    if (type == 'proj') {
+        new_headers = fpros_proj_headers[pos_name];
+    }
+    
+    var new_csv = new_data.table2CSV({
+        delivery: 'value',
+        header: new_headers
+    });
+
+    return new_csv;
+}
+
 function getPosProjections() {
     var ready_proj = all_positions_proj.length;
     var type = 'proj';
-    
+    //TODO add a catch here if this array is emptyy at the end or something
     for (var p=0; p < all_positions_proj.length; p++) {
         var p_name = all_positions_proj[p];
         fetchPositionData(p_name, type, function(p_name, raw_data) {
-            var player_heading, pos_name, retrieved_proj, parsed_proj;
+            var pos_name, retrieved_proj, parsed_proj;
             
             if (!(raw_data == 'error')) {
                 if (off_positions_proj.indexOf(p_name) > -1 || p_name == '6') {
-                    player_heading = 'Player Name';
-                    pos_name = p_name.toUpperCase();
-                    retrieved_proj = raw_data.split('\n').splice(4);
-                    parsed_proj = [];
-                    for (var t=0; t < retrieved_proj.length; t++) {
-                        parsed_proj[t] = retrieved_proj[t].split("\t");
+                    if (p_name == '6') {
+                        pos_name = 'DST';
                     }
+                    else {
+                        pos_name = p_name.toUpperCase();
+                    }
+                    raw_data = convertFProsToCSV(raw_data, type, pos_name);
                 }
                 else {
-                    player_heading = 'Player';
                     pos_name = idp_conversion[p_name];
-                    parsed_proj = parsesiteCSV(raw_data);
                 }
+                
+                parsed_proj = parsesiteCSV(raw_data);
                 
                 var headers = parsed_proj[0];
                 for (var h=0; h < headers.length; h++) {
@@ -1530,7 +1623,7 @@ function getPosProjections() {
                 }
                 
                 var team_header = headers.indexOf('Team');
-                var player_name_header = headers.indexOf(player_heading);
+                var player_name_header = headers.indexOf('Player');
                 
                 if ((team_header > -1) && (player_name_header > -1)) {
                     for (var i=1; i < parsed_proj.length; i++) {
@@ -1542,7 +1635,7 @@ function getPosProjections() {
                         }
                         
                         var player_name = currentline[player_name_header].trim();
-                        
+
                         if (def_positions_proj.indexOf(p_name) > -1) {
                             //DST
                             if (p_name == '6') {
@@ -1574,7 +1667,7 @@ function getPosProjections() {
 							alldata[full_name] = {};
 						}
                         
-                        for (var j = player_name_header + 1; j < headers.length - 1; j++) {
+                        for (var j = player_name_header + 1; j < headers.length; j++) {
                             alldata[full_name][headers[j].trim()] = currentline[j].trim().replace(',', '');
                         }
                     }
@@ -1596,16 +1689,13 @@ function getPosRankings() {
     for (var p=0; p < all_positions_rank.length; p++) {
         var p_name = all_positions_rank[p];
         fetchPositionData(p_name, type, function(p_name, raw_data) {
-            var player_heading, pos_name, retrieved_rank, parsed_rank;
+            var pos_name, retrieved_rank, parsed_rank;
             
             if (!(raw_data == 'error')) {
-                player_heading = 'Player Name';
                 pos_name = p_name.toUpperCase();
-                retrieved_rank = raw_data.split('\n').splice(4);
-                parsed_rank = [];
-                for (var t=0; t < retrieved_rank.length; t++) {
-                    parsed_rank[t] = retrieved_rank[t].split("\t");
-                }
+                raw_data = convertFProsToCSV(raw_data, type, pos_name);
+                
+                parsed_rank = parsesiteCSV(raw_data);
                 
                 var headers = parsed_rank[0];
                 for (var h=0; h < headers.length; h++) {
@@ -1613,7 +1703,7 @@ function getPosRankings() {
                 }
                 
                 var team_header = headers.indexOf('Team');
-                var player_name_header = headers.indexOf(player_heading);
+                var player_name_header = headers.indexOf('Player');
                 
                 if ((team_header > -1) && (player_name_header > -1)) {
                     for (var i=1; i < parsed_rank.length; i++) {
@@ -1631,7 +1721,7 @@ function getPosRankings() {
                                 player_name = player_name.split(' ').pop() + ' D/ST';
                             }
                             else if (siteType == "yahoo") {
-                                player_name = team_name;
+                                player_name = team_abbrevs[player_name];
                             }
                             pos_name = 'D/ST';
                             team_name = "-";
@@ -1646,7 +1736,7 @@ function getPosRankings() {
                             alldata[full_name] = {};
                         }
                         
-                        for (var j = player_name_header + 3; j < headers.length - 1; j++) {
+                        for (var j = player_name_header + 2; j < headers.length; j++) {
                             alldata[full_name][headers[j].trim()] = currentline[j].trim();
                         }
                     }
@@ -1669,16 +1759,13 @@ function getRosRankings() {
     for (var p=0; p < all_positions_rank.length; p++) {
         var p_name = all_positions_rank[p];
         fetchPositionData(p_name, type, function(p_name, raw_data) {
-            var player_heading, pos_name, retrieved_rank, parsed_rank;
+            var pos_name, retrieved_rank, parsed_rank;
             
             if (!(raw_data == 'error')) {
-                player_heading = 'Player Name';
                 pos_name = p_name.toUpperCase();
-                retrieved_rank = raw_data.split('\n').splice(4);
-                parsed_rank = [];
-                for (var t=0; t < retrieved_rank.length; t++) {
-                    parsed_rank[t] = retrieved_rank[t].split("\t");
-                }
+                raw_data = convertFProsToCSV(raw_data, type, pos_name);
+                
+                parsed_rank = parsesiteCSV(raw_data);
                 
                 var headers = parsed_rank[0];
                 for (var h=0; h < headers.length; h++) {
@@ -1686,7 +1773,7 @@ function getRosRankings() {
                 }
                 
                 var team_header = headers.indexOf('Team');
-                var player_name_header = headers.indexOf(player_heading);
+                var player_name_header = headers.indexOf('Player');
                 
                 if ((team_header > -1) && (player_name_header > -1)) {
                     for (var i=1; i < parsed_rank.length; i++) {
@@ -1704,7 +1791,7 @@ function getRosRankings() {
                                 player_name = player_name.split(' ').pop() + ' D/ST';
                             }
                             else if (siteType == "yahoo") {
-                                player_name = team_name;
+                                player_name = team_abbrevs[player_name];
                                 
                             }
                             pos_name = 'D/ST';
@@ -1720,7 +1807,7 @@ function getRosRankings() {
                             alldata[full_name] = {};
                         }
                         
-                        for (var j = player_name_header + 3; j < headers.length - 1; j++) {
+                        for (var j = player_name_header + 2; j < headers.length; j++) {
                             alldata[full_name][headers[j].trim() + ' Ros'] = currentline[j].trim();
                         }
                     }
