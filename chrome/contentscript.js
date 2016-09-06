@@ -1458,7 +1458,8 @@ function fetchPositionData(position, type, cb) {
     else {
         //TODO delay fantasy sharks, maybe find some way to only loop over each position when the relevant calls are done
         source_type = 'idp';
-        source_site = 'http://www.fantasysharks.com/apps/bert/forecasts/projections.php?csv=1&Position=' + position + '&Segment=' + (563 + current_week);
+        //source_site = 'http://www.fantasysharks.com/apps/bert/forecasts/projections.php?csv=1&Position=' + position + '&Segment=' + (563 + current_week);
+        source_site = 'http://www.fantasysharks.com/apps/bert/forecasts/projections.php?csv=1&Position=' + position;
     }
     
     jQuery.ajax({
