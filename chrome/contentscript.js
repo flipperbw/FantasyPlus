@@ -12,7 +12,6 @@
 - timeout for loading gif
 - start doing things before the document is ready. https://gist.github.com/raw/2625891/waitForKeyElements.js, waitForKeyElements ("a.Inline", delinkChangeStat);
 - use window temporary data instead of recalculating when changes are made
-- skin ads look like garbage, need to adjust their position
 - starting on different tab doesnt enable anything
 - insider tab
 - use this "prebuilt" thing inside, intercept it and reput it in? http://games.espn.com/ffl/playertable/prebuilt/manageroster?leagueId=1496143&teamId=4&seasonId=2014&scoringPeriodId=12&view=overview&context=clubhouse&ajaxPath=playertable/prebuilt/manageroster&managingIr=false&droppingPlayers=false&asLM=false
@@ -26,9 +25,11 @@ tag.src = "https://code.jquery.com/jquery-latest.min.js";
 document.body.appendChild(tag);
 */
 
-//var debug_mode = true;
 var debug_mode = false;
+var debug_mode = true;
+
 //chrome.storage.local.clear();
+
 //chrome.storage.local.remove('fp_player_activity_data');
 //chrome.storage.local.get('fp_player_activity_data', function(d) { console.info(d); });
 
@@ -45,7 +46,7 @@ var alldata,
 	storage_league_data,
     storage_translation_data,
 	activity_data,
-	activity_data_current_year,
+	activity_data_current_season,
 	total_players,
     siteType,
     playerTable,
@@ -64,7 +65,10 @@ var alldata,
 	page_menu,
 	pts_total_selector,
 	pts_total,
-    ld_selector;
+    ld_selector,
+    depth_data,
+    depth_data_season,
+    depth_data_current_week;
 
 
 function dlog(o) {
@@ -83,11 +87,12 @@ var show_avg = true;
 var show_proj = true;
 var show_rank = true;
 var show_ros = true;
+var show_depth = true;
 
 season_start_map = {
 	'2014': [8, 2],
 	'2015': [8, 8],
-	'2016': [8, 8]
+	'2016': [8, 6]
 }
 
 var current_date = new Date();
@@ -178,6 +183,7 @@ var projDone = jQuery.Deferred();
 var rankDone = jQuery.Deferred();
 var rosDone = jQuery.Deferred();
 var avgDone = jQuery.Deferred();
+var depthDone = jQuery.Deferred();
 
 // Temporary clearing of cache, not sure if this is needed every season or not.
 chrome.storage.local.get('fp_reset_2016', function(d) { 
@@ -186,6 +192,8 @@ chrome.storage.local.get('fp_reset_2016', function(d) {
         chrome.storage.local.set({'fp_reset_2016': true});
     }
 });
+
+var storageDepthKey = 'fp_depth_data';
 
 if (document.URL.match(/games.espn.com/)) {
     siteType = 'espn';
@@ -245,7 +253,7 @@ if (document.URL.match(/games.espn.com/)) {
     var storageUpdateKey = 'fp_espn_last_updated_' + league_id;
     var storageProjUpdateKey = 'fp_espn_last_updated_proj_' + league_id;
     
-    var storageKeys = [storageLeagueKey, storagePlayerKey, storageUpdateKey, storageProjUpdateKey];
+    var storageKeys = [storageLeagueKey, storagePlayerKey, storageUpdateKey, storageProjUpdateKey, storageDepthKey];
 	
 	setSelectors();
 	
@@ -282,7 +290,7 @@ else if (document.URL.match(/football.fantasysports.yahoo.com/)) {
     var storageProjUpdateKey = 'fp_yahoo_last_updated_proj_' + league_id;
     var storageTranslationKey = 'fp_yahoo_translation';
     
-    var storageKeys = [storageLeagueKey, storagePlayerKey, storageUpdateKey, storageProjUpdateKey, storageTranslationKey];
+    var storageKeys = [storageLeagueKey, storagePlayerKey, storageUpdateKey, storageProjUpdateKey, storageTranslationKey, storageDepthKey];
 	
     base_table_selector = '#team-roster';
     player_table_selector = 'table[id^=statTable]';
@@ -308,6 +316,7 @@ else if (document.URL.match(/football.fantasysports.yahoo.com/)) {
     
     show_avg = false;
     show_ros = false;
+    show_depth = false; //TODO remove
 }
 
 function getParams(u) {
@@ -955,9 +964,14 @@ if (hasProjectionTable) {
             }
         }
         
+        depth_data = r[storageDepthKey];
+        if (!depth_data || Object.keys(depth_data).length <= 0) {
+            depth_data = {};
+        }
+
         storage_league_data = r[storageLeagueKey];
         if ((storage_league_data) && ((current_time - updated_time) < (1000 * 60 * check_minutes))) {
-            dlog('Using cache');
+            dlog('Using cache for league');
             settings = storage_league_data;
             doLeagueThings();
         }
@@ -984,6 +998,7 @@ function doLeagueThings() {
 			rankDone.resolve();
 			rosDone.resolve();
 			avgDone.resolve();
+			depthDone.resolve();
 			
 			alldata = {};
             getPosProjections();
@@ -1001,8 +1016,9 @@ function doLeagueThings() {
     }
     else {
         if ((current_time - updated_time) < (1000 * 60 * check_minutes)) {
+            dlog('Using cache for data');
             addAllData(true);
-            jQuery.when(projDone, rankDone, rosDone, avgDone).done(function () {
+            jQuery.when(projDone, rankDone, rosDone, avgDone, depthDone).done(function () {
                 watchForChanges();
             });
         }
@@ -1010,7 +1026,7 @@ function doLeagueThings() {
 			//TODO: dont clear the iavg. in fact, store that somewhere else.
 			alldata = {};
             getData();
-            jQuery.when(projDone, rankDone, rosDone, avgDone).done(function () {
+            jQuery.when(projDone, rankDone, rosDone, avgDone, depthDone).done(function () {
                 dlog('fetch fail: ' + fetch_fail);
                 dlog('idp fetch fail: ' + idp_fetch_fail);
                 if ((!fetch_fail && !idp_fetch_fail) || (siteType == 'yahoo' && !fetch_fail)) {
@@ -1064,13 +1080,16 @@ function addColumns() {
                 var rank_header = '<td colspan="2" style="text-align: center" class="playertableStat FantasyPlus FantasyPlusRankings FantasyPlusRankingsHeader" title="Projected position rank (lower is better) for *this week* from FantasyPros (via FantasyPlus)">THIS WEEK</td>'; //say wk 9 or this week
                 //stdev_header = '<td class="playertableStat FantasyPlus FantasyPlusStdevs FantasyPlusStdevsHeader">StDev</td>';
                 var ros_header = '<td colspan="2" style="text-align: center" class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosHeader" title="Projected position rank (lower is better) for *the rest of the season* from FantasyPros (via FantasyPlus)">REMAINING</td>';
+                var depth_header = '<td class="playertableStat FantasyPlus FantasyPlusDepth FantasyPlusDepthHeader" title="Depth chart information (via FantasyPlus)">DEPTH</td>';
                 
                 //temp hack
                 custom_cols = 8;
                 
                 var all_header_cells = projection_header + '<td class="FantasyPlus sectionLeadingSpacer"></td>' + rank_header + ros_header + '<td class="FantasyPlus sectionLeadingSpacer"></td>';
                 
-                var last_header_col = jQuery('.playerTableBgRowHead.tableHead.playertableSectionHeader').find('th:last');
+                var section_header = jQuery('.playerTableBgRowHead.tableHead.playertableSectionHeader');
+                
+                var last_header_col = section_header.find('th:last');
                 last_header_col.attr({'colspan': 2, 'title': 'Projected points for this week'}).text('PROJ PTS');
                 last_header_col.after('<th class="FantasyPlus" colspan="3">OWNERSHIP</th>');
                 last_header_col.after('<th class="FantasyPlus" colspan="1">OPRK</th>'); //change to 2, OPRK to ESPN, and include the DVOA adjusted version
@@ -1086,20 +1105,27 @@ function addColumns() {
                     proj_head.text('ESPN');
                 }
                 
-                var avg_header_col = jQuery('.playerTableBgRowHead.tableHead.playertableSectionHeader').find('th:contains(SEASON)');
+                var players_col_span = section_header.next('tr').find('td.sectionLeadingSpacer:first').index();
+                var players_col = section_header.find('th.playertableSectionHeaderFirst');
+                players_col.attr({'colspan': players_col_span + 1, 'title': 'Player information'});
+                
+                var avg_header_col = section_header.find('th:contains(SEASON)');
                 avg_header_col.attr({'colspan': 7, 'title': 'Season statistics'});
                 
+                var player_head = player_table_header.find('td:contains(TEAM POS)');
+                var player_header_index = player_head.first().index();
+                player_head.after(depth_header);
+                
                 var avg_head = player_table_header.find('td:contains(AVG)');
-                var avg_header_index = avg_head.first().index();
+                var avg_header_index = avg_head.first().index() - 1;
                 avg_head.after(adjavg_header);
                 
                 var last_head = player_table_header.find('td:contains(LAST)');
-                var last_header_index = last_head.first().index();
+                var last_header_index = last_head.first().index() - 1;
                 last_head.after(spark_header);
-                
 				last_head.after(current_header);
 
-                var byeweek = player_table_body.find('tr.playerTableBgRowSubhead td:contains(OPP)').first().index();
+                var byeweek = player_table_body.find('tr.playerTableBgRowSubhead td:contains(OPP)').first().index() - 1;
                 player_table_body.find('tr.pncPlayerRow:not(.emptyRow)').each(function () {
                     var currRow = jQuery(this);
                     
@@ -1113,6 +1139,7 @@ function addColumns() {
                     currRow.find('td').eq(adj_last_header_index + 1).after('<td class="playertableStat FantasyPlus FantasyPlusSpark FantasyPlusSparkData">' + celldata + '</td>');
                     //make this look at the array instead of this garbage hardcoding bullshitigans
                     currRow.find('td').eq(adj_header_index + 3).after('<td class="playertableStat FantasyPlus FantasyPlusProjections FantasyPlusProjectionsData">' + celldata + '</td><td class="FantasyPlus sectionLeadingSpacer"></td><td class="playertableStat FantasyPlus FantasyPlusRankings FantasyPlusRankingsData">' + celldata + '</td><td class="playertableStat FantasyPlus FantasyPlusRankings FantasyPlusRankingsStdevData"></td><td class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosData">' + celldata + '</td><td class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosStdevData"></td><td class="FantasyPlus sectionLeadingSpacer"></td>');
+                    currRow.find('td').eq(player_header_index).after('<td class="playertableStat FantasyPlus FantasyPlusDepth FantasyPlusDepthData">' + celldata + '</td>');
                 });
             }
         }
@@ -1158,13 +1185,15 @@ function addColumns() {
                 });
             }
 			else {
-				var projection_header = '<th style="width: 40px; text-align: center;" class="FantasyPlus FantasyPlusProjections FantasyPlusProjectionsHeader" title="Consensus point projections from FantasyPros (via FantasyPlus)">Proj (FP)</td>';				
-				var rank_header = '<th style="width: 40px; text-align: center;" class="FantasyPlus FantasyPlusRankings FantasyPlusRankingsHeader" title="Projected position rank (lower is better) for *this week* from FantasyPros (via FantasyPlus)">Rank (FP)</td>';
+				var projection_header = '<th style="width: 40px; text-align: center;" class="FantasyPlus FantasyPlusProjections FantasyPlusProjectionsHeader" title="Consensus point projections from FantasyPros (via FantasyPlus)">Proj (FP)</th>';				
+				var rank_header = '<th style="width: 40px; text-align: center;" class="FantasyPlus FantasyPlusRankings FantasyPlusRankingsHeader" title="Projected position rank (lower is better) for *this week* from FantasyPros (via FantasyPlus)">Rank (FP)</th>';
 				//stdev_header = '<td class="playertableStat FantasyPlus FantasyPlusStdevs FantasyPlusStdevsHeader">StDev</td>';
 				//var ros_header = '<td colspan="2" style="text-align: center" class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosHeader" title="Projected position rank (lower is better) for *the rest of the season* from FantasyPros (via FantasyPlus)">REMAINING</td>';
+                var depth_header = '<th style="width: 50px; text-align: center;" class="playertableStat FantasyPlus FantasyPlusDepth FantasyPlusDepthHeader" title="Depth chart information (via FantasyPlus)">DEPTH</th>';
 				
 				var projection_cell = '<td class="Nowrap Ta-end FantasyPlus FantasyPlusProjections FantasyPlusProjectionsData">' + celldata + '</td>';				
 				var rank_cell = '<td class="Nowrap Ta-end FantasyPlus FantasyPlusRankings FantasyPlusRankingsData">' + celldata + '</td>';
+				var depth_cell = '<td class="Nowrap Ta-end FantasyPlus FantasyPlusDepth FantasyPlusDepthData">' + celldata + '</td>';
 				
 				//temp hack
 				custom_cols = 0;
@@ -1181,6 +1210,11 @@ function addColumns() {
 					all_header_cells += rank_header;
 					all_cells += rank_cell;
 				}
+                //if (show_depth) {
+				//	custom_cols++;
+				//	all_header_cells += rank_header;
+				//	all_cells += rank_cell;
+				//}
 				
                 if (custom_cols > 0) {
                     var first_header_col = player_table_header.first().find('th').filter(function(i) { return jQuery(this).text().match(/^\w/); }).first();
@@ -1844,6 +1878,173 @@ function getAvg() {
     });
 }
 
+function parseDepth(data) {
+    var weekly_depth_data = {};
+    var team_name = '';
+        
+    var depth_rows = jQuery('div.article-content > table > tbody> tr > td.la > table tbody tr', data);
+    depth_rows.each(function(i, v) {
+        var j_v = jQuery(v);
+        var j_vb = j_v.find('b');
+        if (i % 2 == 0) {
+            team_name = j_vb.text();
+            weekly_depth_data[team_name] = {};
+        }
+        else {
+            var depth_poses = j_vb;
+            depth_poses.each(function(j, x) {
+                var j_x = jQuery(x);
+                var depth_pos = j_x.text().replace(':', '');
+                //TODO maybe add FB
+                if (depth_pos == 'NT') {
+                    depth_pos = 'DT';
+                }
+                else if (depth_pos == 'OLB' || depth_pos == 'ILB' || depth_pos == 'MLB') {
+                    depth_pos = 'LB';
+                }
+                if (!weekly_depth_data[team_name].hasOwnProperty(depth_pos)) {
+                    weekly_depth_data[team_name][depth_pos] = {};
+                }
+                
+                var depth_players = j_x.nextUntil('br');
+                depth_players.each(function(k, y) {
+                    var j_y = jQuery(y);
+                    var depth_player_num = k + 1;
+                    var depth_player_text = j_y.text();
+                    var depth_player_name = depth_player_text;
+                    var depth_player_status = [];
+                    if (depth_player_text.indexOf('(') > -1) {
+                        var stat_match = depth_player_text.match(/\([\w/]+\)/g);
+                        if (stat_match && stat_match.length) {
+                            for (n=0; n<stat_match.length; n++) {
+                                depth_player_status.push(stat_match[n].replace(/[()]/g, '').toUpperCase());
+                            }
+                        }
+                        depth_player_name = depth_player_text.slice(0, depth_player_text.indexOf(' ('));
+                    }
+                    
+                    //TODO fix wrong positions, like mathieu
+                    depth_player_name = depth_player_name.replace(/[�′]+/g, "'");
+                    if (depth_player_name == 'Robert Griffin III') {
+                        depth_player_name = 'Robert Griffin';
+                    }
+                    else if (depth_player_name == 'Ted Ginn') {
+                        depth_player_name = 'Ted Ginn Jr.';
+                    }
+                    else if (depth_player_name == 'A.J. McCarron') {
+                        depth_player_name = 'AJ McCarron';
+                    }
+                    else if (depth_player_name == 'Duke Johnson') {
+                        depth_player_name = 'Duke Johnson Jr.';
+                    }
+                    else if (depth_player_name == 'Deandre Washington') {
+                        depth_player_name = 'DeAndre Washington';
+                    }
+                    else if (depth_player_name == 'Benny Cunningham') {
+                        depth_player_name = 'Benjamin Cunningham';
+                    }
+                    else if (depth_player_name == 'Rob Kelley') {
+                        depth_player_name = 'Robert Kelley';
+                    }
+                    else if (depth_player_name == 'George Atkinson') {
+                        depth_player_name = 'George Atkinson III';
+                    }
+                    else if (depth_player_name == 'Steve Smith') {
+                        depth_player_name = 'Steve Smith Sr.';
+                    }
+                    else if (depth_player_name == 'Seth Devalve') {
+                        depth_player_name = 'Seth DeValve';
+                    }
+                    else if (depth_player_name == 'A.J. Derby') {
+                        depth_player_name = 'AJ Derby';
+                    }
+                    else if (depth_player_name == 'MarQuies Gray') {
+                        depth_player_name = 'MarQueis Gray';
+                    }
+                    else if (depth_player_name == 'Navorro Bowman') {
+                        depth_player_name = 'NaVorro Bowman';
+                    }
+                    else if (depth_player_name == 'Jeremiah Attaochu') {
+                        depth_player_name = 'Jerry Attaochu';
+                    }
+                    else if (depth_player_name == 'John Cyprien') {
+                        depth_player_name = 'Johnathan Cyprien';
+                    }
+                    else if (depth_player_name == 'Kahlil Mack') {
+                        depth_player_name = 'Khalil Mack';
+                    }
+                    else if (depth_player_name == 'Michael Mitchell') {
+                        depth_player_name = 'Mike Mitchell';
+                    }
+                    else if (depth_player_name == 'David Bruton') {
+                        depth_player_name = 'David Bruton Jr.';
+                    }
+                    else if (depth_player_name == 'PJ Williams') {
+                        depth_player_name = 'P.J. Williams';
+                    }
+                   
+                    var depth_player_type = j_y.find('font').addBack('font').attr('color');
+                    
+                    if (depth_player_name.length) {
+                        weekly_depth_data[team_name][depth_pos][depth_player_name] = {
+                            'num': depth_player_num,
+                            'status': depth_player_status,
+                            'type': depth_player_type
+                        };
+                    }
+                });
+            });
+        }
+    });
+    
+    depth_data_current_week = weekly_depth_data;
+    depth_data[current_season]['W' + current_week] = depth_data_current_week;
+    
+    var new_depth_data = {};
+    new_depth_data[storageDepthKey] = depth_data;
+    chrome.storage.local.set(new_depth_data, function() {
+        addDepth();
+    });
+}
+
+function getDepth() {
+    chrome.storage.local.get(storageDepthKey, function (de) {
+        if (de[storageDepthKey]) {
+            depth_data = de[storageDepthKey];
+        }
+        else {
+            depth_data = {};
+            depth_data[current_season] = {};
+        }
+        
+        if (depth_data.hasOwnProperty(current_season)) {
+            depth_data_season = depth_data[current_season];
+        }
+        else {
+            depth_data_season[current_season] = {};
+            depth_data_season = depth_data_season[current_season];
+        }
+        
+        if (depth_data_season.hasOwnProperty('W' + current_week)) {
+            depth_data_current_week = depth_data_season['W' + current_week];
+        }
+        else {
+            depth_data_season['W' + current_week] = {};
+            depth_data_current_week = depth_data_season['W' + current_week];
+        }
+        
+        jQuery.ajax({
+            url: '//subscribers.footballguys.com/apps/depthchart.php?type=all&lite=no&exclude_coaches=yes',
+            timeout: ajax_timeout
+        }).done(function(data) {
+            parseDepth(data);
+        }).fail(function() {
+            depth_fail = true;
+            addDepth();
+        });
+    });
+}
+
 function getData() {
     if (show_avg) {
         getAvg();
@@ -1872,6 +2073,13 @@ function getData() {
     else {
         rosDone.resolve();
     }
+    
+    if (show_depth) {
+        getDepth();
+    }
+    else {
+        depthDone.resolve();
+    }
 }
 
 function calcBonus(bonus_type) {
@@ -1895,6 +2103,10 @@ function calcBonus(bonus_type) {
 }
 
 function calculateProjections(datatype, player_name, pos_name, team_name) {
+    if (datatype == 'depth') {
+        return [player_name, pos_name, team_name];
+    }
+    
     // get their projected data, multiply it by the league settings
     var full_name = player_name + "|" + pos_name + "|" + team_name;
     var player_data = alldata[full_name];
@@ -2146,7 +2358,7 @@ function getProjectionData(datatype, currRow, cell) {
         player_cell.find('#inline-availability-marker').remove();
         player_cell_text = player_cell.text().trim().replace(/(\r|\n)/g, '');
     }
-
+    
     if (datatype == 'adjavg') {
         var normavg = cell.prev().text();
         if ((!player_cell_text) || (normavg == "--")) {
@@ -2262,6 +2474,7 @@ function getProjectionData(datatype, currRow, cell) {
                 cell.text('--');
                 total_player_ids--;
                 if (total_player_ids <= 0) {
+                    //TODO check if there is some db of yahoo ids
                     fetchYahooIds.resolve();
                 }
                 return;
@@ -2293,11 +2506,14 @@ function getProjectionData(datatype, currRow, cell) {
                 }
 
                 pos_name = team_pos[2];
-                if ((pos_name == 'DT') || (pos_name == 'DE')) {
-                    pos_name = 'DL';
-                }
-                else if ((pos_name == 'CB') || (pos_name == 'S')) {
-                    pos_name = 'DB';
+                
+                if (datatype != 'depth') {
+                    if ((pos_name == 'DT') || (pos_name == 'DE')) {
+                        pos_name = 'DL';
+                    }
+                    else if ((pos_name == 'CB') || (pos_name == 'S')) {
+                        pos_name = 'DB';
+                    }
                 }
             }
             player_name = player_name.replace('*', '');
@@ -2315,15 +2531,18 @@ function getProjectionData(datatype, currRow, cell) {
             else if (team_name == 'WAS') {
                 team_name = 'WSH';
             }
+            
             pos_name = pos_name_cell[1];
             if (pos_name == "DEF") {
                 pos_name = "D/ST";
             }
-            else if ((pos_name == 'DT') || (pos_name == 'DE')) {
-                pos_name = 'DL';
-            }
-            else if ((pos_name == 'CB') || (pos_name == 'S')) {
-                pos_name = 'DB';
+            if (datatype != 'depth') {
+                if ((pos_name == 'DT') || (pos_name == 'DE')) {
+                    pos_name = 'DL';
+                }
+                else if ((pos_name == 'CB') || (pos_name == 'S')) {
+                    pos_name = 'DB';
+                }
             }
             
             player_name = player_name_cell.find('a').text().trim();
@@ -2363,6 +2582,9 @@ function getProjectionData(datatype, currRow, cell) {
                                 cell.text(calcVal);
                             }
                         }
+                        else if (datatype == 'depth') {
+                            return calcVal;
+                        }
                     }
                 }
                 else {
@@ -2375,7 +2597,6 @@ function getProjectionData(datatype, currRow, cell) {
                         
                         var calcVal = calculateProjections(datatype, n, pos_name, team_name);
                         if (onMatchupPreviewPage) {
-                            //TODO puts in wrong place
                             cell.text(calcVal);
                         }
                         else {
@@ -2391,6 +2612,10 @@ function getProjectionData(datatype, currRow, cell) {
                         storage_translation_data['ID_' + pid] = n;
                         new_id_data['fp_yahoo_translation'] = storage_translation_data;
                         chrome.storage.local.set(new_id_data);
+                        
+                        if (datatype == 'depth') {
+                            return calcVal;
+                        }
                     }).fail(function() {
                         cell.text('--');
                     }).always(function() {
@@ -2515,6 +2740,7 @@ function reDefer() {
         rankDone = jQuery.Deferred();
         rosDone = jQuery.Deferred();
         avgDone = jQuery.Deferred();
+        depthDone = jQuery.Deferred();
     }
 }
 
@@ -2550,12 +2776,20 @@ function addAllData(firstrun) {
         else {
             rosDone.resolve();
         }
+        
+        if (show_depth) {
+            addDepth();
+        }
+        else {
+            depthDone.resolve();
+        }
     }
 	else {
 		avgDone.resolve();
 		projDone.resolve();
 		rankDone.resolve();
 		rosDone.resolve();
+		depthDone.resolve();
 	}
 }
 
@@ -2681,14 +2915,14 @@ function addProjections() {
 						}
 					}
 					// I should fix this to make it more automatic for the bye week stupid nonsense
-					if (td_length == (17 + custom_cols)) {
+					if (td_length == (18 + custom_cols)) {
                         var extra_td = '<td></td>';
 					}
 					else {
                         var extra_td = '';
 					}
                     
-                    if (td_length == 21) {
+                    if (td_length == 22) {
                         var week_tds = '';
                     }
                     else {
@@ -2696,7 +2930,7 @@ function addProjections() {
                     }
 					
 					//gonna have to edit this too when its automatic
-					currHeaderRow.before('<tr class="pncPlayerRow playerTableBgRow0 FantasyPlus FantasyPlusProjections"><td class="playerSlot" style="font-weight: bold;">Total</td><td></td>' + extra_td + '<td class="sectionLeadingSpacer"></td>' + week_tds + '</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="sectionLeadingSpacer"></td><td class="playertableStat">' + Math.round(sumTotalESPN * 100) / 100 + '</td><td class="playertableStat">' + Math.round(sumTotal * 100) / 100 + '</td><td class="sectionLeadingSpacer"></td><td></td><td></td><td></td><td></td><td class="sectionLeadingSpacer"></td><td></td><td></td><td></td><td></td></tr>');
+					currHeaderRow.before('<tr class="pncPlayerRow playerTableBgRow0 FantasyPlus FantasyPlusProjections"><td class="playerSlot" style="font-weight: bold;">Total</td><td></td><td></td>' + extra_td + '<td class="sectionLeadingSpacer"></td>' + week_tds + '</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="sectionLeadingSpacer"></td><td class="playertableStat">' + Math.round(sumTotalESPN * 100) / 100 + '</td><td class="playertableStat">' + Math.round(sumTotal * 100) / 100 + '</td><td class="sectionLeadingSpacer"></td><td></td><td></td><td></td><td></td><td class="sectionLeadingSpacer"></td><td></td><td></td><td></td><td></td></tr>');
 				}
 			});
 		}
@@ -2915,6 +3149,115 @@ function addAvg() {
     });
 }
 
+function addDepth() {
+    var datatype = 'depth';
+    var type_map = {
+        'blue': 'Starter',
+        'green': 'Situational',
+        'red': 'Fill-in',
+        'black': 'Reserve'
+    };
+    var popup_settings = {
+        type: 'tooltip',
+        
+    };
+    
+    if (!depth_data_current_week || Object.keys(depth_data_current_week).length <= 0) {
+        if (depth_data.hasOwnProperty(current_season) && depth_data[current_season].hasOwnProperty('W' + current_week)) {
+            depth_data_current_week = depth_data[current_season]['W' + current_week];
+        }
+        else {
+            depth_data_current_week = {};
+        }
+    }
+
+    //if (jQuery.isEmptyObject(depth_data_current_week)) {
+        //TODO revert back to older weeks
+        //depth_data[current_season]['W' + (current_week - 1)]
+    //}
+    
+    var all_depth_cells = player_table_body.find('.FantasyPlusDepthData');
+    
+    all_depth_cells.each(function() {
+        var cell = jQuery(this);
+        var currRow = cell.parent();
+        
+        var depthData = getProjectionData(datatype, currRow, cell);
+        
+        if (!depthData.constructor === Array || depthData.length < 3) {
+            cell.text('--');
+        }
+        else {
+            var plname = depthData[0];
+            var posname = depthData[1];
+            var teamname = depthData[2];
+            
+            if (posname == 'D/ST') {
+                cell.text('--');
+            }
+            else if (teamname == 'FA') {
+                cell.text('--');
+            }
+            else {
+                teamname = Object.keys(team_abbrevs).filter(function(key) {return team_abbrevs[key] === teamname})[0];
+                
+                var team_data = {};
+                if (depth_data_current_week.hasOwnProperty(teamname)) {
+                    team_data = depth_data_current_week[teamname];
+                }
+                
+                var team_pos_data = {};
+                if (team_data.hasOwnProperty(posname)) {
+                    team_pos_data = team_data[posname];
+                }
+                
+                if (team_pos_data.hasOwnProperty(plname)) {
+                    var pdata = team_pos_data[plname];
+                    var p_depth = posname + pdata['num'];                    
+                    cell.text(p_depth);
+                }
+                else {
+                    cell.text('--');
+                }
+
+                var players_sorted = Object.keys(team_pos_data).sort(function(a,b){ return team_pos_data[a].num - team_pos_data[b].num });
+                
+                var p_trs = '';
+                for (p=0; p < players_sorted.length; p++) {
+                    var pname = players_sorted[p];
+                    var pd = team_pos_data[pname];
+                    var ptype = type_map[pd['type']];
+                    var pnum = pd['num']; 
+                    var p_status_arr = pd['status'];
+                    var p_status = p_status_arr.join('|');
+                    
+                    var trstring = '<tr>';
+                    if (pname == plname) {
+                        trstring = '<tr style="background-color: lightblue">';
+                    }
+                    var pstring = trstring + '<td style="width: 40px;">' + posname + pnum + ':' + '</td><td style="width: 140px;">' + pname + '</td><td style="width: 90px;">' + ptype + '</td><td style="width: 80px;">' + p_status + '</td></tr>';
+                    p_trs += pstring;
+                }
+                var tooltip_content = jQuery('<div><table><tbody></tbody></table></div>');
+                tooltip_content.find('tbody').append(p_trs);
+                
+                cell.css({'cursor': 'pointer'});
+                cell.tooltipster({
+                    content: tooltip_content,
+                    contentCloning: false,
+                    delay: 100,
+                    debug: true,
+                    interactive: true,
+                    theme: 'tooltipster-light',
+                    side: 'right'
+                });
+            }
+        }
+    });
+    
+    depthDone.resolve();
+}
+
 function watchForChanges() {
     if (hasPlayerTable) {
         var observerConfig = {
@@ -2954,7 +3297,7 @@ function watchForChanges() {
 					addAllData(false);
 				}
             }
-            jQuery.when(projDone, rankDone, rosDone, avgDone).done(function () {
+            jQuery.when(projDone, rankDone, rosDone, avgDone, depthDone).done(function () {
                 observerESPN.observe(target_observe, observerConfig);
             });
         });
