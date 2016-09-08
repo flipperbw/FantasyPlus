@@ -26,7 +26,7 @@ document.body.appendChild(tag);
 */
 
 var debug_mode = false;
-var debug_mode = true;
+//var debug_mode = true;
 
 //chrome.storage.local.clear();
 
