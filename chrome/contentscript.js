@@ -992,6 +992,7 @@ if (hasProjectionTable) {
 function doLeagueThings() {
     if (onMatchupPreviewPage) {
         if ((current_time - updated_time_proj) < (1000 * 60 * check_minutes)) {
+            dlog('Using cache for data');
             addProjections();
         }
         else {
@@ -2800,7 +2801,7 @@ function isCurrentWeek() {
 	else if (siteType == 'yahoo') {
 		if (page_menu) {
 			if (onMatchupPreviewPage) {
-				var proj_txt = page_menu.contents().not(page_menu.children()).text();
+				var proj_txt = page_menu.contents().filter(function() { return this.nodeType === 3; }).text();
 				var proj_idx = proj_txt.indexOf(':');
 				var proj_week = proj_txt.substr(0, proj_idx).split(' ').reverse()[0];
 			}
@@ -2849,6 +2850,7 @@ function addProjections() {
     else {
         isCurrWeek = isCurrentWeek();
     }
+
 	if (isCurrWeek) {
         var projCells = player_table_body.find('.FantasyPlusProjectionsData');
         total_player_ids = projCells.length;
