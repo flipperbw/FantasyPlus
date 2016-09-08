@@ -2113,10 +2113,7 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
     var player_data = alldata[full_name];
 
     if (typeof(player_data) === "undefined") {
-        if (player_name == 'Steve Smith Sr.') {
-            player_name = 'Steve Smith';
-        }
-        else if (player_name == 'EJ Manuel') {
+        if (player_name == 'EJ Manuel') {
             player_name = 'E.J. Manuel';
         }
         else if (player_name == 'T.Y. Hilton') {
@@ -2128,15 +2125,6 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
         else if (player_name == 'Ha Ha Clinton-Dix') {
             player_name = 'Hasean Clinton-Dix';
         }
-        else if (player_name == 'Cecil Shorts III') {
-            player_name = 'Cecil Shorts';
-        }
-        else if (player_name == 'Robert Griffin III') {
-            player_name = 'Robert Griffin';
-        }
-        else if (player_name == 'Ted Ginn Jr.') {
-            player_name = 'Ted Ginn';
-        }
         else if (player_name == 'Corey Brown') {
             player_name = 'Philly Brown';
         }
@@ -2146,23 +2134,23 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
 		else if (player_name == 'DeVante Parker') {
             player_name = 'Devante Parker';
         }
-		else if (player_name == 'Duke Johnson Jr.') {
-            player_name = 'Duke Johnson';
-        }
-        else if (player_name == 'Mike Vick') {
-            player_name = 'Michael Vick';
-        }
         else if (player_name == 'Boobie Dixon') {
             player_name = 'Anthony Dixon';
         }
-        else if (player_name == 'Walter Thurmond III') {
-            player_name = 'Walter Thurmond';
+        else if (player_name.indexOf(' III') > -1) {
+            player_name = player_name.slice(0, player_name.indexOf(' III'));
         }
-        else if (player_name.split(' ')[0] == 'Chris') {
-            player_name = 'Christopher ' + player_name.split(' ').slice(1).join(' ');
+        else if (player_name.indexOf(' Jr.') > -1) {
+            player_name = player_name.slice(0, player_name.indexOf(' Jr.'));
+        }
+        else if (player_name.indexOf(' Sr.') > -1) {
+            player_name = player_name.slice(0, player_name.indexOf(' Sr.'));
         }
         else if (player_name.split(' ')[0] == 'Christopher') {
             player_name = 'Chris ' + player_name.split(' ').slice(1).join(' ');
+        }
+        else if (player_name.split(' ')[0] == 'Chris') {
+            player_name = 'Christopher ' + player_name.split(' ').slice(1).join(' ');
         }
         else if (player_name.split(' ')[0] == 'Benjamin') {
             player_name = 'Benny ' + player_name.split(' ').slice(1).join(' ');
