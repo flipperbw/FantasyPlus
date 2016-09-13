@@ -319,6 +319,43 @@ else if (document.URL.match(/football.fantasysports.yahoo.com/)) {
     show_depth = false; //TODO remove
 }
 
+else if (document.URL.match(/fleaflicker.com/)) {
+    siteType = 'fleaflicker';
+    
+	var onMatchupPreviewPage = document.URL.match(/nfl\/leagues\/(\d+)\/scores\/(\d+)/);
+    var onClubhousePage = document.URL.match(/nfl\/leagues\/(\d+)\/teams\/(\d+)/);
+    var onFreeAgencyPage = document.URL.match(/nfl\/leagues\/(\d+)\/players/);
+	
+    base_table_selector = '#main-container';
+    player_table_selector = '[id^=table_]';
+    player_table_body_selector = 'tbody';
+    player_table_header_selector = 'thead tr';
+    //player_table_header_proj_selector = 'td:contains(PROJ), td:contains(ESPN)';
+    player_name_selector = 'td.player';
+    	
+	var hasProjTotals = onMatchupPreviewPage || onClubhousePage;
+	var hasPlayerTable = onMatchupPreviewPage || onClubhousePage || onFreeAgencyPage;
+    //var hasProjectionTable = document.URL.match(/f1\/\d+\/(\d+|players|matchup)/);
+    var hasProjectionTable = true;
+    
+    jQuery('a[href^="/nfl/upgrade"]').remove();
+       
+    league_id = document.URL.match(/nfl\/leagues\/(\d+)/)[1];
+    league_settings_url = '//www.fleaflicker.com/nfl/leagues/' + league_id + '/scoring';
+    
+    var storageLeagueKey = 'fp_fleaflicker_league_data_' + league_id;
+    var storagePlayerKey = 'fp_fleaflicker_player_data_' + league_id;
+    var storageUpdateKey = 'fp_fleaflicker_last_updated_' + league_id;
+    var storageProjUpdateKey = 'fp_fleaflicker_last_updated_proj_' + league_id;
+    
+    var storageKeys = [storageLeagueKey, storagePlayerKey, storageUpdateKey, storageProjUpdateKey, storageDepthKey];
+	
+	setSelectors();
+    
+    show_avg = false;
+}
+
+
 function getParams(u) {
 	var qd = {};
 	var q_loc = u.indexOf('?');
@@ -935,6 +972,7 @@ function setSelectors() {
 			}
 		}
 	}
+
 	proj_head = player_table_header.find(player_table_header_proj_selector);
 	
 	var proj_first = proj_head.first();
@@ -1409,7 +1447,7 @@ function parseLeagueSettings(league_data, siteType) {
         var rushSettings = getValue('Rushing Yards');
             settings['rush_yds'] = rushSettings[0] || 0;
             settings['rush_bonus'] = {};
-            var rushSettingsDict = rushSettings[1];
+                var rushSettingsDict = rushSettings[1];
                 for (var k in rushSettingsDict) {
                     if (rushSettingsDict.hasOwnProperty(k)) {
                         settings['rush_bonus'][k] = rushSettingsDict[k];
@@ -1421,7 +1459,7 @@ function parseLeagueSettings(league_data, siteType) {
         var recSettings = getValue('Receiving Yards');
             settings['rec_yds'] = recSettings[0] || 0;
             settings['rec_bonus'] = {};
-            var recSettingsDict = recSettings[1];
+                var recSettingsDict = recSettings[1];
                 for (var k in recSettingsDict) {
                     if (recSettingsDict.hasOwnProperty(k)) {
                         settings['rec_bonus'][k] = recSettingsDict[k];
@@ -1480,8 +1518,267 @@ function parseLeagueSettings(league_data, siteType) {
         settings['ya499'] = getValue('Defensive Yards Allowed 400-499')[0] || 0;
         settings['ya500'] = getValue('Defensive Yards Allowed 500+')[0] || 0;
     }
-    
-    //dlog(settings);
+    else if (siteType == 'fleaflicker') {
+        var league_table = jQuery('#body-center-main > table', $ld);
+        var league_headers = league_table.find('tr td.table-heading').closest('tr');
+        //todo separate these by who it applies to, in td.right
+        //todo calculate bonuses based on some averages maybe? like first downs, yards per catch, etc.
+        
+        //this is literally calculus. calculus in fantasy football. what the fuck is my life.
+        var kicking_multiples = [8.89812E-09, -1.60194E-06, 8.8598E-05, -0.001254664, 0.003728836];
+        var kick_dist = [18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64];
+        var kick_counts = [5,27,68,62,77,78,62,69,57,94,65,71,84,81,71,94,60,93,77,76,89,65,78,56,71,76,80,70,63,63,75,67,57,54,55,58,30,19,6,6,5,1,0,2,0,0,1];
+        var min_dist = 18;
+        var max_dist = 62;
+        
+        var getValue = function(setting_name, bonus) {
+            bonus = (typeof bonus == 'undefined') ? false : bonus;
+            dlog(setting_name + "," + bonus);
+            var settingVals = [];
+            
+            var this_header = league_headers.find("td.table-heading:contains('" + point_type + "')").closest('tr');
+            if (this_header.parent('thead').length > 0) {
+                var league_tds = league_table.find('tbody tr:first').nextUntil(league_headers, 'tr[id^=row]').addBack();
+            }
+            else {
+                var league_tds = this_header.nextUntil(league_headers, 'tr[id^=row]');
+            }
+            var search_regex = new RegExp('^' + setting_name + '(?:(s|es))?(?: [(]Quantity[)])?$');
+            var settingTds = league_tds.find("td.left strong").filter(function() { return search_regex.test(jQuery(this).text()) }).closest('td.left');
+            
+            if (settingTds && settingTds.length > 0) {
+                jQuery.each(settingTds, function( sindex, svalue ) {
+                    var scell = jQuery(svalue);
+                    var s_contents = scell.contents();
+                    
+                    var s_val = parseFloat(s_contents[0].textContent);
+                    
+                    var for_every = false;
+                    var for_every_text = s_contents[1].textContent.trim();
+                    if (for_every_text.indexOf(' for every') > -1) {
+                        for_every = true;
+                    
+                        var for_every_num = 1;
+                        var for_every_cell = scell.find('span.for-every');
+                        if (for_every_cell.length > 0) {
+                            for_every_num = parseFloat(for_every_cell.text().trim());
+                        }
+                    
+                        s_val = parseFloat((s_val * 1.0) / for_every_num);
+                    }
+
+                    var quant = scell.find("strong:contains('(Quantity)')");
+                    var s_name = s_contents.filter('strong:first');
+                    var bonus_index = s_contents.index(s_name);
+                    var bonus_details = s_contents.slice(bonus_index + 1);
+                    var is_bonus = false;
+                    var skip = false;
+                    var every_alt = s_contents.get(bonus_index - 1).textContent.trim();
+                    var every_yards = for_every && (/yards? covered/.test(for_every_text) || /yards? covered/.test(every_alt));
+                    
+                    if (point_type != 'Kicking' && every_yards) {
+                        is_bonus = true;
+                        skip = true;
+                    }
+                    
+                    if (bonus_details.length) {
+                        var bonus_type = bonus_details[0].textContent.trim();
+                        if (point_type == 'Kicking' && (/Field Goals\? (Made|Missed)/.test(setting_name))) {
+                            if (!/^\(/.test(bonus_type) && quant.length) {
+                                is_bonus = true;
+                            }
+                        }
+                        else if (!/^\(/.test(bonus_type)) {
+                            is_bonus = true;
+                        }
+                        else if (every_yards) {
+                            is_bonus = true;
+                            skip = true;
+                        }
+                    }
+                    
+                    var expected_yards = 36.36 // from historical data, last 3 years
+                    var expected_pct = 1;
+                    
+                    if (is_bonus == bonus) {
+                        if (is_bonus === false) {
+                            if (point_type != 'Kicking') {
+                                settingVals.push(s_val);
+                            }
+                            else {
+                                //debugger;
+                                if (!every_yards && (!bonus_details.length || /^\(/.test(bonus_type))) {
+                                    settingVals.push(s_val);
+                                }
+                                else {
+                                    var bonus_low = bonus_details.filter('span.text-muted.low').text().trim();
+                                    if (bonus_low) {
+                                        bonus_low = parseFloat(bonus_low);
+                                        bonus_low = Math.max(bonus_low, min_dist);
+                                    }
+                                    var bonus_high = bonus_details.filter('span.text-muted.high').text().trim();
+                                    if (bonus_high) {
+                                        bonus_high = parseFloat(bonus_high);
+                                        bonus_high = Math.min(bonus_high, max_dist);
+                                    }
+                                    
+                                    if (bonus_low || bonus_high) {
+                                        if (!bonus_low) {
+                                            bonus_low = min_dist;
+                                        }
+                                        if (!bonus_high) {
+                                            bonus_high = max_dist;
+                                        }
+                                        
+                                        var area_low = kicking_multiples[0]*(bonus_low**5) + kicking_multiples[1]*(bonus_low**4) + kicking_multiples[2]*(bonus_low**3) + kicking_multiples[3]*(bonus_low**2) + kicking_multiples[4]*(bonus_low**1);
+                                        var area_high = kicking_multiples[0]*(bonus_high**5) + kicking_multiples[1]*(bonus_high**4) + kicking_multiples[2]*(bonus_high**3) + kicking_multiples[3]*(bonus_high**2) + kicking_multiples[4]*(bonus_high**1);
+
+                                        expected_pct = area_high - area_low;
+                                        
+                                        if (every_yards) {
+                                            var kick_index_low = kick_dist.indexOf(bonus_low);
+                                            var kick_index_high = kick_dist.indexOf(bonus_high);
+                                            var kick_dist_cut = kick_dist.slice(kick_index_low, kick_index_high + 1);
+                                            var kick_counts_cut = kick_counts.slice(kick_index_low, kick_index_high + 1);
+                                            
+                                            var sumkick = 0;
+                                            for (var i=0; i< kick_dist_cut.length; i++) {
+                                                sumkick += kick_dist_cut[i]*kick_counts_cut[i];
+                                            }
+                                            var sumkick_count = 0;
+                                            for (var j=0; j< kick_counts_cut.length; j++) {
+                                                sumkick_count += kick_counts_cut[j];
+                                            }
+
+                                            expected_yards = sumkick * 1.0 / sumkick_count;
+                                        }
+                                        else {
+                                            expected_yards = 1;
+                                        }
+                                    }
+                                    
+                                    s_val *= expected_yards * expected_pct;
+                                    
+                                    settingVals.push(s_val);
+                                }
+                            }
+                        }
+                        else {
+                            if (skip || (setting_name.indexOf(' TD') > -1 && !quant.length)) {
+                                dlog('skipping: ' + scell.text());
+                            }
+                            else {
+                                var bonusDict = {};
+                                bonusDict['pts'] = s_val;
+                                bonusDict['is_per'] = for_every ? true : false;
+                                
+                                var bonus_low = bonus_details.filter('span.text-muted.low').text().trim();
+                                if (bonus_low) {
+                                    bonus_low = parseFloat(bonus_low);
+                                }
+                                var bonus_high = bonus_details.filter('span.text-muted.high').text().trim();
+                                if (bonus_high) {
+                                    bonus_high = parseFloat(bonus_high);
+                                }
+                                
+                                bonusDict['low'] = bonus_low;
+                                bonusDict['high'] = bonus_high;
+                                
+                                settingVals.push(bonusDict);
+                            }
+                        }
+                    }
+                });
+            }
+            
+            if (bonus === false) {
+                 var new_pts = 0;
+                 for (f=0; f<settingVals.length; f++) {
+                     new_pts += settingVals[f];
+                 }
+                 settingVals = new_pts;
+            }
+            else if (settingVals.length == 0) {
+                settingVals = null;
+            }
+
+            return settingVals;
+        }
+        
+        var point_type = 'Passing';
+            settings['pass_yds'] = getValue('Passing Yard') || 0;
+            settings['pass_yds_bonus'] = getValue('Passing Yard', true);
+            settings['pass_tds'] = getValue('Passing TD') || 0;
+            settings['pass_tds_bonus'] = getValue('Passing TD', true);
+            settings['pass_ints'] = getValue('Interception') || 0;
+            settings['pass_ints_bonus'] = getValue('Interception', true);
+            settings['pass_cmp'] = getValue('Passing Completion') || 0;
+            settings['pass_cmp_bonus'] = getValue('Passing Completion', true);
+            settings['pass_icmp'] = getValue('Incomplete Pass') || 0;
+            settings['pass_icmp_bonus'] = getValue('Incomplete Pass', true);
+            settings['pass_att'] = getValue('Passing Attempt') || 0;
+            settings['pass_att_bonus'] = getValue('Passing Attempt', true);
+        
+        var point_type = 'Rushing';
+            settings['rush_yds'] = getValue('Rushing Yard') || 0;
+            settings['rush_yds_bonus'] = getValue('Rushing Yard', true);
+            settings['rush_tds'] = getValue('Rushing TD') || 0;
+            settings['rush_tds_bonus'] = getValue('Rushing TD', true);
+            settings['rush_att'] = getValue('Rushing Attempt') || 0;
+            settings['rush_att_bonus'] = getValue('Rushing Attempt', true);
+        
+        var point_type = 'Receiving';
+            settings['rec_yds'] = getValue('Receiving Yard') || 0;
+            settings['rec_yds_bonus'] = getValue('Receiving Yard', true);
+            settings['rec_tds'] = getValue('Receiving TD') || 0;
+            settings['rec_tds_bonus'] = getValue('Receiving TD', true);
+            settings['rec_att'] = getValue('Catch') || 0;
+            settings['rec_att_bonus'] = getValue('Catch', true);
+
+        var point_type = 'Kicking';
+            settings['xpt'] = getValue('XP') || 0;
+            settings['xpt_bonus'] = getValue('XP', true);
+            settings['fga'] = getValue('Field Goal Attempt') || 0;
+            settings['fga_bonus'] = getValue('Field Goal Attempt', true);
+            settings['fg'] = getValue('Field Goals? Made') || 0;
+            settings['fg_bonus'] = getValue('Field Goals? Made', true);
+            settings['fgm'] = getValue('Field Goals? Missed') || 0;
+            settings['fgm_bonus'] = getValue('Field Goals? Missed', true);
+
+        var point_type = 'Misc';
+            settings['fumbles'] = getValue('Fumbles? Lost') || getValue('Fumble') || 0;
+            settings['fumbles_bonus'] = getValue('Fumbles? Lost', true) || getValue('Fumble', true);
+        
+        var point_type = 'Defense';
+            settings['tka'] = getValue('Assisted Tackle') || getValue('Total Tackle') || 0;
+            settings['tka_bonus'] = getValue('Assisted Tackle', true) || getValue('Total Tackle', true);
+            settings['tks'] = getValue('Solo Tackle') || getValue('Total Tackle') || 0;
+            settings['tks_bonus'] = getValue('Solo Tackle', true) || getValue('Total Tackle', true);
+            settings['pd'] = getValue('Pass(?:es)? Defended') || 0;
+            settings['pd_bonus'] = getValue('Pass(?:es)? Defended', true);
+            
+            settings['ff'] = getValue('Fumbles? Forced') || 0;
+            settings['ff_bonus'] = getValue('Fumbles? Forced', true);
+            settings['fr'] = getValue('Fumbles? Recovered') || 0;
+            settings['fr_bonus'] = getValue('Fumbles? Recovered', true);
+
+            settings['sk'] = getValue('Sack') || 0;
+            settings['sk_bonus'] = getValue('Sack', true);
+            settings['int'] = getValue('Interception') || 0;
+            settings['int_bonus'] = getValue('Interception', true);
+            settings['deftd'] = getValue('Defensive TD') || getValue('INT Return TD') || getValue('Fumble Return TD') || 0;
+            settings['deftd_bonus'] = getValue('Defensive TD', true) || getValue('INT Return TD', true) || getValue('Fumble Return TD', true);
+
+            settings['ya'] = getValue('Net Yards? Allowed') || 0;
+            settings['ya_bonus'] = getValue('Net Yards? Allowed', true);
+            
+            //todo (is exactly 0), try setting min and max to same value
+            settings['pa'] = getValue('Points? Allowed') || getValue('Offensive . Special Teams Points? Allowed') || getValue('Offensive Points? Allowed [(]FG, Pass TD, Rush TD[)]') || 0;
+            settings['pa_bonus'] = getValue('Points? Allowed', true) || getValue('Offensive . Special Teams Points? Allowed', true) || getValue('Offensive Points? Allowed [(]FG, Pass TD, Rush TD[)]', true);
+    }
+
+    dlog(settings);
+    //debugger;
     return settings;
 }
 
@@ -2668,7 +2965,7 @@ function insertAdjAvg(thiscell, p_avg, weekly_points_data) {
 	var thisCurrent = thiscell.siblings('.FantasyPlusCurrentData');
     var curr_score = "--";
 	if (weekly_points_data_cut && weekly_points_data_cut.length > 0) {
-        if (current_season == current_season_avg_week) {
+        if (current_season == current_season_avg_week && weekly_points_data_cut[current_week - 1]) {
             curr_score = weekly_points_data_cut[current_week - 1];
         }
         
@@ -2689,7 +2986,7 @@ function insertAdjAvg(thiscell, p_avg, weekly_points_data) {
 	}
     
     var thisSpark = thiscell.siblings('.FantasyPlusSparkData');
-    if (weekly_points_data_cut && weekly_points_data_cut.length > 0) {
+    if (weekly_points_data_cut && weekly_points_data_cut.length > 1) {
         thisSpark.sparkline(weekly_points_data_cut, {
             type: 'line',
             disableHiddenCheck: true,
