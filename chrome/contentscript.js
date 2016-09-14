@@ -16,6 +16,7 @@
 - insider tab
 - use this "prebuilt" thing inside, intercept it and reput it in? http://games.espn.com/ffl/playertable/prebuilt/manageroster?leagueId=1496143&teamId=4&seasonId=2014&scoringPeriodId=12&view=overview&context=clubhouse&ajaxPath=playertable/prebuilt/manageroster&managingIr=false&droppingPlayers=false&asLM=false
 - clicking too fast disables it until the next click...
+- store historical projections
 */
 
 /*
@@ -323,22 +324,34 @@ else if (document.URL.match(/fleaflicker.com/)) {
     siteType = 'fleaflicker';
     
 	var onMatchupPreviewPage = document.URL.match(/nfl\/leagues\/(\d+)\/scores\/(\d+)/);
-    var onClubhousePage = document.URL.match(/nfl\/leagues\/(\d+)\/teams\/(\d+)/);
+    var onClubhousePage = document.URL.match(/nfl\/leagues\/(\d+)\/teams\/(\d+)(\?|$)/);
     var onFreeAgencyPage = document.URL.match(/nfl\/leagues\/(\d+)\/players/);
+    var onGeneralProjPage = document.URL.match(/nfl\/leagues\/(\d+)\/teams\/(\d+)\/(watched)/); //add more
 	
+    var is_current_week = true;
+    
     base_table_selector = '#main-container';
     player_table_selector = '[id^=table_]';
     player_table_body_selector = 'tbody';
     player_table_header_selector = 'thead tr';
-    //player_table_header_proj_selector = 'td:contains(PROJ), td:contains(ESPN)';
     player_name_selector = 'td.player';
     	
 	var hasProjTotals = onMatchupPreviewPage || onClubhousePage;
-	var hasPlayerTable = onMatchupPreviewPage || onClubhousePage || onFreeAgencyPage;
-    //var hasProjectionTable = document.URL.match(/f1\/\d+\/(\d+|players|matchup)/);
-    var hasProjectionTable = true;
+	var hasPlayerTable = onMatchupPreviewPage || onClubhousePage || onFreeAgencyPage || onGeneralProjPage;
+    var hasProjectionTable = hasPlayerTable;
     
     jQuery('a[href^="/nfl/upgrade"]').remove();
+    jQuery('i.icon-edge-E').remove();
+    if (onFreeAgencyPage) {
+        var trade_btns = jQuery('a').filter(function(i) { return jQuery(this).text() === 'Trade'});
+        trade_btns.css({
+            'background-image': 'linear-gradient(to bottom,#a070ec 0%,#6c4186 100%)',
+            'border-color': '#5828de'
+        });
+        trade_btns.hover(function() {
+            jQuery(this).css("background-color", "rgb(108, 65, 134)");
+        });
+    }
        
     league_id = document.URL.match(/nfl\/leagues\/(\d+)/)[1];
     league_settings_url = '//www.fleaflicker.com/nfl/leagues/' + league_id + '/scoring';
@@ -925,7 +938,12 @@ function setSelectors() {
         playerTable = player_table_body;
     }
     player_table_header = playerTable.find(player_table_header_selector);
-	if (siteType == "yahoo") {
+	
+    if (siteType == 'espn') {
+        proj_head = player_table_header.find(player_table_header_proj_selector);
+        var proj_first = proj_head.first();
+    }
+    else if (siteType == "yahoo") {
 		show_proj = true;
 		show_rank = true;
 		if (onMatchupPreviewPage) {
@@ -971,11 +989,44 @@ function setSelectors() {
 				player_table_header_proj_selector = 'th:contains(This Week)';
 			}
 		}
+        
+        proj_head = player_table_header.find(player_table_header_proj_selector);
+        var proj_first = proj_head.first();
 	}
+    else if (siteType == "fleaflicker") {
+        player_table_header_proj_selector = 'Proj';
+        var this_url = window.location.search;
+        var url_dict = getParams(this_url);
+        var uri_name = 'statRange';
+        if (onClubhousePage) {
+            uri_name = 'week';
+        }
+        var week_no = url_dict.hasOwnProperty(uri_name) ? url_dict[uri_name][0] : '';
+        if (week_no && week_no != current_week) {
+            is_current_week = false;
+        } 
+        var season_no = url_dict.hasOwnProperty('season') ? url_dict['season'][0] : '';
+        if (season_no && season_no != current_season) {
+            is_current_week = false;
+        } 
 
-	proj_head = player_table_header.find(player_table_header_proj_selector);
+        if (onFreeAgencyPage) {
+            var stat_no = url_dict.hasOwnProperty('statType') ? url_dict['statType'][0] : '';
+            if (stat_no && stat_no == '7') {
+                player_table_header_proj_selector = 'FPts';
+            } 
+        }
+        
+        if (!is_current_week) {
+            hasProjectionTable = false;
+        }
+
+        proj_head = player_table_header.find('th').filter(function(i) {
+            return jQuery(this).text() === player_table_header_proj_selector;
+        });
+        var proj_first = proj_head.last();
+    }
 	
-	var proj_first = proj_head.first();
     header_index = proj_first.index();
 	proj_first.prevAll("th, td").each(function() {
 		header_index += this.colSpan - 1;
@@ -1087,193 +1138,200 @@ function doLeagueThings() {
 }
 
 function addColumns() {
-    if (header_index > -1) {
-        if (siteType == "espn") {
-            var celldata = '<img src="' + loadingUrl + '"/>';
-            var projection_header = '<td class="playertableStat FantasyPlus FantasyPlusProjections FantasyPlusProjectionsHeader" title="Consensus point projections from FantasyPros (via FantasyPlus)">FPROS</td>';
-            
-            if (onMatchupPreviewPage) {
-                proj_head.after(projection_header);
-                proj_head.text('ESPN');
-                                
-                var last_header_col = player_table_body.find('.playertableSectionHeader th:contains(STATS)');
-                last_header_col.each(function() {
-                    var curr_span = jQuery(this).attr("colspan");
-                    jQuery(this).attr("colspan", curr_span + 1);
-                    
-                    var parent_table = jQuery(this).closest('table');
-                    
-                    parent_table.find('tr.pncPlayerRow:not(.emptyRow)').each(function () {
-                        var currRow = jQuery(this);
-                        
-                        //make this look at the array instead of this garbage hardcoding bullshitigans
-                        currRow.find('td').last().after('<td class="playertableStat FantasyPlus FantasyPlusProjections FantasyPlusProjectionsData">' + celldata + '</td>');
-                    });
-                });
-            }
-            else {
-                //make these options that are set above, add to a custom_cols array when each is enabled)
-                var adjavg_header = '<td class="playertableStat FantasyPlus FantasyPlusAvg FantasyPlusAvgHeader" title="Injury/Suspension-adjusted average points for the season (via FantasyPlus)">iAVG</td>';
-                var current_header = '<td class="playertableStat FantasyPlus FantasyPlusCurrent FantasyPlusCurrentHeader" title="Points scored this week (via FantasyPlus)">CURR</td>';
-                var spark_header = '<td class="playertableStat FantasyPlus FantasyPlusSpark FantasyPlusSparkHeader" title="Graph of fantasy points over previous weeks (via FantasyPlus)">TREND</td>';
-                var rank_header = '<td colspan="2" style="text-align: center" class="playertableStat FantasyPlus FantasyPlusRankings FantasyPlusRankingsHeader" title="Projected position rank (lower is better) for *this week* from FantasyPros (via FantasyPlus)">THIS WEEK</td>'; //say wk 9 or this week
-                //stdev_header = '<td class="playertableStat FantasyPlus FantasyPlusStdevs FantasyPlusStdevsHeader">StDev</td>';
-                var ros_header = '<td colspan="2" style="text-align: center" class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosHeader" title="Projected position rank (lower is better) for *the rest of the season* from FantasyPros (via FantasyPlus)">REMAINING</td>';
-                var depth_header = '<td class="playertableStat FantasyPlus FantasyPlusDepth FantasyPlusDepthHeader" title="Depth chart information (via FantasyPlus)">DEPTH</td>';
+    if (header_index == -1) {
+        return;
+    }
+    
+    if (siteType == "espn") {
+        var celldata = '<img src="' + loadingUrl + '"/>';
+        var projection_header = '<td class="playertableStat FantasyPlus FantasyPlusProjections FantasyPlusProjectionsHeader" title="Consensus point projections from FantasyPros (via FantasyPlus)">FPROS</td>';
+        
+        if (onMatchupPreviewPage) {
+            proj_head.after(projection_header);
+            proj_head.text('ESPN');
+                            
+            var last_header_col = player_table_body.find('.playertableSectionHeader th:contains(STATS)');
+            last_header_col.each(function() {
+                var curr_span = jQuery(this).attr("colspan");
+                jQuery(this).attr("colspan", curr_span + 1);
                 
-                //temp hack
-                custom_cols = 8;
+                var parent_table = jQuery(this).closest('table');
                 
-                var all_header_cells = projection_header + '<td class="FantasyPlus sectionLeadingSpacer"></td>' + rank_header + ros_header + '<td class="FantasyPlus sectionLeadingSpacer"></td>';
-                
-                var section_header = jQuery('.playerTableBgRowHead.tableHead.playertableSectionHeader');
-                
-                var last_header_col = section_header.find('th:last');
-                last_header_col.attr({'colspan': 2, 'title': 'Projected points for this week'}).text('PROJ PTS');
-                last_header_col.after('<th class="FantasyPlus" colspan="3">OWNERSHIP</th>');
-                last_header_col.after('<th class="FantasyPlus" colspan="1">OPRK</th>'); //change to 2, OPRK to ESPN, and include the DVOA adjusted version
-                last_header_col.after('<td class="FantasyPlus sectionLeadingSpacer"></td>');
-                last_header_col.after('<th class="FantasyPlus" colspan="4" title="Projected position rank (lower is better) with 95% confidence interval from FantasyPros (via FantasyPlus)">PROJ POS RANK (±RANGE)</th>');
-                last_header_col.after('<td class="FantasyPlus sectionLeadingSpacer"></td>');
-
-                proj_head.after(all_header_cells);
-                if (proj_head.find('a').length > 0) { //we're on a filterable page
-                    proj_head.find('a').text('ESPN');
-                }
-                else {
-                    proj_head.text('ESPN');
-                }
-                
-                var players_col_span = section_header.next('tr').find('td.sectionLeadingSpacer:first').index();
-                var players_col = section_header.find('th.playertableSectionHeaderFirst');
-                players_col.attr({'colspan': players_col_span + 1, 'title': 'Player information'});
-                
-                var avg_header_col = section_header.find('th:contains(SEASON)');
-                avg_header_col.attr({'colspan': 7, 'title': 'Season statistics'});
-                
-                var player_head = player_table_header.find('td:contains(TEAM POS)');
-                var player_header_index = player_head.first().index();
-                player_head.after(depth_header);
-                
-                var avg_head = player_table_header.find('td:contains(AVG)');
-                var avg_header_index = avg_head.first().index() - 1;
-                avg_head.after(adjavg_header);
-                
-                var last_head = player_table_header.find('td:contains(LAST)');
-                var last_header_index = last_head.first().index() - 1;
-                last_head.after(spark_header);
-				last_head.after(current_header);
-
-                var byeweek = player_table_body.find('tr.playerTableBgRowSubhead td:contains(OPP)').first().index() - 1;
-                player_table_body.find('tr.pncPlayerRow:not(.emptyRow)').each(function () {
+                parent_table.find('tr.pncPlayerRow:not(.emptyRow)').each(function () {
                     var currRow = jQuery(this);
                     
-                    var byeweek_text = currRow.find('td').eq(byeweek).text();
-                    var adj_header_index = (byeweek_text == "** BYE **" ? header_index - 1 : header_index);
-                    var adj_avg_header_index = (byeweek_text == "** BYE **" ? avg_header_index - 1 : avg_header_index);
-                    var adj_last_header_index = (byeweek_text == "** BYE **" ? last_header_index - 1 : last_header_index);
-                
-                    currRow.find('td').eq(adj_avg_header_index).after('<td class="playertableStat FantasyPlus FantasyPlusAvg FantasyPlusAvgData">' + celldata + '</td>');
-                    currRow.find('td').eq(adj_last_header_index).after('<td class="playertableStat FantasyPlus FantasyPlusCurrent FantasyPlusCurrentData">' + celldata + '</td>');
-                    currRow.find('td').eq(adj_last_header_index + 1).after('<td class="playertableStat FantasyPlus FantasyPlusSpark FantasyPlusSparkData">' + celldata + '</td>');
                     //make this look at the array instead of this garbage hardcoding bullshitigans
-                    currRow.find('td').eq(adj_header_index + 3).after('<td class="playertableStat FantasyPlus FantasyPlusProjections FantasyPlusProjectionsData">' + celldata + '</td><td class="FantasyPlus sectionLeadingSpacer"></td><td class="playertableStat FantasyPlus FantasyPlusRankings FantasyPlusRankingsData">' + celldata + '</td><td class="playertableStat FantasyPlus FantasyPlusRankings FantasyPlusRankingsStdevData"></td><td class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosData">' + celldata + '</td><td class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosStdevData"></td><td class="FantasyPlus sectionLeadingSpacer"></td>');
-                    currRow.find('td').eq(player_header_index).after('<td class="playertableStat FantasyPlus FantasyPlusDepth FantasyPlusDepthData">' + celldata + '</td>');
+                    currRow.find('td').last().after('<td class="playertableStat FantasyPlus FantasyPlusProjections FantasyPlusProjectionsData">' + celldata + '</td>');
                 });
-            }
+            });
         }
-        else if (siteType == "yahoo") {
-			var celldata = '<center><img src="' + loadingUrl + '"/></center>';			
-			if (onMatchupPreviewPage) {
-				var projection_header = '<th style="width: 38px;" class="Ta-end Va-top FantasyPlus FantasyPlusProjections FantasyPlusProjectionsHeader" title="Consensus point projections from FantasyPros (via FantasyPlus)"><div style="width: 40px;">Proj (FP)</div></td>';
-				var projection_cell = '<td style="width: 38px;" class="Alt Ta-end F-shade Va-top FantasyPlus FantasyPlusProjections FantasyPlusProjectionsData">' + celldata + '</td>';
-				var newprojcell = '<td style="width: 38px;" class="Alt Ta-end F-shade Va-top FantasyPlus FantasyPlusProjections FantasyPlusProjectionsTotal">-</td>'
-				
-				playerTable.each(function() {
-                    var total_cell = projection_cell;
-					var currTab = jQuery(this);
-					var matchup_heads = currTab.find('thead th');
-                    var matchup_heads_len = matchup_heads.length;
-                    var matchup_proj_heads = matchup_heads.filter(function() {
-						return jQuery(this).text() === 'Proj';
-					});
-                    
-                    var first_proj_header = jQuery(matchup_proj_heads[0]);
-                    var second_proj_header = jQuery(matchup_proj_heads[1]);
-                    
-                    var first_proj_header_idx = first_proj_header.index();
-                    var second_proj_header_idx = second_proj_header.index();
-                    
-					first_proj_header.after(projection_header);
-					second_proj_header.before(projection_header);
-					
-					var currRows = currTab.find('tbody tr');
-					var currRowsLen = currRows.length;
-					currRows.each(function(l) {
-						var currRow = jQuery(this);
-                        
-                        if ((l + 1) == currRowsLen) {
-                            total_cell = newprojcell;
-                        }
-                        
-                        var currRowTds = currRow.find('td');
-                        var header_diff = matchup_heads_len - currRowTds.length;
-                        currRowTds.eq(first_proj_header_idx).after(total_cell);
-                        currRowTds.eq(second_proj_header_idx - header_diff).before(total_cell);
-					});
-                });
+        else {
+            //make these options that are set above, add to a custom_cols array when each is enabled)
+            var adjavg_header = '<td class="playertableStat FantasyPlus FantasyPlusAvg FantasyPlusAvgHeader" title="Injury/Suspension-adjusted average points for the season (via FantasyPlus)">iAVG</td>';
+            var current_header = '<td class="playertableStat FantasyPlus FantasyPlusCurrent FantasyPlusCurrentHeader" title="Points scored this week (via FantasyPlus)">CURR</td>';
+            var spark_header = '<td class="playertableStat FantasyPlus FantasyPlusSpark FantasyPlusSparkHeader" title="Graph of fantasy points over previous weeks (via FantasyPlus)">TREND</td>';
+            var rank_header = '<td colspan="2" style="text-align: center" class="playertableStat FantasyPlus FantasyPlusRankings FantasyPlusRankingsHeader" title="Projected position rank (lower is better) for *this week* from FantasyPros (via FantasyPlus)">THIS WEEK</td>'; //say wk 9 or this week
+            //stdev_header = '<td class="playertableStat FantasyPlus FantasyPlusStdevs FantasyPlusStdevsHeader">StDev</td>';
+            var ros_header = '<td colspan="2" style="text-align: center" class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosHeader" title="Projected position rank (lower is better) for *the rest of the season* from FantasyPros (via FantasyPlus)">REMAINING</td>';
+            var depth_header = '<td class="playertableStat FantasyPlus FantasyPlusDepth FantasyPlusDepthHeader" title="Depth chart information (via FantasyPlus)">DEPTH</td>';
+            
+            //temp hack
+            custom_cols = 8;
+            
+            var all_header_cells = projection_header + '<td class="FantasyPlus sectionLeadingSpacer"></td>' + rank_header + ros_header + '<td class="FantasyPlus sectionLeadingSpacer"></td>';
+            
+            var section_header = jQuery('.playerTableBgRowHead.tableHead.playertableSectionHeader');
+            
+            var last_header_col = section_header.find('th:last');
+            last_header_col.attr({'colspan': 2, 'title': 'Projected points for this week'}).text('PROJ PTS');
+            last_header_col.after('<th class="FantasyPlus" colspan="3">OWNERSHIP</th>');
+            last_header_col.after('<th class="FantasyPlus" colspan="1">OPRK</th>'); //change to 2, OPRK to ESPN, and include the DVOA adjusted version
+            last_header_col.after('<td class="FantasyPlus sectionLeadingSpacer"></td>');
+            last_header_col.after('<th class="FantasyPlus" colspan="4" title="Projected position rank (lower is better) with 95% confidence interval from FantasyPros (via FantasyPlus)">PROJ POS RANK (±RANGE)</th>');
+            last_header_col.after('<td class="FantasyPlus sectionLeadingSpacer"></td>');
+
+            proj_head.after(all_header_cells);
+            if (proj_head.find('a').length > 0) { //we're on a filterable page
+                proj_head.find('a').text('ESPN');
             }
-			else {
-				var projection_header = '<th style="width: 40px; text-align: center;" class="FantasyPlus FantasyPlusProjections FantasyPlusProjectionsHeader" title="Consensus point projections from FantasyPros (via FantasyPlus)">Proj (FP)</th>';				
-				var rank_header = '<th style="width: 40px; text-align: center;" class="FantasyPlus FantasyPlusRankings FantasyPlusRankingsHeader" title="Projected position rank (lower is better) for *this week* from FantasyPros (via FantasyPlus)">Rank (FP)</th>';
-				//stdev_header = '<td class="playertableStat FantasyPlus FantasyPlusStdevs FantasyPlusStdevsHeader">StDev</td>';
-				//var ros_header = '<td colspan="2" style="text-align: center" class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosHeader" title="Projected position rank (lower is better) for *the rest of the season* from FantasyPros (via FantasyPlus)">REMAINING</td>';
-                var depth_header = '<th style="width: 50px; text-align: center;" class="playertableStat FantasyPlus FantasyPlusDepth FantasyPlusDepthHeader" title="Depth chart information (via FantasyPlus)">DEPTH</th>';
-				
-				var projection_cell = '<td class="Nowrap Ta-end FantasyPlus FantasyPlusProjections FantasyPlusProjectionsData">' + celldata + '</td>';				
-				var rank_cell = '<td class="Nowrap Ta-end FantasyPlus FantasyPlusRankings FantasyPlusRankingsData">' + celldata + '</td>';
-				var depth_cell = '<td class="Nowrap Ta-end FantasyPlus FantasyPlusDepth FantasyPlusDepthData">' + celldata + '</td>';
-				
-				//temp hack
-				custom_cols = 0;
-				var all_header_cells = '';
-				var all_cells = '';
-				
-				if (show_proj) {
-					custom_cols++;
-					all_header_cells += projection_header;
-					all_cells += projection_cell;
-				}
-                if (show_rank) {
-					custom_cols++;
-					all_header_cells += rank_header;
-					all_cells += rank_cell;
-				}
-                //if (show_depth) {
-				//	custom_cols++;
-				//	all_header_cells += rank_header;
-				//	all_cells += rank_cell;
-				//}
-				
-                if (custom_cols > 0) {
-                    var first_header_col = player_table_header.first().find('th').filter(function(i) { return jQuery(this).text().match(/^\w/); }).first();
-                    var fhc_curr_cols = parseInt(first_header_col.attr('colspan'));
-                    if (!isNaN(fhc_curr_cols) && !first_header_col.data('modified')) {
-                        first_header_col.attr({'colspan': fhc_curr_cols + custom_cols, 'data-modified': true});
+            else {
+                proj_head.text('ESPN');
+            }
+            
+            var players_col_span = section_header.next('tr').find('td.sectionLeadingSpacer:first').index();
+            var players_col = section_header.find('th.playertableSectionHeaderFirst');
+            players_col.attr({'colspan': players_col_span + 1, 'title': 'Player information'});
+            
+            var avg_header_col = section_header.find('th:contains(SEASON)');
+            avg_header_col.attr({'colspan': 7, 'title': 'Season statistics'});
+            
+            var player_head = player_table_header.find('td:contains(TEAM POS)');
+            var player_header_index = player_head.first().index();
+            player_head.after(depth_header);
+            
+            var avg_head = player_table_header.find('td:contains(AVG)');
+            var avg_header_index = avg_head.first().index() - 1;
+            avg_head.after(adjavg_header);
+            
+            var last_head = player_table_header.find('td:contains(LAST)');
+            var last_header_index = last_head.first().index() - 1;
+            last_head.after(spark_header);
+            last_head.after(current_header);
+
+            var byeweek = player_table_body.find('tr.playerTableBgRowSubhead td:contains(OPP)').first().index() - 1;
+            player_table_body.find('tr.pncPlayerRow:not(.emptyRow)').each(function () {
+                var currRow = jQuery(this);
+                
+                var byeweek_text = currRow.find('td').eq(byeweek).text();
+                var adj_header_index = (byeweek_text == "** BYE **" ? header_index - 1 : header_index);
+                var adj_avg_header_index = (byeweek_text == "** BYE **" ? avg_header_index - 1 : avg_header_index);
+                var adj_last_header_index = (byeweek_text == "** BYE **" ? last_header_index - 1 : last_header_index);
+            
+                currRow.find('td').eq(adj_avg_header_index).after('<td class="playertableStat FantasyPlus FantasyPlusAvg FantasyPlusAvgData">' + celldata + '</td>');
+                currRow.find('td').eq(adj_last_header_index).after('<td class="playertableStat FantasyPlus FantasyPlusCurrent FantasyPlusCurrentData">' + celldata + '</td>');
+                currRow.find('td').eq(adj_last_header_index + 1).after('<td class="playertableStat FantasyPlus FantasyPlusSpark FantasyPlusSparkData">' + celldata + '</td>');
+                //make this look at the array instead of this garbage hardcoding bullshitigans
+                currRow.find('td').eq(adj_header_index + 3).after('<td class="playertableStat FantasyPlus FantasyPlusProjections FantasyPlusProjectionsData">' + celldata + '</td><td class="FantasyPlus sectionLeadingSpacer"></td><td class="playertableStat FantasyPlus FantasyPlusRankings FantasyPlusRankingsData">' + celldata + '</td><td class="playertableStat FantasyPlus FantasyPlusRankings FantasyPlusRankingsStdevData"></td><td class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosData">' + celldata + '</td><td class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosStdevData"></td><td class="FantasyPlus sectionLeadingSpacer"></td>');
+                currRow.find('td').eq(player_header_index).after('<td class="playertableStat FantasyPlus FantasyPlusDepth FantasyPlusDepthData">' + celldata + '</td>');
+            });
+        }
+    }
+    else if (siteType == "yahoo") {
+        var celldata = '<center><img src="' + loadingUrl + '"/></center>';			
+        if (onMatchupPreviewPage) {
+            var projection_header = '<th style="width: 38px;" class="Ta-end Va-top FantasyPlus FantasyPlusProjections FantasyPlusProjectionsHeader" title="Consensus point projections from FantasyPros (via FantasyPlus)"><div style="width: 40px;">Proj (FP)</div></td>';
+            var projection_cell = '<td style="width: 38px;" class="Alt Ta-end F-shade Va-top FantasyPlus FantasyPlusProjections FantasyPlusProjectionsData">' + celldata + '</td>';
+            var newprojcell = '<td style="width: 38px;" class="Alt Ta-end F-shade Va-top FantasyPlus FantasyPlusProjections FantasyPlusProjectionsTotal">-</td>'
+            
+            playerTable.each(function() {
+                var total_cell = projection_cell;
+                var currTab = jQuery(this);
+                var matchup_heads = currTab.find('thead th');
+                var matchup_heads_len = matchup_heads.length;
+                var matchup_proj_heads = matchup_heads.filter(function() {
+                    return jQuery(this).text() === 'Proj';
+                });
+                
+                var first_proj_header = jQuery(matchup_proj_heads[0]);
+                var second_proj_header = jQuery(matchup_proj_heads[1]);
+                
+                var first_proj_header_idx = first_proj_header.index();
+                var second_proj_header_idx = second_proj_header.index();
+                
+                first_proj_header.after(projection_header);
+                second_proj_header.before(projection_header);
+                
+                var currRows = currTab.find('tbody tr');
+                var currRowsLen = currRows.length;
+                currRows.each(function(l) {
+                    var currRow = jQuery(this);
+                    
+                    if ((l + 1) == currRowsLen) {
+                        total_cell = newprojcell;
                     }
                     
-                    proj_head.after(all_header_cells);
-                    
-                    player_table_body.find('tr:not(.empty-bench, empty-position)').each(function () {
-                        var currRow = jQuery(this);
-                        currRow.find('td').eq(header_index).after(all_cells);
-                        if (currRow.find('td:first').hasClass('Selected')) {
-                            currRow.find('td.FantasyPlus').addClass('Selected');
-                        }
-                    });
-                }
-			}
+                    var currRowTds = currRow.find('td');
+                    var header_diff = matchup_heads_len - currRowTds.length;
+                    currRowTds.eq(first_proj_header_idx).after(total_cell);
+                    currRowTds.eq(second_proj_header_idx - header_diff).before(total_cell);
+                });
+            });
         }
+        else {
+            var projection_header = '<th style="width: 40px; text-align: center;" class="FantasyPlus FantasyPlusProjections FantasyPlusProjectionsHeader" title="Consensus point projections from FantasyPros (via FantasyPlus)">Proj (FP)</th>';				
+            var rank_header = '<th style="width: 40px; text-align: center;" class="FantasyPlus FantasyPlusRankings FantasyPlusRankingsHeader" title="Projected position rank (lower is better) for *this week* from FantasyPros (via FantasyPlus)">Rank (FP)</th>';
+            //stdev_header = '<td class="playertableStat FantasyPlus FantasyPlusStdevs FantasyPlusStdevsHeader">StDev</td>';
+            //var ros_header = '<td colspan="2" style="text-align: center" class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosHeader" title="Projected position rank (lower is better) for *the rest of the season* from FantasyPros (via FantasyPlus)">REMAINING</td>';
+            var depth_header = '<th style="width: 50px; text-align: center;" class="playertableStat FantasyPlus FantasyPlusDepth FantasyPlusDepthHeader" title="Depth chart information (via FantasyPlus)">DEPTH</th>';
+            
+            var projection_cell = '<td class="Nowrap Ta-end FantasyPlus FantasyPlusProjections FantasyPlusProjectionsData">' + celldata + '</td>';				
+            var rank_cell = '<td class="Nowrap Ta-end FantasyPlus FantasyPlusRankings FantasyPlusRankingsData">' + celldata + '</td>';
+            var depth_cell = '<td class="Nowrap Ta-end FantasyPlus FantasyPlusDepth FantasyPlusDepthData">' + celldata + '</td>';
+            
+            //temp hack
+            custom_cols = 0;
+            var all_header_cells = '';
+            var all_cells = '';
+            
+            if (show_proj) {
+                custom_cols++;
+                all_header_cells += projection_header;
+                all_cells += projection_cell;
+            }
+            if (show_rank) {
+                custom_cols++;
+                all_header_cells += rank_header;
+                all_cells += rank_cell;
+            }
+            //if (show_depth) {
+            //	custom_cols++;
+            //	all_header_cells += rank_header;
+            //	all_cells += rank_cell;
+            //}
+            
+            if (custom_cols > 0) {
+                var first_header_col = player_table_header.first().find('th').filter(function(i) { return jQuery(this).text().match(/^\w/); }).first();
+                var fhc_curr_cols = parseInt(first_header_col.attr('colspan'));
+                if (!isNaN(fhc_curr_cols) && !first_header_col.data('modified')) {
+                    first_header_col.attr({'colspan': fhc_curr_cols + custom_cols, 'data-modified': true});
+                }
+                
+                proj_head.after(all_header_cells);
+                
+                player_table_body.find('tr:not(.empty-bench, empty-position)').each(function () {
+                    var currRow = jQuery(this);
+                    currRow.find('td').eq(header_index).after(all_cells);
+                    if (currRow.find('td:first').hasClass('Selected')) {
+                        currRow.find('td.FantasyPlus').addClass('Selected');
+                    }
+                });
+            }
+        }
+    }
+    else if (siteType == 'fleaflicker') {
+        var celldata = '<img src="' + loadingUrl + '"/>';
+        
+        
     }
 }
 
@@ -1524,16 +1582,19 @@ function parseLeagueSettings(league_data, siteType) {
         //todo separate these by who it applies to, in td.right
         //todo calculate bonuses based on some averages maybe? like first downs, yards per catch, etc.
         
-        //this is literally calculus. calculus in fantasy football. what the fuck is my life.
-        var kicking_multiples = [8.89812E-09, -1.60194E-06, 8.8598E-05, -0.001254664, 0.003728836];
-        var kick_dist = [18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64];
-        var kick_counts = [5,27,68,62,77,78,62,69,57,94,65,71,84,81,71,94,60,93,77,76,89,65,78,56,71,76,80,70,63,63,75,67,57,54,55,58,30,19,6,6,5,1,0,2,0,0,1];
-        var min_dist = 18;
-        var max_dist = 62;
+        //well, this got really complicated really fast.
+        var kick_dist = [17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65];
+        var kick_counts = [0,5,27,68,62,77,78,62,69,57,94,65,71,84,81,71,94,60,93,77,76,89,65,78,56,71,76,80,70,63,63,75,67,57,54,55,58,30,19,6,6,5,1,0,2,0,0,1,0];
+        
+        var kick_tot = 0;
+        for (c=0; c<kick_counts.length; c++) {
+            kick_tot += kick_counts[c];
+        }
+        var min_dist = kick_dist[0];
+        var max_dist = kick_dist[kick_dist.length - 1];
         
         var getValue = function(setting_name, bonus) {
             bonus = (typeof bonus == 'undefined') ? false : bonus;
-            dlog(setting_name + "," + bonus);
             var settingVals = [];
             
             var this_header = league_headers.find("td.table-heading:contains('" + point_type + "')").closest('tr');
@@ -1571,6 +1632,7 @@ function parseLeagueSettings(league_data, siteType) {
                     var s_name = s_contents.filter('strong:first');
                     var bonus_index = s_contents.index(s_name);
                     var bonus_details = s_contents.slice(bonus_index + 1);
+                    var bonus_type = '';
                     var is_bonus = false;
                     var skip = false;
                     var every_alt = s_contents.get(bonus_index - 1).textContent.trim();
@@ -1582,7 +1644,7 @@ function parseLeagueSettings(league_data, siteType) {
                     }
                     
                     if (bonus_details.length) {
-                        var bonus_type = bonus_details[0].textContent.trim();
+                        bonus_type = bonus_details[0].textContent.trim();
                         if (point_type == 'Kicking' && (/Field Goals\? (Made|Missed)/.test(setting_name))) {
                             if (!/^\(/.test(bonus_type) && quant.length) {
                                 is_bonus = true;
@@ -1606,44 +1668,38 @@ function parseLeagueSettings(league_data, siteType) {
                                 settingVals.push(s_val);
                             }
                             else {
-                                //debugger;
                                 if (!every_yards && (!bonus_details.length || /^\(/.test(bonus_type))) {
                                     settingVals.push(s_val);
                                 }
                                 else {
                                     var bonus_low = bonus_details.filter('span.text-muted.low').text().trim();
+                                    var bonus_low_adj = min_dist;
                                     if (bonus_low) {
                                         bonus_low = parseFloat(bonus_low);
-                                        bonus_low = Math.max(bonus_low, min_dist);
+                                        bonus_low_adj = Math.min(Math.max(bonus_low, min_dist), max_dist);
                                     }
                                     var bonus_high = bonus_details.filter('span.text-muted.high').text().trim();
+                                    var bonus_high_adj = max_dist;
                                     if (bonus_high) {
                                         bonus_high = parseFloat(bonus_high);
-                                        bonus_high = Math.min(bonus_high, max_dist);
+                                        bonus_high_adj = Math.max(Math.min(bonus_high, max_dist), min_dist);
                                     }
                                     
                                     if (bonus_low || bonus_high) {
-                                        if (!bonus_low) {
-                                            bonus_low = min_dist;
-                                        }
-                                        if (!bonus_high) {
-                                            bonus_high = max_dist;
-                                        }
-                                        
-                                        var area_low = kicking_multiples[0]*(bonus_low**5) + kicking_multiples[1]*(bonus_low**4) + kicking_multiples[2]*(bonus_low**3) + kicking_multiples[3]*(bonus_low**2) + kicking_multiples[4]*(bonus_low**1);
-                                        var area_high = kicking_multiples[0]*(bonus_high**5) + kicking_multiples[1]*(bonus_high**4) + kicking_multiples[2]*(bonus_high**3) + kicking_multiples[3]*(bonus_high**2) + kicking_multiples[4]*(bonus_high**1);
+                                        var kick_index_low = kick_dist.indexOf(bonus_low_adj);
+                                        var kick_index_high = kick_dist.indexOf(bonus_high_adj);
+                                        var kick_dist_cut = kick_dist.slice(kick_index_low, kick_index_high + 1);
+                                        var kick_counts_cut = kick_counts.slice(kick_index_low, kick_index_high + 1);
 
-                                        expected_pct = area_high - area_low;
-                                        
                                         if (every_yards) {
-                                            var kick_index_low = kick_dist.indexOf(bonus_low);
-                                            var kick_index_high = kick_dist.indexOf(bonus_high);
-                                            var kick_dist_cut = kick_dist.slice(kick_index_low, kick_index_high + 1);
-                                            var kick_counts_cut = kick_counts.slice(kick_index_low, kick_index_high + 1);
+                                            var kick_extra_counts = kick_counts.slice(kick_index_high + 1);
+                                            for (k=0; k<kick_extra_counts.length; k++) {
+                                                kick_counts_cut[kick_counts_cut.length - 1] += kick_extra_counts[k];
+                                            }
                                             
                                             var sumkick = 0;
                                             for (var i=0; i< kick_dist_cut.length; i++) {
-                                                sumkick += kick_dist_cut[i]*kick_counts_cut[i];
+                                                sumkick += kick_dist_cut[i] * kick_counts_cut[i];
                                             }
                                             var sumkick_count = 0;
                                             for (var j=0; j< kick_counts_cut.length; j++) {
@@ -1651,9 +1707,21 @@ function parseLeagueSettings(league_data, siteType) {
                                             }
 
                                             expected_yards = sumkick * 1.0 / sumkick_count;
+                                            
+                                            if (bonus_high) {
+                                                expected_yards = Math.min(expected_yards, bonus_high);
+                                            }
+                                            if (bonus_low) {
+                                                expected_yards -= bonus_low;
+                                            }
                                         }
                                         else {
                                             expected_yards = 1;
+                                        }
+                                        
+                                        expected_pct = 0;
+                                        for (e=0; e < kick_counts_cut.length; e++) {
+                                            expected_pct += (kick_counts_cut[e] * 1.0 / kick_tot);
                                         }
                                     }
                                     
@@ -1664,10 +1732,8 @@ function parseLeagueSettings(league_data, siteType) {
                             }
                         }
                         else {
-                            if (skip || (setting_name.indexOf(' TD') > -1 && !quant.length)) {
-                                dlog('skipping: ' + scell.text());
-                            }
-                            else {
+                            //todo do what i did with kickers here, to estimate things like "4 extra points for every Rushing TD of 80 or more yards"
+                            if (!skip && !(setting_name.indexOf(' TD') > -1 && !quant.length)) {
                                 var bonusDict = {};
                                 bonusDict['pts'] = s_val;
                                 bonusDict['is_per'] = for_every ? true : false;
@@ -1679,6 +1745,10 @@ function parseLeagueSettings(league_data, siteType) {
                                 var bonus_high = bonus_details.filter('span.text-muted.high').text().trim();
                                 if (bonus_high) {
                                     bonus_high = parseFloat(bonus_high);
+                                }
+                                
+                                if (bonus_low !== '' && bonus_high === '' && bonus_type && /is exactly/.test(bonus_type)) {
+                                    bonus_high = bonus_low;
                                 }
                                 
                                 bonusDict['low'] = bonus_low;
@@ -1772,13 +1842,11 @@ function parseLeagueSettings(league_data, siteType) {
             settings['ya'] = getValue('Net Yards? Allowed') || 0;
             settings['ya_bonus'] = getValue('Net Yards? Allowed', true);
             
-            //todo (is exactly 0), try setting min and max to same value
             settings['pa'] = getValue('Points? Allowed') || getValue('Offensive . Special Teams Points? Allowed') || getValue('Offensive Points? Allowed [(]FG, Pass TD, Rush TD[)]') || 0;
             settings['pa_bonus'] = getValue('Points? Allowed', true) || getValue('Offensive . Special Teams Points? Allowed', true) || getValue('Offensive Points? Allowed [(]FG, Pass TD, Rush TD[)]', true);
     }
 
     dlog(settings);
-    //debugger;
     return settings;
 }
 
@@ -2500,6 +2568,9 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
         }
         else if (player_name == 'Chandler Jones') {
             full_name = 'Chandler Jones|LB|ARI';
+        }	
+        else if (player_name == 'Jabaal Sheard') {
+            full_name = 'Jabaal Sheard|DE|NE';
         }	
 
         player_data = alldata[full_name];
