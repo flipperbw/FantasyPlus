@@ -17,6 +17,7 @@
 - use this "prebuilt" thing inside, intercept it and reput it in? http://games.espn.com/ffl/playertable/prebuilt/manageroster?leagueId=1496143&teamId=4&seasonId=2014&scoringPeriodId=12&view=overview&context=clubhouse&ajaxPath=playertable/prebuilt/manageroster&managingIr=false&droppingPlayers=false&asLM=false
 - clicking too fast disables it until the next click...
 - store historical projections
+- add projected to Yahoo roster page
 */
 
 /*
@@ -29,7 +30,7 @@ document.body.appendChild(tag);
 var debug_mode = false;
 var debug_mode = true;
 
-chrome.storage.local.clear();
+//chrome.storage.local.clear();
 
 //chrome.storage.local.remove('fp_player_activity_data');
 //chrome.storage.local.get('fp_player_activity_data', function(d) { console.info(d); });
@@ -48,7 +49,6 @@ var alldata,
     storage_translation_data,
 	activity_data,
 	activity_data_current_season_site,
-	total_players,
     siteType,
     playerTable,
     player_table_selector,
@@ -86,6 +86,8 @@ var ajax_timeout = 2000;
 
 var fetch_fail = false;
 var idp_fetch_fail = false;
+
+var total_players = 0;
 
 var show_avg = true;
 var show_proj = true;
@@ -332,6 +334,9 @@ else if (document.URL.match(/football.fantasysports.yahoo.com/)) {
 else if (document.URL.match(/fleaflicker.com/)) {
     siteType = 'fleaflicker';
     
+    var fetchFleaflickerIds = jQuery.Deferred();
+    var total_player_ids = 0;
+
 	var onMatchupPreviewPage = document.URL.match(/nfl\/leagues\/(\d+)\/scores\/(\d+)/);
     var onClubhousePage = document.URL.match(/nfl\/leagues\/(\d+)\/teams\/(\d+)(\?|$)/);
     var onFreeAgencyPage = document.URL.match(/nfl\/leagues\/(\d+)\/players/);
@@ -339,7 +344,7 @@ else if (document.URL.match(/fleaflicker.com/)) {
 	
     var is_current_week = true;
     
-    base_table_selector = '#main-container';
+    base_table_selector = '#body-center-main';
     player_table_selector = '[id^=table_]';
     player_table_body_selector = 'tbody';
     player_table_header_selector = 'thead tr';
@@ -347,8 +352,8 @@ else if (document.URL.match(/fleaflicker.com/)) {
     player_name_selector = 'div.player';
     	
 	var hasProjTotals = onMatchupPreviewPage || onClubhousePage;
-	var hasPlayerTable = onMatchupPreviewPage || onClubhousePage || onFreeAgencyPage || onGeneralProjPage;
-    var hasProjectionTable = hasPlayerTable;
+	var hasPlayerTable = onFreeAgencyPage || onMatchupPreviewPage;
+    var hasProjectionTable = onMatchupPreviewPage || onClubhousePage || onFreeAgencyPage || onGeneralProjPage;
     
     jQuery('a[href^="/nfl/upgrade"]').remove();
     jQuery('i.icon-edge-E').remove();
@@ -379,8 +384,9 @@ else if (document.URL.match(/fleaflicker.com/)) {
     var storagePlayerKey = 'fp_fleaflicker_player_data_' + league_id;
     var storageUpdateKey = 'fp_fleaflicker_last_updated_' + league_id;
     var storageProjUpdateKey = 'fp_fleaflicker_last_updated_proj_' + league_id;
+    var storageTranslationKey = 'fp_fleaflicker_translation';
     
-    var storageKeys = [storageLeagueKey, storagePlayerKey, storageUpdateKey, storageProjUpdateKey, storageDepthKey];
+    var storageKeys = [storageLeagueKey, storagePlayerKey, storageUpdateKey, storageProjUpdateKey, storageDepthKey, storageTranslationKey];
 	
     show_avg = false; // maybe remove next week
     show_current = false;
@@ -1016,6 +1022,7 @@ function setSelectors() {
         show_proj = true;
 		show_rank = true;
 		show_ros = true;
+		show_spark = true;
 
         player_table_header_proj_selector = 'Proj';
         var this_url = window.location.search;
@@ -1075,7 +1082,7 @@ if (hasProjectionTable) {
             updated_time_proj = r[storageProjUpdateKey];
         }
         
-        if (siteType == 'yahoo') {
+        if ((siteType == 'yahoo' && (onMatchupPreviewPage || onFreeAgencyPage))  || (siteType == 'fleaflicker' && onMatchupPreviewPage)) {
             storage_translation_data = r[storageTranslationKey];
             if (!storage_translation_data) {
                 storage_translation_data = {};
@@ -1112,6 +1119,11 @@ function doLeagueThings() {
         if ((current_time - updated_time_proj) < (1000 * 60 * check_minutes)) {
             dlog('Using cache for data');
             addProjections();
+            if (siteType == 'fleaflicker') {
+                jQuery.when(projDone).done(function () {
+                    watchForChanges();
+                });
+            }
         }
         else {
 			rankDone.resolve();
@@ -1128,7 +1140,11 @@ function doLeagueThings() {
                     var setPlayerData = {};
                     setPlayerData[storagePlayerKey] = alldata;
                     setPlayerData[storageProjUpdateKey] = current_time;
-                    chrome.storage.local.set(setPlayerData);
+                    chrome.storage.local.set(setPlayerData, function() {
+                        if (siteType == 'fleaflicker') {
+                            watchForChanges();
+                        }
+                    });
                 }
             });
         }
@@ -1136,7 +1152,7 @@ function doLeagueThings() {
     else {
         if ((current_time - updated_time) < (1000 * 60 * check_minutes)) {
             dlog('Using cache for data');
-            addAllData(true);
+            addAllData();
             jQuery.when(projDone, rankDone, rosDone, avgDone, depthDone).done(function () {
                 watchForChanges();
             });
@@ -1146,6 +1162,7 @@ function doLeagueThings() {
 			alldata = {};
             getData();
             jQuery.when(projDone, rankDone, rosDone, avgDone, depthDone).done(function () {
+                dlog('all done')
                 dlog('fetch fail: ' + fetch_fail);
                 dlog('idp fetch fail: ' + idp_fetch_fail);
                 if ((!fetch_fail && !idp_fetch_fail) || (siteType == 'yahoo' && !fetch_fail)) {
@@ -1390,12 +1407,16 @@ function addColumns() {
             });
         };
         
-        var getIdxSpan = function(c) {
+        var getIdxSpan = function(c, add_this) {
+            add_this = typeof add_this === "undefined" ? false : add_this;
             if (c && c.length) {
                 var index = 0;
                 jQuery(c[0]).prevAll("td, th").each(function() {
                     index += this.colSpan;
                 });
+                if (add_this) {
+                    index += c[0].colSpan;
+                }
                 return index;
             }
             else {
@@ -1454,10 +1475,50 @@ function addColumns() {
             return seek_headers;
         };
         
+        var findSubChildren = function(cell) {
+            var child_list = [];
+            var child_idx = -1;
+            var par_idx_start = getIdxSpan(cell);
+            
+            var start_found = false;
+            var sub_headers = cell.parent('tr').next('tr').find('td, th');
+            sub_headers.each(function() {
+                var sub_header = jQuery(this);
+                if (start_found) {
+                    if (sub_header.hasClass('horizontal-spacer')) {
+                        return false;
+                    }
+                    else {
+                        child_list.push(sub_header);
+                    }
+                }
+                else {
+                    child_idx += this.colSpan;
+                    if (child_idx >= par_idx_start) {
+                        child_list.push(sub_header);
+                        start_found = true;
+                    }
+                }
+            });
+            
+            return child_list;
+        };
+        
         var addColspan = function(cell, num) {
-            if (cell && cell.length && Number.isInteger(num)) {
-                var this_span = parseInt(cell[0].colSpan);
-                cell.attr('colspan', this_span + num);
+            num = typeof num === "undefined" ? false : parseInt(num);
+            
+            if (cell && cell.length) {
+                if (typeof num !== "number") {
+                    var child_list = findSubChildren(cell);
+                    var child_len = child_list.length;
+                    if (child_len > 0) {
+                        cell.attr('colspan', child_len);
+                    }
+                }
+                else {
+                    var thisSpan = cell[0].colSpan;
+                    cell.attr('colspan', thisSpan + num);
+                }
             }
         };
 
@@ -1598,7 +1659,19 @@ function addColumns() {
             
             var seas_header_default = findHeader('^Season$');
             seas_header_default.css('width', '5%');
+            
+            if (show_depth) {
+                var name_head = player_table_header.find('th').filter(function(i) {
+                    return jQuery(this).text() === 'Name';
+                });
+                var name_index = getIdxSpan(name_head);
+                var parent_name_head = findIdxSpan(name_index, name_head);
 
+                addHeader(name_head, depth_header);
+                addColspan(parent_name_head);
+                addCells(name_index, depth_cell);
+            }
+            
             var proj_index = getIdxSpan(proj_head);
             var parent_head = findIdxSpan(proj_index, proj_head);
 
@@ -1609,8 +1682,8 @@ function addColumns() {
             }
             
             if (show_proj) {
-                addColspan(parent_head, 1);
                 addHeader(proj_head, projection_header);
+                addColspan(parent_head);
                 addCells(proj_index, projection_cell);
             }
             
@@ -1662,18 +1735,10 @@ function addColumns() {
                 }
             }
             
-            if (show_depth) {
-                var name_head = player_table_header.find('th').filter(function(i) {
-                    return jQuery(this).text() === 'Name';
-                });
-                var name_index = getIdxSpan(name_head);
-                var parent_name_head = findIdxSpan(name_index, name_head);
+            //if (show_avg) {
+                //check if ff already does this
+            //}
 
-                addColspan(parent_name_head, 1);
-                addHeader(name_head, depth_header);
-                addCells(name_index, depth_cell);
-            }
-            
             if (show_spark) {
                 var last_fantasy_head = playerTable.find('tr th').filter(function(i) {
                     return jQuery(this).text().match(/Season|Avg/);
@@ -1681,14 +1746,10 @@ function addColumns() {
                 var fantasy_index = getIdxSpan(last_fantasy_head);
                 var fantasy_head = findIdxSpan(fantasy_index, last_fantasy_head);
 
-                addColspan(fantasy_head, 1);
                 addHeader(last_fantasy_head, spark_header);
+                addColspan(fantasy_head);
                 addCells(fantasy_index, spark_cell);
             }
-            
-            //if (show_avg) {
-                //check if ff already does this
-            //}
 
             if (onClubhousePage && show_proj) {
                 var last_row = player_table_body.find('tr[id^=row].last:first');
@@ -2891,7 +2952,7 @@ function calcBonus(bonus_type, pd) {
     else if (siteType == 'fleaflicker') {
         var b_list = settings[bonus_type + '_bonus'];
         if (b_list && b_list.length) {
-            dlog(pd);
+            //dlog(pd);
             
             for (l=0; l < b_list.length; l++) {
                 var bonus_obj = b_list[l];
@@ -2924,8 +2985,12 @@ function calcBonus(bonus_type, pd) {
                     var adj_val = 0;
                     if (b_per) {
                         var pd_apply = pd;
+                        //this math will be wonky if you have negative numbers, but that's just bad league settings
                         if (is_b_low && is_b_high) {
-                            pd_apply = Math.max(Math.min(pd - b_low, b_high - b_low), 0);
+                            if (b_low <= 0) {
+                                b_low += 1;
+                            }
+                            pd_apply = Math.max(Math.min(pd - b_low + 1, b_high - b_low + 1), 0);
                         }
                         else if (is_b_low) {
                             pd_apply = Math.max(pd - b_low, 0);
@@ -3073,8 +3138,8 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
         }
     }
     
-    dlog('player data: ');
-    dlog(player_data);
+    //dlog('player data: ');
+    //dlog(player_data);
 
     if (datatype == 'proj') {
         //until fantasysharks is https
@@ -3115,27 +3180,27 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
         for (n=0; n < settingNames.length; n++) {
             var sn = settingNames[n];
             var setting_score = settings[sn];
-            dlog(sn);
-            dlog(setting_score);
+            //dlog(sn);
+            //dlog(setting_score);
             var p_data = 0;
             
             if (sn == 'pass_icmp') {
-                p_data = (player_data['pass_att'] || 0) - (player_data['pass_cmp'] || 0);
+                p_data = Math.max((player_data['pass_att'] || 0) - (player_data['pass_cmp'] || 0), 0);
             }
             else if (sn == 'fgm') {
-                p_data = (player_data['fga'] || 0) - (player_data['fg'] || 0);
+                p_data = Math.max((player_data['fga'] || 0) - (player_data['fg'] || 0), 0);
             }
             else {
                 p_data = (player_data[sn] || 0);
             }
-            dlog(p_data);
+            //dlog(p_data);
             var p_plus = setting_score * p_data;
-            dlog(p_plus);
+            //dlog(p_plus);
             player_score += p_plus;
             
             if (siteType == 'fleaflicker') {
                 var p_plus_bonus = calcBonus(sn, p_data);
-                dlog(p_plus_bonus);
+                //dlog(p_plus_bonus);
                 player_score += p_plus_bonus;
             }
         }
@@ -3144,24 +3209,24 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
             if (settingDict.hasOwnProperty(k)) {
                 //todo fix this to apply on a per position basis
                 if ((k == 'pa' || k == 'ya') && off_positions_proj.indexOf(pos_name.toLowerCase()) > -1) {
-                    dlog('skipping dst scoring for pos: ' + pos_name);
+                    //dlog('skipping dst scoring for pos: ' + pos_name);
                     continue;
                 }
                 var k_val = settingDict[k];
-                dlog(k, k_val);
+                //dlog(k, k_val);
                 var settings_k = settings[k];
-                dlog(settings_k);
+                //dlog(settings_k);
                 var p_data_val = (player_data[k_val] || 0);
-                dlog(p_data_val);
+                //dlog(p_data_val);
                 
                 var p_plus_d = settings_k * p_data_val;
-                dlog(p_plus_d);
+                //dlog(p_plus_d);
                 
                 player_score += p_plus_d;
                 
                 if (siteType == 'fleaflicker') {
                     var p_plus_bonus_d = calcBonus(k, p_data_val);
-                    dlog(p_plus_bonus_d);
+                    //dlog(p_plus_bonus_d);
                     player_score += p_plus_bonus_d;
                 }
             }
@@ -3223,8 +3288,8 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
             
         player_score += player_adjustment;
         
-        dlog('returning score: ');
-        dlog(player_name +','+ player_score);
+        //dlog('returning score: ');
+        //dlog(player_name +','+ player_score);
         
         return (Math.round(player_score * 10) / 10).toFixed(1);
     }
@@ -3327,7 +3392,7 @@ function getProjectionData(datatype, currRow, cell) {
                                 }
                             }
 
-                            if (player_cell_text.match(/(D\/ST|TQB|HC)$/)) {
+                            if (player_cell_text.match(/(D\/ST|TQB|HC|P)$/)) {
                                 calcAdjAvg(currRow, player_id, null, weeklyPointsData);
                             }
                             else if ((player_stored_activity_games.length > 0) && (current_week_avg == player_stored_activity_updated_week)) {
@@ -3423,12 +3488,19 @@ function getProjectionData(datatype, currRow, cell) {
                 }
                 return;
             }
+            else if (siteType == "fleaflicker" && onMatchupPreviewPage) {
+                total_player_ids--;
+                if (total_player_ids <= 0) {
+                    fetchFleaflickerIds.resolve();
+                }
+                return "";
+            }
             else {
                 return "--";
             }
         }
         
-        else if (player_cell_text.match(/(TQB|HC)$/)) { // can't project head coaches or TQB's
+        else if (player_cell_text.match(/(TQB|HC|P)$/)) { // can't project head coaches or TQB's
             return "--";
         }
         
@@ -3500,6 +3572,7 @@ function getProjectionData(datatype, currRow, cell) {
                 var player_href = player_name_cell.find('a').attr('href');
                 var player_id = player_href.split('/').reverse()[0];
                 var seenId = storage_translation_data.hasOwnProperty('ID_' + player_id);
+                //dlog('id is ' + player_id + ', seen is ' + seenId);
                 
                 if (pos_name == "D/ST" || seenId) {
                     if (seenId) {
@@ -3552,9 +3625,12 @@ function getProjectionData(datatype, currRow, cell) {
                             }
                         }
                         
+                        //TODO fix this so it only runs once,
+                        //somehow set a variable for "currently running for PID", then wait for that to resolve
                         var new_id_data = {};
                         storage_translation_data['ID_' + pid] = n;
-                        new_id_data['fp_yahoo_translation'] = storage_translation_data;
+                        new_id_data[storageTranslationKey] = storage_translation_data;
+                        //dlog('setting new data for ' + pid);
                         chrome.storage.local.set(new_id_data);
                         
                         if (datatype == 'depth') {
@@ -3598,7 +3674,64 @@ function getProjectionData(datatype, currRow, cell) {
             }
             player_name = player_name.replace('*', '');
             
-            return calculateProjections(datatype, player_name, pos_name, team_name);
+            if (onMatchupPreviewPage) {
+                var player_href = player_cell.find('div.player-name a.player-text').attr('href');
+                var player_last = player_href.split('/').pop();
+                var player_name_split = player_last.split('-');
+                var player_id = player_name_split.pop();
+                var player_href_name = player_name_split.map(i => i[0].toUpperCase() + i.substring(1)).join(' ');
+                //todo could improve by storing things in all uppercase
+
+                var seenId = storage_translation_data.hasOwnProperty('ID_' + player_id);
+                
+                if (pos_name == "D/ST" || seenId) {
+                    if (seenId) {
+                        player_name = storage_translation_data['ID_' + player_id];
+                    }
+                    
+                    var calcVal = calculateProjections(datatype, player_name, pos_name, team_name);
+                    
+                    cell.text(calcVal);
+                    total_player_ids--;
+                    if (total_player_ids <= 0) {
+                        fetchFleaflickerIds.resolve();
+                    }
+                }
+                else if (alldata.hasOwnProperty(player_href_name + '|' + pos_name + '|' + team_name)) {
+                    total_player_ids--;
+                    if (total_player_ids <= 0) {
+                        fetchFleaflickerIds.resolve();
+                    }
+
+                    return calculateProjections(datatype, player_href_name, pos_name, team_name);
+                }
+                else {
+                    jQuery.ajax({
+                        url: player_href
+                    }).done(function(pl) {
+                        var pldata = jQuery(pl);
+                        var n = pldata.find('#left-container > div.panel > div.panel-heading').text();
+                        
+                        var calcVal = calculateProjections(datatype, n, pos_name, team_name);
+                        cell.text(calcVal); //todo won't work if i want to add other types, like depth
+                        
+                        var new_id_data = {};
+                        storage_translation_data['ID_' + player_id] = n;
+                        new_id_data[storageTranslationKey] = storage_translation_data;
+                        chrome.storage.local.set(new_id_data);
+                    }).fail(function() {
+                        cell.text('--');
+                    }).always(function() {
+                        total_player_ids--;
+                        if (total_player_ids <= 0) {
+                            fetchFleaflickerIds.resolve();
+                        }
+                    });
+                }
+            }
+            else {
+                return calculateProjections(datatype, player_name, pos_name, team_name);
+            }
         }
         else {
             return '--';
@@ -3728,18 +3861,19 @@ function insertAdjAvg(thisrow, p_avg, weekly_points_data) {
         var new_activity_data = {};
         new_activity_data['fp_player_activity_data'] = activity_data;
         chrome.storage.local.set(new_activity_data, function() {
-            if ((current_season != current_season_avg) || (current_season != current_season_avg_week)) {
+            if (siteType == 'espn' && ((current_season != current_season_avg) || (current_season != current_season_avg_week))) {
                 //doing this to reset back to current season
                 var espn_points_data = {'leagueId': league_id, 'seasonId': current_season, 'xhr': '1'};
                 jQuery.get('//games.espn.com/ffl/freeagency', espn_points_data);
             }
+            dlog('avg done');
             avgDone.resolve();
         });
     }
 }
 
 function reDefer() {
-    if (header_index > -1) {
+    if ((header_index > -1) || ((siteType == 'fleaflicker') && hasProjectionTable)) {
         projDone = jQuery.Deferred();
         rankDone = jQuery.Deferred();
         rosDone = jQuery.Deferred();
@@ -3748,13 +3882,15 @@ function reDefer() {
     }
 }
 
-function addAllData(firstrun) {
-    if (header_index > -1) {
-        if (firstrun && (show_avg || show_spark || show_current)) {
-            getAvg();
-        }
-        else if (show_avg || show_spark || show_current) {
-            addAvg();
+function addAllData() {
+    if (header_index > -1 || ((siteType == 'fleaflicker') && hasProjectionTable)) {
+        if (show_avg || show_spark || show_current) {
+            if (typeof activity_data_current_season_site === "undefined") {
+                getAvg();
+            }
+            else {
+                addAvg();
+            }
         }
         else {
             avgDone.resolve();
@@ -3789,6 +3925,7 @@ function addAllData(firstrun) {
         }
     }
 	else {
+        dlog('no header');
 		avgDone.resolve();
 		projDone.resolve();
 		rankDone.resolve();
@@ -3861,7 +3998,7 @@ function addProjections() {
 
 	if (isCurrWeek) {
         var projCells = player_table_body.find('.FantasyPlusProjectionsData');
-        if (siteType == 'yahoo') {
+        if (siteType == 'yahoo' || siteType == 'fleaflicker') {
             total_player_ids = projCells.length;
         }
 		projCells.each(function() {
@@ -3952,7 +4089,34 @@ function addProjections() {
 			});
 		}
         else if (siteType == 'fleaflicker') {
+            var sumTotal = 0;
+            var sumTotalFlea = 0;
+            var sumTotalActual = 0;
             
+            var start_rows = player_table_rows.first().nextUntil('.divider').addBack();
+            start_rows.each(function() {
+                var this_row = jQuery(this);
+                var proj_cell = this_row.find('.FantasyPlusProjectionsData');
+                
+                var sumpts = proj_cell.text();
+                var sumptsFlea = proj_cell.prev().text();
+                var sumptsActual = proj_cell.next().text();
+
+                if (parseFloat(sumpts)) {
+                    sumTotal = parseFloat(sumTotal + parseFloat(sumpts));
+                }
+                if (parseFloat(sumptsFlea)) {
+                    sumTotalFlea = parseFloat(sumTotalFlea + parseFloat(sumptsFlea));
+                }
+                if (parseFloat(sumptsActual)) {
+                    sumTotalActual = parseFloat(sumTotalActual + parseFloat(sumptsActual));
+                }
+            });
+            
+            var tot_cell = player_table_body.find('tr td.FantasyPlusProjectionsTotal');
+            tot_cell.html(Math.round(sumTotal * 10) / 10);
+            tot_cell.prev().html(Math.round(sumTotalFlea * 10) / 10);
+            tot_cell.next().html(Math.round(sumTotalActual * 10) / 10);
         }
     }
     if (hasProjTotals) {
@@ -4074,10 +4238,44 @@ function addProjections() {
 			}
 		}
         else if (siteType == 'fleaflicker') {
-            
+            dlog('gonna insert tot');
+            jQuery.when(fetchFleaflickerIds).done(function() {
+                dlog('inserting tot');
+                playerTable.each(function(t) {
+                    var currTable = jQuery(this);
+                    
+                    var start_rows = currTable.find('tbody').find(player_table_row_selector).first().nextUntil('.divider').addBack();
+                    var datapoints = start_rows.find('.FantasyPlusProjectionsData');
+                    if (datapoints.length > 0) {
+                        var matchup_total = 0;
+                        var matchup_flea_total = 0;
+                        
+                        datapoints.each(function() {
+                            var value = parseFloat(jQuery(this).text());
+                            if (value) {
+                                matchup_total = parseFloat(matchup_total + value);
+                            }
+                            var flea_value = parseFloat(jQuery(this).prev().text());
+                            if (flea_value) {
+                                matchup_flea_total = parseFloat(matchup_flea_total + flea_value);
+                            }
+                        });
+                        
+                        var tot_cell = currTable.find('tr td.FantasyPlusProjectionsTotal');
+                        tot_cell.html(Math.round(matchup_total * 10) / 10);
+                        tot_cell.prev().html(Math.round(matchup_flea_total * 10) / 10);
+                    
+                        //todo add to the projected in the boxscore
+                        // find boxscore .FantasyPlusProjectionsTotal
+                        // .eq(t), populate cell with matchup_total
+                    }
+                });
+                
+            });
         }
     }
 
+    dlog('proj done');
     projDone.resolve();
 }
 
@@ -4140,6 +4338,7 @@ function addRankings() {
 		});
 	}	
 
+    dlog('rank done');
     rankDone.resolve();
 }
 
@@ -4180,12 +4379,14 @@ function addRos() {
 		});
 	}	
 
+    dlog('ros done');
     rosDone.resolve();
 }
 
 function addAvg() {
     var datatype = 'adjavg';
     
+    total_players = player_table_rows.length;
     player_table_rows.each(function() {
         var currRow = jQuery(this);
         
@@ -4200,10 +4401,6 @@ function addDepth() {
         'green': 'Situational',
         'red': 'Fill-in',
         'black': 'Reserve'
-    };
-    var popup_settings = {
-        type: 'tooltip',
-        
     };
     
     var fix_name = function(pname, tpd) {
@@ -4346,11 +4543,13 @@ function addDepth() {
         }
     });
     
+    dlog('depth done');
     depthDone.resolve();
 }
 
 function watchForChanges() {
     if (hasPlayerTable) {
+        dlog('init watch');
         var observerConfig = {
             childList: true,
             characterData: true,
@@ -4363,14 +4562,23 @@ function watchForChanges() {
         rankDone.resolve();
         rosDone.resolve();
         avgDone.resolve();      
-*/
-        var target_observe = document.querySelector(base_table_selector);
-        var observerESPN = new MutationObserver(function (mutations) {
-            observerESPN.disconnect();
+        */
+        var target_selector = base_table_selector;
+        if (siteType == 'fleaflicker') {
+            target_selector = 'div#body';
+            if (onFreeAgencyPage) {
+                observerConfig['characterData'] = false;
+                observerConfig['subtree'] = false;
+            }
+        }
+        var target_observe = document.querySelector(target_selector);
+        dlog(target_observe);
+        var observer = new MutationObserver(function (mutations) {
+            var acceptedChange = true;
+            var disconned = false;
             if (mutations.length > 0) {
-				var acceptedChange = true;
 				if (siteType == 'yahoo') {
-					m = mutations[0];
+                    var m = mutations[0];
 					var thisMutTgt = m['target'];
 					if (thisMutTgt) {
 						var thisMutTgtId = thisMutTgt['id'];
@@ -4380,37 +4588,55 @@ function watchForChanges() {
 						}
 					}
 				}
-                //todo fix
                 else if (siteType == 'fleaflicker') {
-                    m = mutations[0];
-					var thisMutNodes = m['addedNodes'];
-                    if (!thisMutNodes || !thisMutNodes.length) {
-                        thisMutNodes = m['removedNodes'];
+                    acceptedChange = false;
+                    if (onMatchupPreviewPage) {
+                        acceptedChange = true;
                     }
-					if (thisMutNodes && thisMutNodes.length) {
-						var thisMutNode = thisMutNodes[0];
-						var thisMutTgtClass = thisMutNode['className'];
-						if (thisMutTgtClass && thisMutTgtClass.indexOf('tooltip') > -1) {
-							acceptedChange = false;
-						}
-					}
-
+                    else {
+                        for (m=0; m < mutations.length; m++) {
+                            var md = mutations[m];
+                            var thisMutNodes = md['addedNodes'];
+                            if (thisMutNodes && thisMutNodes.length) {
+                                for (ma=0; ma < thisMutNodes.length; ma++) {
+                                    var thisMutNode = thisMutNodes[ma];
+                                    var thisMutTgtParent = thisMutNode['parentElement'];
+                                    if (thisMutTgtParent) {
+                                        if (thisMutTgtParent.localName == 'div' && thisMutTgtParent.id == 'body') {
+                                            dlog('accepted');
+                                            acceptedChange = true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
+                
 				if (acceptedChange) {
+                    disconned = true;
+                    observer.disconnect();
                     dlog('rerunning');
 					jQuery('.FantasyPlus').remove();
 					setSelectors();
 					reDefer();
 					addColumns();
-					addAllData(false);
+					addAllData();
 				}
+                else { dlog('rejected'); }
             }
-            jQuery.when(projDone, rankDone, rosDone, avgDone, depthDone).done(function () {
-                dlog('watching for changes after finishing');
-                observerESPN.observe(target_observe, observerConfig);
-            });
+            
+            if (disconned) {
+                dlog('disconned, reattaching');
+                jQuery.when(projDone, rankDone, rosDone, avgDone, depthDone).done(function () {
+                    dlog('watching for changes after finishing');
+                    target_observe = document.querySelector(target_selector);
+                    observer.observe(target_observe, observerConfig);
+                });
+            }
         });
+        
         dlog('watching for changes');
-        observerESPN.observe(target_observe, observerConfig);
+        observer.observe(target_observe, observerConfig);
     }
 }
