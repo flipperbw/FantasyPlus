@@ -1,23 +1,30 @@
 /*-- TODO
 - somehow adjust OPRK for shitty teams, snap %
 - median
-- debug/verbose mode
-- nfl / fleaflicker / myfantasyleague
+- debug/verbose mode with various levels
+- nfl / myfantasyleague / cbs
 - return yardage
 - firefox/safari
 - sortable? doubt it
 - option to disable/add
 - option for experts
-- WR1/2 from depth chart, http://www.footballoutsiders.com/stats/teamdef
 - timeout for loading gif
-- start doing things before the document is ready. https://gist.github.com/raw/2625891/waitForKeyElements.js, waitForKeyElements ("a.Inline", delinkChangeStat);
+- start doing things before the document is ready. https://gist.github.com/raw/2625891/waitForKeyElements.js, waitForKeyElements ("a.Inline", delinkChangeStat); -- this probably doesnt apply since its an extension
 - use window temporary data instead of recalculating when changes are made
-- starting on different tab doesnt enable anything
+- starting on different tab doesnt enable anything (players tab, espn)
 - insider tab
 - use this "prebuilt" thing inside, intercept it and reput it in? http://games.espn.com/ffl/playertable/prebuilt/manageroster?leagueId=1496143&teamId=4&seasonId=2014&scoringPeriodId=12&view=overview&context=clubhouse&ajaxPath=playertable/prebuilt/manageroster&managingIr=false&droppingPlayers=false&asLM=false
 - clicking too fast disables it until the next click...
 - store historical projections
 - add projected to Yahoo roster page
+- add a CURR total for espn
+- add bye week for espn
+- highlight players with higher ROS/rank than on roster
+- weather/dome information
+- injury info for relevant players
+- replicate fantasy finder
+- trade values
+- stdev of points
 */
 
 /*
@@ -1564,7 +1571,7 @@ function addColumns() {
                         var this_proj_cell = currRowTds.eq(this_proj_header_idx);
 
                         var total_cell = projection_cell;
-                        if (currRow.is('.divider, .scoreboard')) {
+                        if (currRow.hasClass('divider')) {
                             if (!starter_found) {
                                 total_cell = newprojcell;
                                 this_proj_cell.html('--');
@@ -1573,6 +1580,9 @@ function addColumns() {
                             else {
                                 total_cell = blank_cell;
                             }
+                        }
+                        else if (currRow.hasClass('scoreboard')) {
+                            total_cell = newprojcell;
                         }
                         else if (currRow.hasClass('repeated')) {
                             total_cell = space_v_cell;
@@ -1654,7 +1664,7 @@ function addColumns() {
             var rnk_header_default = findHeader('^Rank$', false, true);
             rnk_header_default.css('width', '3%');
             
-            var fant_header_default = findHeader('^Last 1$|^Total$|^Avg$', '^Fantasy$');
+            var fant_header_default = findHeader('^Last [0-9]+$|^Total$|^Avg$', '^Fantasy$');
             fant_header_default.css('width', '4%');
             
             var seas_header_default = findHeader('^Season$');
@@ -3833,7 +3843,7 @@ function insertAdjAvg(thisrow, p_avg, weekly_points_data) {
             var weekly_points_data_cut = weekly_points_data.slice(week_modifier, Math.min(Math.max(0, current_week_avg - 1), 17));
             
             if (weekly_points_data_cut && weekly_points_data_cut.length > 1) {
-                thisSpark.sparkline(weekly_points_data_cut, {
+                var spark_options = {
                     type: 'line',
                     disableHiddenCheck: true,
                     width: '35px',
@@ -3844,8 +3854,18 @@ function insertAdjAvg(thisrow, p_avg, weekly_points_data) {
                     minSpotColor: false,
                     maxSpotColor: false,
                     spotColor: false,
-                    tooltipFormatter: function(a,b,c) { return 'W' + (c.x + week_modifier + 1) + ': ' + c.y; }
-                } );
+                    tooltipFormatter: function(a,b,c) { return 'W' + (c.x + week_modifier + 1) + ': ' + Math.round(c.y * 10) / 10; }
+                };
+                
+                if (siteType == 'fleaflicker') {
+                    spark_options['height'] = '25px';
+                    spark_options['width'] = '40px';
+                    spark_options['tooltipClassname'] = 'fp-jqstooltip';
+                    spark_options['spotRadius'] = 2;
+                    spark_options['chartRangeMin'] = 0;
+                }
+                
+                thisSpark.sparkline(weekly_points_data_cut, spark_options);
             }
             else {
                 thisSpark.text('--');
@@ -4068,7 +4088,7 @@ function addProjections() {
 							keepAdding = false;
 						}
 					}
-					// I should fix this to make it more automatic for the bye week stupid nonsense
+					//todo I should fix this to make it more automatic for the bye week stupid nonsense
 					if (td_length == (18 + custom_cols)) {
                         var extra_td = '<td></td>';
 					}
@@ -4083,7 +4103,7 @@ function addProjections() {
                         var week_tds = '<td></td><td></td><td class="sectionLeadingSpacer">';
                     }
 					
-					//gonna have to edit this too when its automatic
+					//todo gonna have to edit this too when its automatic
 					currHeaderRow.before('<tr class="pncPlayerRow playerTableBgRow0 FantasyPlus FantasyPlusProjections"><td class="playerSlot" style="font-weight: bold;">Total</td><td></td><td></td>' + extra_td + '<td class="sectionLeadingSpacer"></td>' + week_tds + '</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="sectionLeadingSpacer"></td><td class="playertableStat">' + Math.round(sumTotalESPN * 100) / 100 + '</td><td class="playertableStat">' + Math.round(sumTotal * 100) / 100 + '</td><td class="sectionLeadingSpacer"></td><td></td><td></td><td></td><td></td><td class="sectionLeadingSpacer"></td><td></td><td></td><td></td><td></td></tr>');
 				}
 			});
@@ -4241,7 +4261,9 @@ function addProjections() {
             dlog('gonna insert tot');
             jQuery.when(fetchFleaflickerIds).done(function() {
                 dlog('inserting tot');
-                playerTable.each(function(t) {
+                var scoreboard_table = base_table.find('table tr.scoreboard').closest('table');
+                var matchupTables = playerTable.not(scoreboard_table);
+                matchupTables.each(function(t) {
                     var currTable = jQuery(this);
                     
                     var start_rows = currTable.find('tbody').find(player_table_row_selector).first().nextUntil('.divider').addBack();
@@ -4265,9 +4287,10 @@ function addProjections() {
                         tot_cell.html(Math.round(matchup_total * 10) / 10);
                         tot_cell.prev().html(Math.round(matchup_flea_total * 10) / 10);
                     
-                        //todo add to the projected in the boxscore
-                        // find boxscore .FantasyPlusProjectionsTotal
-                        // .eq(t), populate cell with matchup_total
+                        var this_scoreboard_cell = scoreboard_table.find('.FantasyPlusProjectionsTotal').eq(t);
+                        if (this_scoreboard_cell.length) {
+                            this_scoreboard_cell.html(Math.round(matchup_total * 100) / 100);
+                        }
                     }
                 });
                 
