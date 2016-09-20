@@ -35,7 +35,7 @@ document.body.appendChild(tag);
 */
 
 var debug_mode = false;
-var debug_mode = true;
+//var debug_mode = true;
 
 //chrome.storage.local.clear();
 
@@ -2053,6 +2053,8 @@ function parseLeagueSettings(league_data, siteType) {
         //todo separate these by who it applies to, in td.right
         //todo calculate bonuses based on some averages maybe? like first downs, yards per catch, etc.
         
+        var point_type;
+        
         //well, this got really complicated really fast.
         var kick_dist = [17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65];
         var kick_counts = [0,5,27,68,62,77,78,62,69,57,94,65,71,84,81,71,94,60,93,77,76,89,65,78,56,71,76,80,70,63,63,75,67,57,54,55,58,30,19,6,6,5,1,0,2,0,0,1,0];
@@ -2246,7 +2248,7 @@ function parseLeagueSettings(league_data, siteType) {
             return settingVals;
         }
         
-        var point_type = 'Passing';
+        point_type = 'Passing';
             settings['pass_yds'] = getValue('Passing Yard') || 0;
             settings['pass_yds_bonus'] = getValue('Passing Yard', true);
             settings['pass_tds'] = getValue('Passing TD') || 0;
@@ -2260,7 +2262,7 @@ function parseLeagueSettings(league_data, siteType) {
             settings['pass_att'] = getValue('Passing Attempt') || 0;
             settings['pass_att_bonus'] = getValue('Passing Attempt', true);
         
-        var point_type = 'Rushing';
+        point_type = 'Rushing';
             settings['rush_yds'] = getValue('Rushing Yard') || 0;
             settings['rush_yds_bonus'] = getValue('Rushing Yard', true);
             settings['rush_tds'] = getValue('Rushing TD') || 0;
@@ -2268,7 +2270,7 @@ function parseLeagueSettings(league_data, siteType) {
             settings['rush_att'] = getValue('Rushing Attempt') || 0;
             settings['rush_att_bonus'] = getValue('Rushing Attempt', true);
         
-        var point_type = 'Receiving';
+        point_type = 'Receiving';
             settings['rec_yds'] = getValue('Receiving Yard') || 0;
             settings['rec_yds_bonus'] = getValue('Receiving Yard', true);
             settings['rec_tds'] = getValue('Receiving TD') || 0;
@@ -2276,7 +2278,7 @@ function parseLeagueSettings(league_data, siteType) {
             settings['rec_att'] = getValue('Catch') || 0;
             settings['rec_att_bonus'] = getValue('Catch', true);
 
-        var point_type = 'Kicking';
+        point_type = 'Kicking';
             settings['xpt'] = getValue('XP') || 0;
             settings['xpt_bonus'] = getValue('XP', true);
             settings['fga'] = getValue('Field Goal Attempt') || 0;
@@ -2286,11 +2288,11 @@ function parseLeagueSettings(league_data, siteType) {
             settings['fgm'] = getValue('Field Goals? Missed') || 0;
             settings['fgm_bonus'] = getValue('Field Goals? Missed', true);
 
-        var point_type = 'Misc';
+        point_type = 'Misc';
             settings['fumbles'] = getValue('Fumbles? Lost') || getValue('Fumble') || 0;
             settings['fumbles_bonus'] = getValue('Fumbles? Lost', true) || getValue('Fumble', true);
         
-        var point_type = 'Defense';
+        point_type = 'Defense';
             settings['tka'] = getValue('Assisted Tackle') || getValue('Total Tackle') || 0;
             settings['tka_bonus'] = getValue('Assisted Tackle', true) || getValue('Total Tackle', true);
             settings['tks'] = getValue('Solo Tackle') || getValue('Total Tackle') || 0;
@@ -3148,8 +3150,8 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
         }
     }
     
-    //dlog('player data: ');
-    //dlog(player_data);
+    dlog('player data: ');
+    dlog(player_data);
 
     if (datatype == 'proj') {
         //until fantasysharks is https
@@ -3166,7 +3168,16 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
             'xpt', 'fg', 'fga', 'fgm',
             'fumbles'
         ];
-        var settingDict = {
+        var defDict = {
+            'sk': 'def_sack',
+            'ff': 'def_ff',
+            'int': 'def_int',
+            'deftd': 'def_td',
+            'fr': 'def_fr',
+            'pa': 'def_pa',
+            'ya': 'def_tyda'
+        };
+        var idpDict = {
             'sk': 'Scks',
             'ff': 'FumFrc',
             'tka': 'Tack',
@@ -3175,17 +3186,7 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
             'int': 'Int',
             'deftd': 'DefTD',
             'fr': 'Fum',
-
-            'sk': 'def_sack',
-            'ff': 'def_ff',
-            'int': 'def_int',
-            'deftd': 'def_td',
-            'fr': 'def_fr',
-
-            'pa': 'def_pa',
-            'ya': 'def_tyda'
         };
-        
         
         for (n=0; n < settingNames.length; n++) {
             var sn = settingNames[n];
@@ -3215,22 +3216,26 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
             }
         }
         
-        for (var k in settingDict) {
-            if (settingDict.hasOwnProperty(k)) {
+        var thisDefDict = {};
+        if (pos_name == 'D/ST') {
+            thisDefDict = defDict;
+        }
+        else if (idp_positions.indexOf(pos_name) > -1) {
+            thisDefDict = idpDict;
+        }
+        
+        for (var k in thisDefDict) {
+            if (thisDefDict.hasOwnProperty(k)) {
                 //todo fix this to apply on a per position basis
-                if ((k == 'pa' || k == 'ya') && off_positions_proj.indexOf(pos_name.toLowerCase()) > -1) {
-                    //dlog('skipping dst scoring for pos: ' + pos_name);
-                    continue;
-                }
-                var k_val = settingDict[k];
-                //dlog(k, k_val);
+                var k_val = thisDefDict[k];
+                dlog(k + ', ' + k_val);
                 var settings_k = settings[k];
-                //dlog(settings_k);
+                dlog(settings_k);
                 var p_data_val = (player_data[k_val] || 0);
-                //dlog(p_data_val);
+                dlog(p_data_val);
                 
                 var p_plus_d = settings_k * p_data_val;
-                //dlog(p_plus_d);
+                dlog(p_plus_d);
                 
                 player_score += p_plus_d;
                 
