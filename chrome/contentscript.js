@@ -25,6 +25,7 @@
 - replicate fantasy finder
 - trade values
 - stdev of points
+- add weekly projections second header to projs for fleaflicker
 */
 
 /*
@@ -2948,7 +2949,7 @@ function calcBonus(bonus_type, pd) {
         var this_settings_dict = settings[bonus_type + '_bonus'];
         for (var k in this_settings_dict) {
             if (this_settings_dict.hasOwnProperty(k)) {
-                b_list.push(k);
+                b_list.push(parseFloat(k));
             }
         }
         b_list = b_list.sort().reverse();
@@ -3150,8 +3151,8 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
         }
     }
     
-    dlog('player data: ');
-    dlog(player_data);
+    //dlog('player data: ');
+    //dlog(player_data);
 
     if (datatype == 'proj') {
         //until fantasysharks is https
@@ -3228,14 +3229,14 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
             if (thisDefDict.hasOwnProperty(k)) {
                 //todo fix this to apply on a per position basis
                 var k_val = thisDefDict[k];
-                dlog(k + ', ' + k_val);
+                //dlog(k + ', ' + k_val);
                 var settings_k = settings[k];
-                dlog(settings_k);
+                //dlog(settings_k);
                 var p_data_val = (player_data[k_val] || 0);
-                dlog(p_data_val);
+                //dlog(p_data_val);
                 
                 var p_plus_d = settings_k * p_data_val;
-                dlog(p_plus_d);
+                //dlog(p_plus_d);
                 
                 player_score += p_plus_d;
                 
@@ -3847,6 +3848,13 @@ function insertAdjAvg(thisrow, p_avg, weekly_points_data) {
             var week_modifier = Math.max(0, Math.min(17, current_week_avg) - 7);
             var weekly_points_data_cut = weekly_points_data.slice(week_modifier, Math.min(Math.max(0, current_week_avg - 1), 17));
             
+            //todo id rather have this stay as null, but the lines look stupid
+            for (w=0; w<weekly_points_data_cut.length; w++) {
+                if (weekly_points_data_cut[w] === null) {
+                    weekly_points_data_cut[w] = 0;
+                }
+            }
+            
             if (weekly_points_data_cut && weekly_points_data_cut.length > 1) {
                 var spark_options = {
                     type: 'line',
@@ -3859,6 +3867,8 @@ function insertAdjAvg(thisrow, p_avg, weekly_points_data) {
                     minSpotColor: false,
                     maxSpotColor: false,
                     spotColor: false,
+                    spotRadius: 2,
+                    chartRangeMin: 0,
                     tooltipFormatter: function(a,b,c) { return 'W' + (c.x + week_modifier + 1) + ': ' + Math.round(c.y * 10) / 10; }
                 };
                 
@@ -3866,8 +3876,6 @@ function insertAdjAvg(thisrow, p_avg, weekly_points_data) {
                     spark_options['height'] = '25px';
                     spark_options['width'] = '40px';
                     spark_options['tooltipClassname'] = 'fp-jqstooltip';
-                    spark_options['spotRadius'] = 2;
-                    spark_options['chartRangeMin'] = 0;
                 }
                 
                 thisSpark.sparkline(weekly_points_data_cut, spark_options);
