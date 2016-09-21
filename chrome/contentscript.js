@@ -26,6 +26,7 @@
 - trade values
 - stdev of points
 - add weekly projections second header to projs for fleaflicker
+- fall back to ros if ppr-ros doesnt work
 */
 
 /*
@@ -35,8 +36,8 @@ tag.src = "https://code.jquery.com/jquery-latest.min.js";
 document.body.appendChild(tag);
 */
 
-var debug_mode = false;
-//var debug_mode = true;
+var debug_mode = -1;
+//var debug_mode = 0;
 
 //chrome.storage.local.clear();
 
@@ -82,8 +83,9 @@ var alldata,
     depth_data_current_week;
 
 
-function dlog(o) {
-    if (debug_mode) {
+function dlog(o, level) {
+    level = typeof level === "undefined" ? 0 : level;
+    if (debug_mode >= level ) {
         console.log(o);
     }
 }
@@ -2954,18 +2956,20 @@ function calcBonus(bonus_type, pd) {
         }
         b_list = b_list.sort().reverse();
         for (var b=0; b < b_list.length; b++) {
-            if (parseFloat(b_list[b+1])) {
+            if (parseFloat(b_list[b+1]) && parseFloat(b_list[b])) {
                 adj += (this_settings_dict[b_list[b]] * (b_list[b] <= pd[bonus_type + '_yds'] && pd[bonus_type + '_yds'] < b_list[b+1]));
             }
             else {
-                adj += (this_settings_dict[b_list[b]] * (pd[bonus_type + '_yds'] >= b_list[b]));
+                if (parseFloat(b_list[b])) {
+                    adj += (this_settings_dict[b_list[b]] * (pd[bonus_type + '_yds'] >= b_list[b]));
+                }
             }
         }
     }
     else if (siteType == 'fleaflicker') {
         var b_list = settings[bonus_type + '_bonus'];
         if (b_list && b_list.length) {
-            //dlog(pd);
+            dlog(pd, 1);
             
             for (l=0; l < b_list.length; l++) {
                 var bonus_obj = b_list[l];
@@ -3151,8 +3155,8 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
         }
     }
     
-    //dlog('player data: ');
-    //dlog(player_data);
+    dlog('player data: ', 1);
+    dlog(player_data, 1);
 
     if (datatype == 'proj') {
         //until fantasysharks is https
@@ -3192,8 +3196,8 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
         for (n=0; n < settingNames.length; n++) {
             var sn = settingNames[n];
             var setting_score = settings[sn];
-            //dlog(sn);
-            //dlog(setting_score);
+            dlog(sn, 1);
+            dlog(setting_score, 1);
             var p_data = 0;
             
             if (sn == 'pass_icmp') {
@@ -3205,14 +3209,14 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
             else {
                 p_data = (player_data[sn] || 0);
             }
-            //dlog(p_data);
+            dlog(p_data, 1);
             var p_plus = setting_score * p_data;
-            //dlog(p_plus);
+            dlog(p_plus, 1);
             player_score += p_plus;
             
             if (siteType == 'fleaflicker') {
                 var p_plus_bonus = calcBonus(sn, p_data);
-                //dlog(p_plus_bonus);
+                dlog(p_plus_bonus, 1);
                 player_score += p_plus_bonus;
             }
         }
@@ -3229,20 +3233,20 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
             if (thisDefDict.hasOwnProperty(k)) {
                 //todo fix this to apply on a per position basis
                 var k_val = thisDefDict[k];
-                //dlog(k + ', ' + k_val);
+                dlog(k + ', ' + k_val, 1);
                 var settings_k = settings[k];
-                //dlog(settings_k);
+                dlog(settings_k, 1);
                 var p_data_val = (player_data[k_val] || 0);
-                //dlog(p_data_val);
+                dlog(p_data_val, 1);
                 
                 var p_plus_d = settings_k * p_data_val;
-                //dlog(p_plus_d);
+                dlog(p_plus_d, 1);
                 
                 player_score += p_plus_d;
                 
                 if (siteType == 'fleaflicker') {
                     var p_plus_bonus_d = calcBonus(k, p_data_val);
-                    //dlog(p_plus_bonus_d);
+                    dlog(p_plus_bonus_d, 1);
                     player_score += p_plus_bonus_d;
                 }
             }
@@ -3304,8 +3308,8 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
             
         player_score += player_adjustment;
         
-        //dlog('returning score: ');
-        //dlog(player_name +','+ player_score);
+        dlog('returning score: ', 1);
+        dlog(player_name +','+ player_score, 1);
         
         return (Math.round(player_score * 10) / 10).toFixed(1);
     }
@@ -3363,7 +3367,9 @@ function getProjectionData(datatype, currRow, cell) {
             }
             else if (siteType == 'fleaflicker') {
                 var player_href = player_cell.find('div.player-name a.player-text').attr('href');
-                player_id = player_href.split('-').pop();
+                if (player_href) {
+                    player_id = player_href.split('-').pop();
+                }
             }
             
             if (!player_id) {
@@ -3588,7 +3594,7 @@ function getProjectionData(datatype, currRow, cell) {
                 var player_href = player_name_cell.find('a').attr('href');
                 var player_id = player_href.split('/').reverse()[0];
                 var seenId = storage_translation_data.hasOwnProperty('ID_' + player_id);
-                //dlog('id is ' + player_id + ', seen is ' + seenId);
+                dlog('id is ' + player_id + ', seen is ' + seenId, 1);
                 
                 if (pos_name == "D/ST" || seenId) {
                     if (seenId) {
@@ -3646,7 +3652,6 @@ function getProjectionData(datatype, currRow, cell) {
                         var new_id_data = {};
                         storage_translation_data['ID_' + pid] = n;
                         new_id_data[storageTranslationKey] = storage_translation_data;
-                        //dlog('setting new data for ' + pid);
                         chrome.storage.local.set(new_id_data);
                         
                         if (datatype == 'depth') {
@@ -3669,7 +3674,7 @@ function getProjectionData(datatype, currRow, cell) {
             }
         }
         else if (siteType == "fleaflicker") {
-            player_name = player_cell.find('div.player-name a').text().trim();
+            player_name = player_cell.find('div.player-name .player-text').text().trim();
             team_name = player_cell.find('div.player-info span.player-team').text().trim();
             pos_name = player_cell.find('div.player-info span.position').text().trim();
             
@@ -4608,7 +4613,6 @@ function watchForChanges() {
             }
         }
         var target_observe = document.querySelector(target_selector);
-        dlog(target_observe);
         var observer = new MutationObserver(function (mutations) {
             var acceptedChange = true;
             var disconned = false;
