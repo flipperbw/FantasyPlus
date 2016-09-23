@@ -36,8 +36,8 @@ tag.src = "https://code.jquery.com/jquery-latest.min.js";
 document.body.appendChild(tag);
 */
 
-var debug_mode = -1;
-//var debug_mode = 0;
+//var debug_mode = -1;
+var debug_mode = 0;
 
 //chrome.storage.local.clear();
 
@@ -248,8 +248,8 @@ if (document.URL.match(/games.espn.com/)) {
     }
     else if (onLeaguePage) {
         jQuery('.games-rightcol-spacer').remove();
-        jQuery('img[usemap*="pizza-hut"]').parent().remove();
-        //jQuery('a[href*="fantasyfootballtoolkit"]').parent().remove();
+        jQuery('a[href*="pizzahut"]').remove();
+        jQuery('div.promotional-info').remove();
     }
     else if (onFreeAgencyPage) {
         jQuery('#backgroundContainer').css('width', 'auto');

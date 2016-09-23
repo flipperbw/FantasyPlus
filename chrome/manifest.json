@@ -1,9 +1,9 @@
 {
   "name": "FantasyPlus",
   "short_name": "FantasyPlus",
-  "version": "2.3.3",
+  "version": "2.3.4",
   "manifest_version": 2,
-  "description": "Adds weekly projections/stats from FantasyPros (PFF, CBS, NumberFire, etc.) and FantasySharks (for IDP) to fantasy sites.",
+  "description": "Adds extra data and information (projections, stats, depth charts, etc.) to NFL fantasy sites.",
   "icons": {
     "16" : "FantasyPlusIcon-16.png",
     "48" : "FantasyPlusIcon-48.png",
