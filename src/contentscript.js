@@ -28,6 +28,7 @@
 - add weekly projections second header to projs for fleaflicker
 - fall back to ros if ppr-ros doesnt work
 - add a db of confirmed player names and positions
+- add a "refresh data" option
 */
 
 /*
@@ -291,7 +292,7 @@ var idp_positions = ['DL', 'DE', 'LB', 'DB', 'CB', 'S'];
 var idp_conversion = {'6': 'D/ST', '8': 'DL', '9': 'LB', '10': 'DB'};
 var team_name_conversion = {'ARZ': 'ARI', 'GBP': 'GB', 'KCC': 'KC', 'NEP': 'NE', 'NOR': 'NO', 'RAM': 'LA', 'SDC': 'SD', 'SFO': 'SF', 'TBB': 'TB'};
 
-var loadingUrl = chrome.extension.getURL('loading.gif');
+var loadingUrl = chrome.extension.getURL('img/loading.gif');
 
 var projDone = jQuery.Deferred();
 var rankDone = jQuery.Deferred();

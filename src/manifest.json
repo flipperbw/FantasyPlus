@@ -1,13 +1,13 @@
 {
   "name": "FantasyPlus",
   "short_name": "FantasyPlus",
-  "version": "2.3.4",
+  "version": "2.3.5",
   "manifest_version": 2,
   "description": "Adds extra data and information (projections, stats, depth charts, etc.) to NFL fantasy sites.",
   "icons": {
-    "16" : "FantasyPlusIcon-16.png",
-    "48" : "FantasyPlusIcon-48.png",
-    "128" : "FantasyPlusIcon-128.png"
+    "16" : "img/FantasyPlusIcon-16.png",
+    "48" : "img/FantasyPlusIcon-48.png",
+    "128" : "img/FantasyPlusIcon-128.png"
   },
   "permissions": [
     "http://*/*",
@@ -16,8 +16,9 @@
 	"storage"
   ],
   "web_accessible_resources": [
-    "loading.gif"
+    "img/loading.gif"
   ],
+  "content_security_policy": "script-src 'self' https://ssl.google-analytics.com; object-src 'self'",
   "content_scripts": [
     {
       "matches": [
@@ -38,16 +39,16 @@
 		"http://fleaflicker.com/nfl/leagues/*"
 	  ],
 	  "js": [
-		"jquery.min.js",
-		"jquery.sparkline.min.js",
-		"table2CSV.js",
-		"tooltipster.bundle.min.js",
+		"lib/jquery.min.js",
+		"lib/jquery.sparkline.min.js",
+		"lib/table2CSV.js",
+		"lib/tooltipster.bundle.min.js",
 		"contentscript.js"
 	  ],
 	  "css": [
 		"fantasyplus.css",
-		"tooltipster.bundle.min.css",
-		"tooltipster-sideTip-light.min.css"
+		"lib/tooltipster.bundle.min.css",
+		"lib/tooltipster-sideTip-light.min.css"
 	  ]
     }
   ]
