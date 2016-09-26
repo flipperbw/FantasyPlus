@@ -113,7 +113,7 @@ season_start_map = {
 	'2014': [8, 2],
 	'2015': [8, 8],
 	'2016': [8, 6]
-}
+};
 
 var current_date = new Date();
 var current_time = current_date.getTime();
@@ -338,7 +338,7 @@ if (document.URL.match(/games.espn.com/)) {
         jQuery('.games-alert-mod.alert-mod2.games-blue-alert').remove();
         jQuery('div.draftKings').remove();
         jQuery('iframe[src*="streak.espn.com"]').parent().remove();
-        jQuery('.games-bottomcol').css('margin', 0)
+        jQuery('.games-bottomcol').css('margin', 0);
         if (jQuery('.games-dates-mod').css('margin-left') == '7px') {
             jQuery('.games-dates-mod').css('margin-left', '6px');
         }
@@ -465,7 +465,7 @@ else if (document.URL.match(/fleaflicker.com/)) {
     jQuery('a[href^="/nfl/upgrade"]').remove();
     jQuery('i.icon-edge-E').remove();
     if (onFreeAgencyPage || onGeneralProjPage) {
-        var trade_btns = jQuery('a').filter(function(i) { return jQuery(this).text() === 'Trade'});
+        var trade_btns = jQuery('a').filter(function(i) { return jQuery(this).text() === 'Trade'; });
         trade_btns.css({
             'background-image': 'linear-gradient(to bottom,#a070ec 0%,#6c4186 100%)',
             'border-color': '#51427d'
@@ -474,7 +474,7 @@ else if (document.URL.match(/fleaflicker.com/)) {
             jQuery(this).css("background-color", "rgb(108, 65, 134)");
         });
         
-        var claim_btns = jQuery('a').filter(function(i) { return jQuery(this).text() === 'Claim'});
+        var claim_btns = jQuery('a').filter(function(i) { return jQuery(this).text() === 'Claim'; });
         claim_btns.css({
             'background-image': 'linear-gradient(to bottom,#fbbc4a 0%,#d68306 100%)',
             'border-color': '#9c6315'
@@ -508,7 +508,12 @@ function getParams(u) {
 	if (q_loc > -1) {
 		u.substr(q_loc + 1).split("&").forEach(function(item) {
 			var s = item.split("="), k = s[0], v = s[1] && decodeURIComponent(s[1]);
-			(k in qd) ? qd[k].push(v) : qd[k] = [v];
+			if (k in qd) {
+                qd[k].push(v);
+            }
+            else {
+                qd[k] = [v];
+            }
 		});
 	}
 	return qd;
@@ -734,6 +739,7 @@ function addLeagueSettings() {
         var $scoring_body = $scoring.find('table.viewable').find('tbody').find('tbody');
         var $scoring_tds = $scoring_body.find('td.statName');
 
+        //todo combine these
         var missing_tds = [];
         for (var j in default_settings) {
             if (default_settings.hasOwnProperty(j)) {
@@ -863,20 +869,19 @@ function addLeagueSettings() {
         }
         
         function check_denom(td_num, denom_str, expected_val, $td_cell) {
+            var denom = 1.0;
             if (denom_str.length > 0) {
-                    var denom = parseFloat(denom_str);
-                }
-                else {
-                    var denom = 1.0;
-                }
-                var converted_val = expected_val * denom;
-                colorizeCell(td_num, converted_val, $td_cell);
-                if (td_num == converted_val) {
-                    return true;
-                }
-                else {
-                    return false;
-                }
+                denom = parseFloat(denom_str);
+            }
+            
+            var converted_val = expected_val * denom;
+            colorizeCell(td_num, converted_val, $td_cell);
+            if (td_num == converted_val) {
+                return true;
+            }
+            else {
+                return false;
+            }
         }
         
         $scoring_tds.each(function(i) {
@@ -889,6 +894,7 @@ function addLeagueSettings() {
             
             var frac_cell = false;
             //again, espn adds a dumb extra space
+            //todo combine these
             var cell_indexof = thistd_text.search(/ards\s+\(PY/);
             if (cell_indexof !== -1) {
                 frac_cell = true;
@@ -896,7 +902,7 @@ function addLeagueSettings() {
                 var denom_str = '';
                 var denom_reg = thistd_text.match(/\([A-Z]+(\d+)\)/);
                 if (denom_reg.length) {
-                    var denom_str = denom_reg[1];
+                    denom_str = denom_reg[1];
                 }
                 var same_val = check_denom(td_num, denom_str, expected_val, $td_cell);
                 if (same_val) {
@@ -904,7 +910,7 @@ function addLeagueSettings() {
                     missing_stand_tds.splice(missing_stand_tds.indexOf(' (PY'), 1);
                 }
             }
-            var cell_indexof = thistd_text.indexOf('ards (RY');
+            cell_indexof = thistd_text.indexOf('ards (RY');
             if (cell_indexof !== -1) {
                 frac_cell = true;
                 var expected_val = default_fractional_settings['Rushing']['Rushing Yards (RY)'];
@@ -912,14 +918,15 @@ function addLeagueSettings() {
                 var denom_reg = thistd_text.match(/\([A-Z]+(\d+)\)/);
                 if (denom_reg.length) {
                     var denom_str = denom_reg[1];
-                }            var same_val = check_denom(td_num, denom_str, expected_val, $td_cell);
+                }
+                var same_val = check_denom(td_num, denom_str, expected_val, $td_cell);
                 if (same_val) {
                     missing_frac_tds.splice(missing_frac_tds.indexOf(' (RY'), 1);
                     missing_stand_tds.splice(missing_stand_tds.indexOf(' (RY'), 1);
                 }
 
             }
-            var cell_indexof = thistd_text.indexOf('ards (REY');
+            cell_indexof = thistd_text.indexOf('ards (REY');
             if (cell_indexof !== -1) {
                 frac_cell = true;
                 var expected_val = default_fractional_settings['Receiving']['Receiving Yards (REY)'];
@@ -1001,7 +1008,7 @@ function addLeagueSettings() {
     var $roster = $allsettings.find("div[name='roster']");
     var $scoring = $allsettings.find("div[name='scoring']");
     
-    if ($roster.length == 0) {
+    if ($roster.length === 0) {
         if ($scoring.length > 0) {
             var roster_fetch = {'xhr': 1, 'edit': 'false', 'leagueId': league_id};
             jQuery.get('//games.espn.com/ffl/leaguesetup/sections/roster', roster_fetch, function(po) {
@@ -1036,7 +1043,7 @@ function addLeagueSettings() {
             if (mutations.length > 0) {
                 var new_target_observe = jQuery(ld_selector);
                 var submit_btn = new_target_observe.find('input.submitSettings:visible');
-				if (submit_btn.length == 0) {
+				if (submit_btn.length === 0) {
                     leagueObserver.disconnect();
                     addLeagueSettings();
                 }
@@ -1269,7 +1276,7 @@ function doLeagueThings() {
 			alldata = {};
             getData();
             jQuery.when(projDone, rankDone, rosDone, avgDone, depthDone).done(function () {
-                dlog('all done')
+                dlog('all done');
                 dlog('fetch fail: ' + fetch_fail);
                 dlog('idp fetch fail: ' + idp_fetch_fail);
                 if ((!fetch_fail && !idp_fetch_fail) || (siteType == 'yahoo' && !fetch_fail)) {
@@ -1501,7 +1508,7 @@ function addColumns() {
                     this_header.addClass('bottom');
                 }
                 if (cell.hasClass('right')) {
-                    cell.removeClass('right')
+                    cell.removeClass('right');
                     this_header.addClass('right');
                 }
             
@@ -1697,7 +1704,7 @@ function addColumns() {
                             total_cell.addClass('bottom');
                         }
                         if (this_proj_cell.hasClass('right')) {
-                            this_proj_cell.removeClass('right')
+                            this_proj_cell.removeClass('right');
                             total_cell.addClass('right');
                         }
 
@@ -1715,7 +1722,7 @@ function addColumns() {
             
             var projection_cell = '<td class="FantasyPlus FantasyPlusProjections FantasyPlusProjectionsData">' + celldata + '</td>';
 
-            var spark_cell = '<td class="FantasyPlus FantasyPlusSpark FantasyPlusSparkData">' + celldata + '</td>'
+            var spark_cell = '<td class="FantasyPlus FantasyPlusSpark FantasyPlusSparkData">' + celldata + '</td>';
             var rank_cell = '<td style="width: 2%;" class="left FantasyPlus FantasyPlusRankings FantasyPlusRankingsData">' + celldata + '</td>';
             var rank_std_cell = '<td style="width: 2%;" class="right FantasyPlus FantasyPlusRankings FantasyPlusRankingsStdevData"></td>';
             var ros_cell = '<td style="width: 2%;" class="FantasyPlus FantasyPlusRos FantasyPlusRosData">' + celldata + '</td>';
@@ -1736,7 +1743,7 @@ function addColumns() {
                         var cell_data = jQuery(data);
 
                         if (target_cell.hasClass('right') && !target_cell.hasClass('FantasyPlus')) {
-                            target_cell.removeClass('right')
+                            target_cell.removeClass('right');
                             cell_data.addClass('right');
                         }
                         if (target_cell.hasClass('bottom') || currRow.hasClass('last')) {
@@ -1876,7 +1883,7 @@ function addColumns() {
                     var t_j = jQuery(this);
                     t_j.addClass('bottom');
                     
-                    if (i == 0) {
+                    if (i === 0) {
                         t_j.addClass('FantasyPlus');
                         t_j.html('<span class="player">Total</span>');
                     }
@@ -1915,7 +1922,7 @@ function parseLeagueSettings(league_data, siteType) {
         var getValue = function(setting_name) {
             //TODO fix this for the right section
             return parseFloat($ld.find("td:contains('" + setting_name + "')").next().first().text());
-        }
+        };
 
         settings['pass_yds'] =
             getValue('Passing Yards (PY)') ||
@@ -2056,7 +2063,7 @@ function parseLeagueSettings(league_data, siteType) {
                 settingVals.push(bonusDict);
             }
             return settingVals;
-        }
+        };
         
         var passSettings = getValue('Passing Yards');
             settings['pass_yds'] = passSettings[0] || 0;
@@ -2178,7 +2185,7 @@ function parseLeagueSettings(league_data, siteType) {
                 var league_tds = this_header.nextUntil(league_headers, 'tr[id^=row]');
             }
             var search_regex = new RegExp('^' + setting_name + '(?:(s|es))?(?: [(]Quantity[)])?$');
-            var settingTds = league_tds.find("td.left strong").filter(function() { return search_regex.test(jQuery(this).text()) }).closest('td.left');
+            var settingTds = league_tds.find("td.left strong").filter(function() { return search_regex.test(jQuery(this).text()); }).closest('td.left');
             
             if (settingTds && settingTds.length > 0) {
                 jQuery.each(settingTds, function( sindex, svalue ) {
@@ -2232,7 +2239,7 @@ function parseLeagueSettings(league_data, siteType) {
                         }
                     }
                     
-                    var expected_yards = 36.36 // from historical data, last 3 years
+                    var expected_yards = 36.36; // from historical data, last 3 years
                     var expected_pct = 1;
                     
                     if (is_bonus == bonus) {
@@ -2341,12 +2348,12 @@ function parseLeagueSettings(league_data, siteType) {
                  }
                  settingVals = new_pts;
             }
-            else if (settingVals.length == 0) {
+            else if (settingVals.length === 0) {
                 settingVals = null;
             }
 
             return settingVals;
-        }
+        };
         
         point_type = 'Passing';
             settings['pass_yds'] = getValue('Passing Yard') || 0;
@@ -2525,7 +2532,7 @@ function convertFProsToCSV(raw_data, type, pos_name) {
     new_raw_data.find('tbody tr:not([class^="mpb-player"])').remove();
     var new_data = jQuery('table#data', new_raw_data);
     
-    var header_cell = new_data.find('thead th:contains("Player")')
+    var header_cell = new_data.find('thead th:contains("Player")');
     var new_header_cell = header_cell.clone();
     new_header_cell.text('Team');
     new_header_cell.insertAfter(header_cell);
@@ -2574,7 +2581,7 @@ function getPosProjections() {
         fetchPositionData(p_name, type, function(p_name, raw_data) {
             var pos_name, retrieved_proj, parsed_proj;
             
-            if (!(raw_data == 'error')) {
+            if (raw_data !== 'error') {
                 if (off_positions_proj.indexOf(p_name) > -1 || p_name == '6') {
                     if (p_name == '6') {
                         pos_name = 'DST';
@@ -2663,7 +2670,7 @@ function getPosProjections() {
             }
             
             ready_proj = ready_proj - 1;
-            if (ready_proj == 0) {
+            if (ready_proj === 0) {
                 addProjections();
             }
         });
@@ -2679,7 +2686,7 @@ function getPosRankings() {
         fetchPositionData(p_name, type, function(p_name, raw_data) {
             var pos_name, retrieved_rank, parsed_rank;
             
-            if (!(raw_data == 'error')) {
+            if (raw_data !== 'error') {
                 pos_name = p_name.toUpperCase();
                 raw_data = convertFProsToCSV(raw_data, type, pos_name);
                 
@@ -2736,7 +2743,7 @@ function getPosRankings() {
             }
             
             ready_rank = ready_rank - 1;
-            if (ready_rank == 0) {
+            if (ready_rank === 0) {
                 addRankings();
             }
         });
@@ -2753,7 +2760,7 @@ function getRosRankings() {
         fetchPositionData(p_name, type, function(p_name, raw_data) {
             var pos_name, retrieved_rank, parsed_rank;
             
-            if (!(raw_data == 'error')) {
+            if (raw_data !== 'error') {
                 pos_name = p_name.toUpperCase();
                 raw_data = convertFProsToCSV(raw_data, type, pos_name);
                 
@@ -2810,7 +2817,7 @@ function getRosRankings() {
             }
             
             ready_ros = ready_ros - 1;
-            if (ready_ros == 0) {
+            if (ready_ros === 0) {
                 addRos();
             }
         });
@@ -2986,7 +2993,7 @@ function parseDepth(data) {
     depth_rows.each(function(i, v) {
         var j_v = jQuery(v);
         var j_vb = j_v.find('b');
-        if (i % 2 == 0) {
+        if (i % 2 === 0) {
             team_name = j_vb.text();
             weekly_depth_data[team_name] = {};
         }
@@ -3381,7 +3388,7 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
                 settings['rec_100_bonus'] * (100 <= player_data['rec_yds'] && player_data['rec_yds'] < 200) +
                 settings['rec_200_bonus'] * ((player_data['rec_yds'] || 0) >= 200) +
                 
-                settings['pa0'] * (player_data['def_pa'] == 0) +
+                settings['pa0'] * (player_data['def_pa'] === 0) +
                 settings['pa1'] * (0 < player_data['def_pa'] && player_data['def_pa'] <= 6) +
                 settings['pa7'] * (6 < player_data['def_pa'] && player_data['def_pa'] <= 13) +
                 settings['pa14'] * (13 < player_data['def_pa'] && player_data['def_pa'] <= 17) +
@@ -3407,7 +3414,7 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
                 calcBonus('rush', player_data) +
                 calcBonus('rec', player_data) +
                 
-                settings['pa0'] * (player_data['def_pa'] == 0) +
+                settings['pa0'] * (player_data['def_pa'] === 0) +
                 settings['pa1'] * (0 < player_data['def_pa'] && player_data['def_pa'] <= 6) +
                 settings['pa7'] * (6 < player_data['def_pa'] && player_data['def_pa'] <= 13) +
                 settings['pa14'] * (13 < player_data['def_pa'] && player_data['def_pa'] <= 20) +
@@ -3558,7 +3565,7 @@ function getProjectionData(datatype, currRow, cell) {
                                             jQuery.each(gamedates, function(gp_i, gp_v) {
                                                 var gp_v_parse = jQuery(gp_v);
                                                 var gamedate = gp_v_parse.find('td').eq(gamedateindex).text().trim();
-                                                var rowDate = rowDate = new Date(gamedate.split(' ')[1] + ' ' + current_season_avg_week);
+                                                var rowDate = new Date(gamedate.split(' ')[1] + ' ' + current_season_avg_week);
                                                 if (rowDate.getMonth() < 5) {
                                                     rowDate = new Date(gamedate.split(' ')[1] + ' ' + (current_season_avg_week + 1));
                                                 }
@@ -3601,7 +3608,7 @@ function getProjectionData(datatype, currRow, cell) {
                             var weeklyPointsData = jQuery.map(points_table_rows, function(ptval) { return jQuery(ptval).find('td:last').text(); });
                             weeklyPointsData = weeklyPointsData.splice(0, current_week_avg);
                             for (var i=0; i < weeklyPointsData.length; i++) {
-                                if (weeklyPointsData[i] == '' || weeklyPointsData[i] == "—") {
+                                if (weeklyPointsData[i] === '' || weeklyPointsData[i] == "—") {
                                     weeklyPointsData[i] = null;
                                 }
                                 else {
@@ -3986,7 +3993,7 @@ function insertAdjAvg(thisrow, p_avg, weekly_points_data) {
             }
             
             //TODO: add a green or red if above/below projection
-            if (parseFloat(curr_score) || curr_score == 0) {
+            if (parseFloat(curr_score) || curr_score === 0) {
                 thisCurrent.text(curr_score);
             }
             else {
@@ -4046,7 +4053,7 @@ function insertAdjAvg(thisrow, p_avg, weekly_points_data) {
     }
     
     total_players--;
-    if (total_players == 0) {
+    if (total_players === 0) {
         var new_activity_data = {};
         new_activity_data['fp_player_activity_data'] = activity_data;
         chrome.storage.local.set(new_activity_data, function() {
@@ -4617,7 +4624,7 @@ function addDepth() {
         
         var depthData = getProjectionData(datatype, currRow, cell);
         
-        if (!depthData.constructor === Array || depthData.length < 3) {
+        if (depthData.constructor !== Array || depthData.length < 3) {
             cell.text('--');
         }
         else {
@@ -4637,7 +4644,7 @@ function addDepth() {
                 cell.text('--');
             }
             else {
-                teamname = Object.keys(team_abbrevs).filter(function(key) {return team_abbrevs[key] === teamname})[0];
+                teamname = Object.keys(team_abbrevs).filter(function(key) { return team_abbrevs[key] === teamname; })[0];
                 
                 var team_data = {};
                 if (depth_data_current_week.hasOwnProperty(teamname)) {
@@ -4726,7 +4733,7 @@ function addDepth() {
                 if (p_depth == '--') { dlog('Could not get depth for player: ' + depthData[0]); }
                 cell.text(p_depth);
 
-                var players_sorted = Object.keys(team_pos_data).sort(function(a,b){ return team_pos_data[a].num - team_pos_data[b].num });
+                var players_sorted = Object.keys(team_pos_data).sort(function(a,b){ return team_pos_data[a].num - team_pos_data[b].num; });
                 
                 if (players_sorted.length) {
                     var p_trs = '';

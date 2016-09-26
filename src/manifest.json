@@ -3,7 +3,8 @@
   "short_name": "FantasyPlus",
   "version": "2.3.5",
   "manifest_version": 2,
-  "description": "Adds extra data and information (projections, stats, depth charts, etc.) to NFL fantasy sites.",
+  "update_url": "https://clients2.google.com/service/update2/crx",
+  "description": "Adds extra data and information (projections, stats, depth charts, etc.) to fantasy football sites.",
   "icons": {
     "16" : "img/FantasyPlusIcon-16.png",
     "48" : "img/FantasyPlusIcon-48.png",
@@ -19,6 +20,18 @@
     "img/loading.gif"
   ],
   "content_security_policy": "script-src 'self' https://ssl.google-analytics.com; object-src 'self'",
+  "options_page": "settings.html",
+  "background": {
+    "page": "background.html"
+  },
+  "page_action": {
+    "default-icon": {
+      "19": "img/FantasyPlusIcon-19.png",
+      "38": "img/FantasyPlusIcon-38.png"
+    },
+    "default_title": "FantasyPlus",
+    "default_popup": "page_action.html"
+  },
   "content_scripts": [
     {
       "matches": [
