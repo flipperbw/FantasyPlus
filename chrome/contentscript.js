@@ -27,6 +27,7 @@
 - stdev of points
 - add weekly projections second header to projs for fleaflicker
 - fall back to ros if ppr-ros doesnt work
+- add a db of confirmed player names and positions
 */
 
 /*
@@ -184,6 +185,101 @@ var team_abbrevs = {
     'Indianapolis Colts': 'IND',
     'New Orleans Saints': 'NO',
     'Dallas Cowboys': 'DAL'
+};
+
+var player_name_fix = {
+    'Stevie Johnson': 'Steve Johnson',
+	'Ha Ha Clinton-Dix': 'Hasean Clinton-Dix',
+	'Corey Brown': 'Philly Brown',
+	'Boobie Dixon': 'Anthony Dixon',
+	'Wil Lutz': 'Will Lutz',
+	'MarQuies Gray': 'MarQueis Gray',
+	'Jerry Attaochu': 'Jeremiah Attaochu',
+    'Kahlil Mack': 'Khalil Mack',
+    'Justin March-Lillard': 'Justin March',
+	'Odell Beckham': 'Odell Beckham Jr.',
+    'A.J. McCarron': 'AJ McCarron',
+    'A.J. Derby': 'AJ Derby',
+    'E.J. Manuel': 'EJ Manuel',
+    'Jurell Casey': 'Jurrell Casey',
+    'Johnathan Hankins': 'Jonathan Hankins',
+    'Malcolm Brown': 'Malcom Brown',
+    'Dante Fowler': 'Dante Fowler Jr.',
+    'Vic Beasley Jr.': 'Vic Beasley',
+    'Nickell Robey': 'Nickell Robey-Coleman'
+};
+
+var player_name_translations = {
+    'Christopher': 'Chris',
+    'Chris': 'Christopher',
+    'Benjamin': 'Benny',
+    'Benny': 'Benjamin',
+    'Tim': 'Timothy',
+    'Timothy': 'Tim',
+    'Rob': 'Robert',
+    'Robert': 'Rob',
+    'Mike': 'Michael',
+    'Michael': 'Mike',
+    'John': 'Johnathan',
+    'Johnathan': 'John',
+    'Jon': 'Jonathan',
+    'Jonathan': 'Jon',
+    'Matt': 'Matthew',
+    'Matthew': 'Matt',
+    'Zach': 'Zachary',
+    'Zachary': 'Zach'
+};
+
+var player_position_fix = {
+    'Julius Peppers': 'LB',
+    'Jadeveon Clowney': 'LB',
+    'Derrick Morgan': 'LB',
+    'Chandler Jones': 'LB',
+    'Vic Beasley': 'LB',
+    'Shea McClellin': 'LB',
+    'Trent Murphy': 'LB',
+    'Jerry Hughes': 'LB',
+    'Kevin Dodd': 'LB',
+    
+    'Su\'a Cravens': 'DB',
+    
+    'Jabaal Sheard': 'DL',
+    'Frank Clark': 'DL',
+    'Khalil Mack': 'DL'
+};
+
+var player_position_fix_depth = {
+    'Julius Peppers': 'LB',
+    'Jadeveon Clowney': 'LB',
+    'Derrick Morgan': 'LB',
+    'Chandler Jones': 'LB',
+    'Vic Beasley': 'LB',
+    'Shea McClellin': 'LB',
+    'Trent Murphy': 'LB',
+    'Jerry Hughes': 'LB',
+    'Kevin Dodd': 'LB',
+    'Su\'a Cravens': 'LB',
+    
+    'Tyrann Mathieu': 'S',
+    'Lamarcus Joyner': 'S',
+    
+    'Jabaal Sheard': 'DE',
+    'Frank Clark': 'DE',
+    'Emmanuel Ogbah': 'DE',
+    'Dwight Freeney': 'DE',
+    'Jurrell Casey': 'DE',
+    'Timmy Jernigan': 'DE',
+    'Jaye Howard': 'DE',
+    'Chris Baker': 'DE',
+    'Kendall Langford': 'DE',
+    'Adolphus Washington': 'DE',
+    'Robert Nkemdiche': 'DE',
+    'DaQuan Jones': 'DE',
+    'Yannick Ngakoue': 'DE'
+};
+
+var player_position_fix_sharks = {
+    'Su\'a Cravens': 'DB'
 };
 
 var off_positions_proj = ['qb', 'rb', 'wr', 'te', 'k'];
@@ -2063,7 +2159,7 @@ function parseLeagueSettings(league_data, siteType) {
         var kick_counts = [0,5,27,68,62,77,78,62,69,57,94,65,71,84,81,71,94,60,93,77,76,89,65,78,56,71,76,80,70,63,63,75,67,57,54,55,58,30,19,6,6,5,1,0,2,0,0,1,0];
         
         var kick_tot = 0;
-        for (c=0; c<kick_counts.length; c++) {
+        for (var c=0; c<kick_counts.length; c++) {
             kick_tot += kick_counts[c];
         }
         var min_dist = kick_dist[0];
@@ -2169,7 +2265,7 @@ function parseLeagueSettings(league_data, siteType) {
 
                                         if (every_yards) {
                                             var kick_extra_counts = kick_counts.slice(kick_index_high + 1);
-                                            for (k=0; k<kick_extra_counts.length; k++) {
+                                            for (var k=0; k<kick_extra_counts.length; k++) {
                                                 kick_counts_cut[kick_counts_cut.length - 1] += kick_extra_counts[k];
                                             }
                                             
@@ -2196,7 +2292,7 @@ function parseLeagueSettings(league_data, siteType) {
                                         }
                                         
                                         expected_pct = 0;
-                                        for (e=0; e < kick_counts_cut.length; e++) {
+                                        for (var e=0; e < kick_counts_cut.length; e++) {
                                             expected_pct += (kick_counts_cut[e] * 1.0 / kick_tot);
                                         }
                                     }
@@ -2239,7 +2335,7 @@ function parseLeagueSettings(league_data, siteType) {
             
             if (bonus === false) {
                  var new_pts = 0;
-                 for (f=0; f<settingVals.length; f++) {
+                 for (var f=0; f<settingVals.length; f++) {
                      new_pts += settingVals[f];
                  }
                  settingVals = new_pts;
@@ -2529,16 +2625,28 @@ function getPosProjections() {
                             }
                             //Other IDPs, reversing names
                             else {
-                                player_name = player_name.split(',')[1] + " " + player_name.split(',')[0]
+                                player_name = player_name.split(',')[1] + " " + player_name.split(',')[0];
+                                player_name = player_name.trim();
+                                var player_check = fixPlayerName(player_name, pos_name, team_name, 'proj');
+                                if (!player_check) {
+                                    if (player_name_fix.hasOwnProperty(player_name)) {
+                                        player_name = player_name_fix[player_name];
+                                    }
+                                }
+                                else {
+                                    player_name = player_check[0];
+                                }
+                                
+                                if (player_position_fix_sharks.hasOwnProperty(player_name)) {
+                                    pos_name = player_position_fix_sharks[player_name];
+                                }
                             }
                             
                             player_name = player_name.trim();
-                            
-                            if (player_name == 'D\'qwell Jackson') {
-                                player_name = 'D\'Qwell Jackson';
-                            }
                         }
                         
+                        player_name = player_name.toUpperCase();
+
                         // Add team and position to player_name for differentiating duplicate names
                         var full_name = player_name + "|" + pos_name + "|" + team_name;
                         
@@ -2610,7 +2718,7 @@ function getPosRankings() {
                             team_name = "-";
                         }
                         
-                        player_name = player_name.trim();
+                        player_name = player_name.trim().toUpperCase();
                         
                         // Add team and position to player_name for differentiating duplicate names
                         var full_name = player_name + "|" + pos_name + "|" + team_name;
@@ -2684,7 +2792,7 @@ function getRosRankings() {
                             team_name = "-";
                         }
                         
-                        player_name = player_name.trim();
+                        player_name = player_name.trim().toUpperCase();
                         
                         // Add team and position to player_name for differentiating duplicate names
                         var full_name = player_name + "|" + pos_name + "|" + team_name;
@@ -2739,6 +2847,136 @@ function getAvg() {
     });
 }
 
+function getPlayerCheckName(n, p, t, typ) {
+    if (typ == 'proj') {
+        return n.toUpperCase() + '|' + p + '|' + t;
+    }
+    else if (typ == 'depth') {
+        return n.toUpperCase();
+    }
+    else {
+        return;
+    }
+}
+
+function fixPlayerPosition(pname, ppos, f_type) {
+    var position_fix_dict = {};
+    if (f_type == 'proj') {
+        position_fix_dict = player_position_fix;
+    }
+    else if (f_type == 'depth') {
+        position_fix_dict = player_position_fix_depth;
+    }
+    
+    if (player_name_fix.hasOwnProperty(pname)) {
+        pname = player_name_fix[pname];
+    }
+    
+    if (position_fix_dict.hasOwnProperty(pname)) {
+        ppos = position_fix_dict[pname];
+    }
+    
+    return ppos;
+}
+
+function fixPlayerName(pname, ppos, pteam, f_type, p_dict) {
+    p_dict = typeof p_dict === "undefined" ? alldata : p_dict;
+    
+    var ppos_list = ppos;
+    if (ppos.constructor !== Array) {
+        ppos_list = [ppos];
+    }
+    for (var pp=0; pp<ppos_list.length; pp++) {
+        ppos = ppos_list[pp];
+        if (f_type == 'proj') {
+            if ((ppos == 'DT') || (ppos == 'DE')) {
+                ppos = 'DL';
+            }
+            else if ((ppos == 'CB') || (ppos == 'S')) {
+                ppos = 'DB';
+            }
+        }
+        
+        if (p_dict.hasOwnProperty(getPlayerCheckName(pname, ppos, pteam, f_type))) {
+            dlog('fixed pos: ' + ppos);
+            return [pname, ppos];
+        }
+        else if (player_name_fix.hasOwnProperty(pname)) {
+            var new_pname = player_name_fix[pname];
+            if (p_dict.hasOwnProperty(getPlayerCheckName(new_pname, ppos, pteam, f_type))) {
+                dlog('fixed name: ' + pname + '; is now: ' + new_pname);
+                return [new_pname, ppos];
+            }
+        }
+        else {
+            var name_list_len, this_name, new_pname_abbrev, new_pname_addon, new_pname_trans, new_pname_add;
+            var name_list = [pname];
+        
+            var name_split = pname.split(' ');
+            var first_name = name_split[0];
+            var rest_name = name_split.slice(1).join(' ');
+            if (first_name === first_name.toUpperCase()) {
+                new_pname_abbrev = first_name.split('').join('.') + '. ' + rest_name;
+                if (p_dict.hasOwnProperty(getPlayerCheckName(new_pname_abbrev, ppos, pteam, f_type))) {
+                    dlog('fixed name: ' + pname + '; is now: ' + new_pname_abbrev);
+                    return [new_pname_abbrev, ppos];
+                }
+                name_list.push(new_pname_abbrev);
+            }
+
+            var player_name_addons_rgx = /( V| IV| III| II| Jr\.| Sr\.)$/;
+            name_list_len = name_list.length;
+            for (var n=0; n<name_list_len; n++) {
+                this_name = name_list[n];
+                var pname_addon_match = this_name.match(player_name_addons_rgx);
+                if (pname_addon_match) {
+                    var name_match = pname_addon_match[1];
+                    new_pname_addon = this_name.slice(0, this_name.indexOf(name_match));
+                    if (p_dict.hasOwnProperty(getPlayerCheckName(new_pname_addon, ppos, pteam, f_type))) {
+                        dlog('fixed name: ' + pname + '; is now: ' + new_pname_addon);
+                        return [new_pname_addon, ppos];
+                    }
+                    name_list.push(new_pname_addon);
+                }
+            }
+            
+            name_list_len = name_list.length;
+            for (var n=0; n<name_list_len; n++) {
+                this_name = name_list[n];
+                var this_name_split = this_name.split(' ');
+                var this_first_name = this_name_split[0];
+                var this_rest_name = this_name_split.slice(1).join(' ');
+
+                if (player_name_translations.hasOwnProperty(this_first_name)) {
+                    new_pname_trans = player_name_translations[this_first_name] + ' ' + this_rest_name;
+                    if (p_dict.hasOwnProperty(getPlayerCheckName(new_pname_trans, ppos, pteam, f_type))) {
+                        dlog('fixed name: ' + pname + '; is now: ' + new_pname_trans);
+                        return [new_pname_trans, ppos];
+                    }
+                    name_list.push(new_pname_trans);
+                }
+            }
+
+            var player_name_addons = [' V', ' IV', ' III', ' II', ' Jr.', ' Sr.'];
+            name_list_len = name_list.length;
+            for (var n=0; n<name_list_len; n++) {
+                this_name = name_list[n];
+                
+                for (var a=0; a < player_name_addons.length; a++) {
+                    new_pname_add = this_name + player_name_addons[a];
+                    if (p_dict.hasOwnProperty(getPlayerCheckName(new_pname_add, ppos, pteam, f_type))) {
+                        dlog('fixed name: ' + pname + '; is now: ' + new_pname_add);
+                        return [new_pname_add, ppos];
+                    }
+                    name_list.push(new_pname_add); //unncessary, but whatevs
+                }
+            }
+        }
+    }
+    
+    return false;
+}
+
 function parseDepth(data) {
     var weekly_depth_data = {};
     var team_name = '';
@@ -2756,7 +2994,6 @@ function parseDepth(data) {
             depth_poses.each(function(j, x) {
                 var j_x = jQuery(x);
                 var depth_pos = j_x.text().replace(':', '');
-                //TODO maybe add FB
                 if (depth_pos == 'NT') {
                     depth_pos = 'DT';
                 }
@@ -2767,92 +3004,57 @@ function parseDepth(data) {
                     weekly_depth_data[team_name][depth_pos] = {};
                 }
                 
+                var skip_next = false;
+                var d_num = 1;
                 var depth_players = j_x.nextUntil('br');
                 depth_players.each(function(k, y) {
+                    if (skip_next) {
+                        skip_next = false;
+                        return;
+                    }
+                    skip_next = false;
+
                     var j_y = jQuery(y);
-                    var depth_player_num = k + 1;
-                    var depth_player_text = j_y.text();
+                    var depth_player_text = j_y.text().trim();
                     var depth_player_name = depth_player_text;
+                    var dpt_next = jQuery(depth_players[k+1]).text().trim();
+                    if (dpt_next && /^\(/.test(dpt_next)) {
+                        skip_next = true;
+                        depth_player_text += ' ' + dpt_next;
+                    }
                     var depth_player_status = [];
                     if (depth_player_text.indexOf('(') > -1) {
                         var stat_match = depth_player_text.match(/\([\w/]+\)/g);
                         if (stat_match && stat_match.length) {
-                            for (n=0; n<stat_match.length; n++) {
+                            for (var n=0; n<stat_match.length; n++) {
                                 depth_player_status.push(stat_match[n].replace(/[()]/g, '').toUpperCase());
                             }
                         }
                         depth_player_name = depth_player_text.slice(0, depth_player_text.indexOf(' ('));
                     }
                     
-                    //TODO fix wrong positions, like mathieu
                     depth_player_name = depth_player_name.replace(/[�′]+/g, "'");
-                    if (depth_player_name == 'Robert Griffin III') {
-                        depth_player_name = 'Robert Griffin';
+                    if (player_name_fix.hasOwnProperty(depth_player_name)) {
+                        depth_player_name = player_name_fix[depth_player_name];
                     }
-                    else if (depth_player_name == 'Ted Ginn') {
-                        depth_player_name = 'Ted Ginn Jr.';
-                    }
-                    else if (depth_player_name == 'A.J. McCarron') {
-                        depth_player_name = 'AJ McCarron';
-                    }
-                    else if (depth_player_name == 'Duke Johnson') {
-                        depth_player_name = 'Duke Johnson Jr.';
-                    }
-                    else if (depth_player_name == 'Deandre Washington') {
-                        depth_player_name = 'DeAndre Washington';
-                    }
-                    else if (depth_player_name == 'Benny Cunningham') {
-                        depth_player_name = 'Benjamin Cunningham';
-                    }
-                    else if (depth_player_name == 'Rob Kelley') {
-                        depth_player_name = 'Robert Kelley';
-                    }
-                    else if (depth_player_name == 'George Atkinson') {
-                        depth_player_name = 'George Atkinson III';
-                    }
-                    else if (depth_player_name == 'Steve Smith') {
-                        depth_player_name = 'Steve Smith Sr.';
-                    }
-                    else if (depth_player_name == 'Seth Devalve') {
-                        depth_player_name = 'Seth DeValve';
-                    }
-                    else if (depth_player_name == 'A.J. Derby') {
-                        depth_player_name = 'AJ Derby';
-                    }
-                    else if (depth_player_name == 'MarQuies Gray') {
-                        depth_player_name = 'MarQueis Gray';
-                    }
-                    else if (depth_player_name == 'Navorro Bowman') {
-                        depth_player_name = 'NaVorro Bowman';
-                    }
-                    else if (depth_player_name == 'Jeremiah Attaochu') {
-                        depth_player_name = 'Jerry Attaochu';
-                    }
-                    else if (depth_player_name == 'John Cyprien') {
-                        depth_player_name = 'Johnathan Cyprien';
-                    }
-                    else if (depth_player_name == 'Kahlil Mack') {
-                        depth_player_name = 'Khalil Mack';
-                    }
-                    else if (depth_player_name == 'Michael Mitchell') {
-                        depth_player_name = 'Mike Mitchell';
-                    }
-                    else if (depth_player_name == 'David Bruton') {
-                        depth_player_name = 'David Bruton Jr.';
-                    }
-                    else if (depth_player_name == 'PJ Williams') {
-                        depth_player_name = 'P.J. Williams';
-                    }
-                   
+                    
+                    var depth_player_name_cap = depth_player_name.toUpperCase();
                     var depth_player_type = j_y.find('font').addBack('font').attr('color');
                     
+                    //todo maybe add into alldata, but need to fix names first
                     if (depth_player_name.length) {
-                        weekly_depth_data[team_name][depth_pos][depth_player_name] = {
-                            'num': depth_player_num,
+                        if (weekly_depth_data[team_name][depth_pos].hasOwnProperty(depth_player_name_cap)) {
+                            return;
+                        }
+                        weekly_depth_data[team_name][depth_pos][depth_player_name_cap] = {
+                            'name': depth_player_name,
+                            'num': d_num,
                             'status': depth_player_status,
                             'type': depth_player_type
                         };
                     }
+                    
+                    d_num += 1;
                 });
             });
         }
@@ -2971,7 +3173,7 @@ function calcBonus(bonus_type, pd) {
         if (b_list && b_list.length) {
             dlog(pd, 1);
             
-            for (l=0; l < b_list.length; l++) {
+            for (var l=0; l < b_list.length; l++) {
                 var bonus_obj = b_list[l];
                 var b_pts = bonus_obj['pts'];
                 var b_low = bonus_obj['low'];
@@ -3036,125 +3238,40 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
         return [player_name, pos_name, team_name];
     }
     
-    // get their projected data, multiply it by the league settings
-    var full_name = player_name + "|" + pos_name + "|" + team_name;
+    var player_name_data = player_name.toUpperCase();
+    
+    if ((pos_name == 'DT') || (pos_name == 'DE')) {
+        pos_name = 'DL';
+    }
+    else if ((pos_name == 'CB') || (pos_name == 'S')) {
+        pos_name = 'DB';
+    }
+    pos_name = fixPlayerPosition(player_name, pos_name, 'proj');
+    
+    var full_name = player_name_data + "|" + pos_name + "|" + team_name;
     var player_data = alldata[full_name];
 
     if (typeof(player_data) === "undefined") {
-        if (player_name == 'EJ Manuel') {
-            player_name = 'E.J. Manuel';
-        }
-        else if (player_name == 'T.Y. Hilton') {
-            player_name = 'Ty Hilton';
-        }
-        else if (player_name == 'Stevie Johnson') {
-            player_name = 'Steve Johnson';
-        }
-        else if (player_name == 'Ha Ha Clinton-Dix') {
-            player_name = 'Hasean Clinton-Dix';
-        }
-        else if (player_name == 'Corey Brown') {
-            player_name = 'Philly Brown';
-        }
-        else if (player_name == 'NaVorro Bowman') {
-            player_name = 'Navorro Bowman';
-        }
-		else if (player_name == 'DeVante Parker') {
-            player_name = 'Devante Parker';
-        }
-        else if (player_name == 'Boobie Dixon') {
-            player_name = 'Anthony Dixon';
-        }
-        else if (player_name.indexOf(' III') > -1) {
-            player_name = player_name.slice(0, player_name.indexOf(' III'));
-        }
-        else if (player_name.indexOf(' Jr.') > -1) {
-            player_name = player_name.slice(0, player_name.indexOf(' Jr.'));
-        }
-        else if (player_name.indexOf(' Sr.') > -1) {
-            player_name = player_name.slice(0, player_name.indexOf(' Sr.'));
-        }
-        else if (player_name.split(' ')[0] == 'Christopher') {
-            player_name = 'Chris ' + player_name.split(' ').slice(1).join(' ');
-        }
-        else if (player_name.split(' ')[0] == 'Chris') {
-            player_name = 'Christopher ' + player_name.split(' ').slice(1).join(' ');
-        }
-        else if (player_name.split(' ')[0] == 'Benjamin') {
-            player_name = 'Benny ' + player_name.split(' ').slice(1).join(' ');
-        }
-        else if (player_name.split(' ')[0] == 'Benny') {
-            player_name = 'Benjamin ' + player_name.split(' ').slice(1).join(' ');
-        }
-        else if (player_name.split(' ')[0] == 'Tim') {
-            player_name = 'Timothy ' + player_name.split(' ').slice(1).join(' ');
-        }
-        else if (player_name.split(' ')[0] == 'Timothy') {
-            player_name = 'Tim ' + player_name.split(' ').slice(1).join(' ');
-        }
-        else if (player_name.split(' ')[0] == 'Rob') {
-            player_name = 'Robert ' + player_name.split(' ').slice(1).join(' ');
-        }
-        else if (player_name.split(' ')[0] == 'Robert') {
-            player_name = 'Rob ' + player_name.split(' ').slice(1).join(' ');
-        }
-        else if (player_name.split(' ')[0] == 'Mike') {
-            player_name = 'Michael ' + player_name.split(' ').slice(1).join(' ');
-        }
-        else if (player_name.split(' ')[0] == 'Michael') {
-            player_name = 'Mike ' + player_name.split(' ').slice(1).join(' ');
-        }
+        var player_fix = fixPlayerName(player_name, pos_name, team_name, 'proj');
+        if (player_fix) {
+            player_name = player_fix[0];
+            pos_name = player_fix[1];
+            player_name_data = player_name.toUpperCase();
+            full_name = player_name_data + "|" + pos_name + "|" + team_name;
         
-        full_name = player_name + "|" + pos_name + "|" + team_name;
-        
-        // For multi-position players
-        if (player_name == 'Dexter McCluster') {
-            full_name = 'Dexter McCluster|RB|TEN';
+            player_data = alldata[full_name];
         }
-        else if (player_name == 'Julius Peppers') {
-            full_name = 'Julius Peppers|LB|GB';
-        }
-        else if (player_name == 'DeMarcus Ware') {
-            full_name = 'Demarcus Ware|LB|DEN';
-        }
-        else if (player_name == 'Jared Allen') {
-            full_name = 'Jared Allen|DE|CAR';
-        }
-        else if (player_name == 'Jadeveon Clowney') {
-            full_name = 'Jadeveon Clowney|LB|HOU';
-        }
-        else if (player_name == 'Derrick Morgan') {
-            full_name = 'Derrick Morgan|LB|TEN';
-        }
-		else if (player_name == 'Khalil Mack') {
-            full_name = 'Khalil Mack|DE|OAK';
-        }
-        else if (player_name == 'Chandler Jones') {
-            full_name = 'Chandler Jones|LB|ARI';
-        }	
-        else if (player_name == 'Jabaal Sheard') {
-            full_name = 'Jabaal Sheard|DE|NE';
-        }	
-
-        player_data = alldata[full_name];
-        
-        //last ditch efforts
-        if (typeof(player_data) === "undefined") {
-            var player_name_addons = [' III', ' Jr.', ' Sr.'];
-            for (a=0; a < player_name_addons.length; a++) {
-                var new_full_name = player_name + player_name_addons[a] + "|" + pos_name + "|" + team_name;
-                if (typeof(alldata[new_full_name]) !== "undefined") {
-                    player_data = alldata[new_full_name];
-                    break;
-                }
+        else {
+            dlog('Could not find player: ' + full_name);
+            if (datatype == 'proj') {
+                return("--");
+            }
+            else {
+                return ['--', '--'];
             }
         }
-
-        if (typeof(player_data) === "undefined") {
-            return("--");
-        }
     }
-    
+
     dlog('player data: ', 1);
     dlog(player_data, 1);
 
@@ -3193,7 +3310,7 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
             'fr': 'Fum',
         };
         
-        for (n=0; n < settingNames.length; n++) {
+        for (var n=0; n < settingNames.length; n++) {
             var sn = settingNames[n];
             var setting_score = settings[sn];
             dlog(sn, 1);
@@ -3536,9 +3653,13 @@ function getProjectionData(datatype, currRow, cell) {
                 pos_name = 'D/ST';
             }
             else {
-                player_name = player_cell_text.split(",")[0];
-                var team_pos = player_cell_text.split(",")[1].split(/\s|\xa0/);
-                team_name = team_pos[1].toUpperCase();
+                var player_split = player_cell_text.split(",");
+                for (var ps=0; ps<player_split.length; ps++) {
+                    player_split[ps] = player_split[ps].trim();
+                }
+                player_name = player_split[0];
+                var team_pos = player_split[1].split(/\s|\xa0/);
+                team_name = team_pos[0].toUpperCase();
                 if (team_name == 'JAX') {
                     team_name = 'JAC';
                 }
@@ -3546,17 +3667,21 @@ function getProjectionData(datatype, currRow, cell) {
                     team_name = 'WAS';
                 }
 
-                pos_name = team_pos[2];
-                
-                if (datatype != 'depth') {
-                    if ((pos_name == 'DT') || (pos_name == 'DE')) {
-                        pos_name = 'DL';
-                    }
-                    else if ((pos_name == 'CB') || (pos_name == 'S')) {
-                        pos_name = 'DB';
+                pos_name = team_pos[1];
+                if (player_split.length > 2) {
+                    pos_name = [pos_name];
+                    var new_posses = player_split.slice(2);
+                    for (var np=0; np<new_posses.length; np++) {
+                        var np_text = new_posses[np];
+                        if (!np_text) {
+                            break;
+                        }
+                        var np_split = np_text.split(/\s|\xa0/);
+                        pos_name.push(np_split[0]);
                     }
                 }
             }
+            
             player_name = player_name.replace('*', '');
             
             return calculateProjections(datatype, player_name, pos_name, team_name);
@@ -3571,16 +3696,15 @@ function getProjectionData(datatype, currRow, cell) {
             }
             
             pos_name = pos_name_cell[1];
-            if (pos_name == "DEF") {
-                pos_name = "D/ST";
+            if (pos_name.indexOf(',') > -1) {
+                var new_posses = pos_name.split(',');
+                pos_name = [];
+                new_posses.forEach(function(np) {
+                    pos_name.push(np.trim());
+                });
             }
-            if (datatype != 'depth') {
-                if ((pos_name == 'DT') || (pos_name == 'DE')) {
-                    pos_name = 'DL';
-                }
-                else if ((pos_name == 'CB') || (pos_name == 'S')) {
-                    pos_name = 'DB';
-                }
+            else if (pos_name == "DEF") {
+                pos_name = "D/ST";
             }
             
             player_name = player_name_cell.find('a').text().trim();
@@ -3596,12 +3720,15 @@ function getProjectionData(datatype, currRow, cell) {
                 var seenId = storage_translation_data.hasOwnProperty('ID_' + player_id);
                 dlog('id is ' + player_id + ', seen is ' + seenId, 1);
                 
-                if (pos_name == "D/ST" || seenId) {
+                var hasAllData = alldata.hasOwnProperty(player_name.toUpperCase() + '|' + pos_name + '|' + team_name);
+                
+                if (pos_name == "D/ST" || seenId || hasAllData) {
                     if (seenId) {
                         player_name = storage_translation_data['ID_' + player_id];
                     }
                     
                     var calcVal = calculateProjections(datatype, player_name, pos_name, team_name);
+                    
                     if (onMatchupPreviewPage) {
                         cell.text(calcVal);
                         total_player_ids--;
@@ -3633,7 +3760,7 @@ function getProjectionData(datatype, currRow, cell) {
                         var pldata = jQuery(pl);
                         var n = pldata.find('#mediasportsplayerheader .player-info h1').text();
                         var pid = this.url.split('/').reverse()[0];
-                        
+
                         var calcVal = calculateProjections(datatype, n, pos_name, team_name);
                         if (onMatchupPreviewPage) {
                             cell.text(calcVal);
@@ -3683,16 +3810,40 @@ function getProjectionData(datatype, currRow, cell) {
                 player_name = psplit[psplit.length - 1];
                 team_name = "-";
             }
-            else {
-                if (datatype == 'depth') {
+            else if (pos_name.indexOf('/') > -1) {
+                var new_posses = pos_name.split('/');
+                pos_name = [];
+                new_posses.forEach(function(np) {
+                    pos_name.push(np.trim());
+                });
+            }
+
+            if (datatype == 'depth') {
+                if (pos_name.constructor === Array) {
+                    var new_pos_list = [];
+                    pos_name.forEach(function(pn) {
+                        if (pn == 'DL') {
+                           new_pos_list.push('DE', 'DT');
+                        }
+                        else if (pn == 'DB') {
+                           new_pos_list.push('CB', 'S');
+                        }
+                        else {
+                            new_pos_list.push(pn);
+                        }
+                    });
+                    pos_name = new_pos_list;
+                }
+                else {
                     if (pos_name == 'DL') {
-                        pos_name = ['DE', 'DT'];
+                       pos_name = ['DE', 'DT'];
                     }
                     else if (pos_name == 'DB') {
-                        pos_name = ['CB', 'S'];
+                       pos_name = ['CB', 'S'];
                     }
                 }
             }
+
             player_name = player_name.replace('*', '');
             
             if (onMatchupPreviewPage) {
@@ -3700,8 +3851,7 @@ function getProjectionData(datatype, currRow, cell) {
                 var player_last = player_href.split('/').pop();
                 var player_name_split = player_last.split('-');
                 var player_id = player_name_split.pop();
-                var player_href_name = player_name_split.map(i => i[0].toUpperCase() + i.substring(1)).join(' ');
-                //todo could improve by storing things in all uppercase
+                var player_href_name = player_name_split.map(i => i.toUpperCase()).join(' ');
 
                 var seenId = storage_translation_data.hasOwnProperty('ID_' + player_id);
                 
@@ -3854,7 +4004,7 @@ function insertAdjAvg(thisrow, p_avg, weekly_points_data) {
             var weekly_points_data_cut = weekly_points_data.slice(week_modifier, Math.min(Math.max(0, current_week_avg - 1), 17));
             
             //todo id rather have this stay as null, but the lines look stupid
-            for (w=0; w<weekly_points_data_cut.length; w++) {
+            for (var w=0; w<weekly_points_data_cut.length; w++) {
                 if (weekly_points_data_cut[w] === null) {
                     weekly_points_data_cut[w] = 0;
                 }
@@ -4444,18 +4594,6 @@ function addDepth() {
         'black': 'Reserve'
     };
     
-    var fix_name = function(pname, tpd) {
-        var player_name_addons = [' III', ' Jr.', ' Sr.'];
-        for (a=0; a < player_name_addons.length; a++) {
-            var new_name = pname + player_name_addons[a];
-            if (tpd.hasOwnProperty(new_name)) {
-                return new_name;
-            }
-        }
-        
-        return false;
-    };
-    
     if (!depth_data_current_week || Object.keys(depth_data_current_week).length <= 0) {
         if (depth_data.hasOwnProperty(current_season) && depth_data[current_season].hasOwnProperty('W' + current_week)) {
             depth_data_current_week = depth_data[current_season]['W' + current_week];
@@ -4485,6 +4623,9 @@ function addDepth() {
             var plname = depthData[0];
             var posname = depthData[1];
             var teamname = depthData[2];
+
+            var plname_cap = plname.toUpperCase();
+            posname = fixPlayerPosition(plname, posname, 'depth');
             
             var p_depth = '--';
             
@@ -4504,26 +4645,32 @@ function addDepth() {
                 
                 var team_pos_data = {};
                 if (posname.constructor === Array) {
-                    for (p=0; p < posname.length; p++) {
+                    for (var p=0; p < posname.length; p++) {
                         var pn = posname[p];
                         var new_pos_data = {};
                         if (team_data.hasOwnProperty(pn)) {
-                            var new_pos_data = team_data[pn];
-                        }
-                        if (new_pos_data.hasOwnProperty(plname)) {
-                            team_pos_data = new_pos_data;
-                            posname = pn;
-                            var pdata = team_pos_data[plname];
-                            p_depth = posname + pdata['num'];                    
-                        }
-                        else {
-                            var new_name = fix_name(plname, new_pos_data);
-                            if (new_name) {
-                                plname = new_name;
+                            new_pos_data = team_data[pn];
+                        
+                            if (new_pos_data.hasOwnProperty(plname_cap)) {
                                 team_pos_data = new_pos_data;
                                 posname = pn;
-                                var pdata = team_pos_data[plname];
-                                p_depth = posname + pdata['num'];                    
+                                var pdata = team_pos_data[plname_cap];
+                                p_depth = posname + pdata['num'];
+                                break;
+                            }
+                            else {
+                                var new_fix = fixPlayerName(plname, pn, teamname, 'depth', new_pos_data);
+                                if (new_fix) {
+                                    plname = new_fix[0];
+                                    posname = new_fix[1];
+                                    plname_cap = plname.toUpperCase();
+                                    team_pos_data = new_pos_data;
+                                    var pdata = team_pos_data[plname_cap];
+                                    pdata['true_name'] = plname;
+                                    p_depth = posname + pdata['num'];
+                                    break;
+                                }
+                                //could put a position fix here, applying to someone who is a DEF but should not be (from flea)
                             }
                         }
                     }
@@ -4531,55 +4678,92 @@ function addDepth() {
                 else {
                     if (team_data.hasOwnProperty(posname)) {
                         team_pos_data = team_data[posname];
-                    }
-                    
-                    if (team_pos_data.hasOwnProperty(plname)) {
-                        var pdata = team_pos_data[plname];
-                        p_depth = posname + pdata['num'];                    
-                    }
-                    else {
-                        var new_name = fix_name(plname, team_pos_data);
-                        if (new_name) {
-                            plname = new_name;
-                            var pdata = team_pos_data[plname];
+                        if (team_pos_data.hasOwnProperty(plname_cap)) {
+                            var pdata = team_pos_data[plname_cap];
                             p_depth = posname + pdata['num'];                    
+                        }
+                        else {
+                            var new_fix = fixPlayerName(plname, posname, teamname, 'depth', team_pos_data);
+                            if (new_fix) {
+                                plname = new_fix[0];
+                                posname = new_fix[1];
+                                plname_cap = plname.toUpperCase();
+                                var pdata = team_pos_data[plname_cap];
+                                pdata['true_name'] = plname;
+                                p_depth = posname + pdata['num'];                    
+                            }
+                            else if (posname == 'RB') {
+                                //todo make above a function
+                                var newposname = 'FB';
+                                var new_team_pos_data = {};
+                                if (team_data.hasOwnProperty(newposname)) {
+                                    new_team_pos_data = team_data[newposname];
+                                    if (new_team_pos_data.hasOwnProperty(plname_cap)) {
+                                        posname = newposname;
+                                        team_pos_data = new_team_pos_data;
+                                        var pdata = team_pos_data[plname_cap];
+                                        p_depth = posname + pdata['num'];                    
+                                    }
+                                    else {
+                                        var new_fix = fixPlayerName(plname, newposname, teamname, 'depth', new_team_pos_data);
+                                        if (new_fix) {
+                                            plname = new_fix[0];
+                                            posname = new_fix[1];
+                                            plname_cap = plname.toUpperCase();
+                                            team_pos_data = new_team_pos_data;
+                                            var pdata = team_pos_data[plname_cap];
+                                            pdata['true_name'] = plname;
+                                            p_depth = posname + pdata['num'];                    
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
 
+                if (p_depth == '--') { dlog('Could not get depth for player: ' + depthData[0]); }
                 cell.text(p_depth);
 
                 var players_sorted = Object.keys(team_pos_data).sort(function(a,b){ return team_pos_data[a].num - team_pos_data[b].num });
                 
-                var p_trs = '';
-                for (p=0; p < players_sorted.length; p++) {
-                    var pname = players_sorted[p];
-                    var pd = team_pos_data[pname];
-                    var ptype = type_map[pd['type']];
-                    var pnum = pd['num']; 
-                    var p_status_arr = pd['status'];
-                    var p_status = p_status_arr.join('|');
-                    
-                    var trstring = '<tr>';
-                    if (pname == plname) {
-                        trstring = '<tr style="background-color: lightblue">';
+                if (players_sorted.length) {
+                    var p_trs = '';
+                    for (var p=0; p < players_sorted.length; p++) {
+                        var pname = players_sorted[p];
+                        var pd = team_pos_data[pname];
+                        var ptype = type_map[pd['type']];
+                        var pnum = pd['num']; 
+                        var p_status_arr = pd['status'];
+                        var p_status = p_status_arr.join('|');
+                        var pname_print = pd['name'];
+                        var pname_check = pname_print;
+                        if (pd.hasOwnProperty('true_name')) {
+                            pname_check = pd['true_name'];
+                        }
+                        
+                        var trstring = '<tr>';
+                        if (pname_check == plname) {
+                            trstring = '<tr style="background-color: lightblue">';
+                        }
+                        var pstring = trstring + '<td style="width: 40px;">' + posname + pnum + ':' + '</td><td style="width: 140px;">' + pname_print + '</td><td style="width: 90px;">' + ptype + '</td><td style="width: 80px;">' + p_status + '</td></tr>';
+                        p_trs += pstring;
                     }
-                    var pstring = trstring + '<td style="width: 40px;">' + posname + pnum + ':' + '</td><td style="width: 140px;">' + pname + '</td><td style="width: 90px;">' + ptype + '</td><td style="width: 80px;">' + p_status + '</td></tr>';
-                    p_trs += pstring;
+                    var tooltip_content = jQuery('<div><table><tbody></tbody></table></div>');
+                    tooltip_content.find('tbody').append(p_trs);
+                    
+                    cell.css({'cursor': 'pointer'});
+                    cell.tooltipster({
+                        content: tooltip_content,
+                        contentCloning: false,
+                        delay: 100,
+                        debug: true,
+                        interactive: true,
+                        theme: 'tooltipster-light',
+                        side: 'right'
+                    });
                 }
-                var tooltip_content = jQuery('<div><table><tbody></tbody></table></div>');
-                tooltip_content.find('tbody').append(p_trs);
-                
-                cell.css({'cursor': 'pointer'});
-                cell.tooltipster({
-                    content: tooltip_content,
-                    contentCloning: false,
-                    delay: 100,
-                    debug: true,
-                    interactive: true,
-                    theme: 'tooltipster-light',
-                    side: 'right'
-                });
+                else { dlog('No team data for pos: ' + posname); dlog(team_data); }
             }
         }
     });
@@ -4617,6 +4801,7 @@ function watchForChanges() {
             var acceptedChange = true;
             var disconned = false;
             if (mutations.length > 0) {
+                //todo fix when grabbing player ids
 				if (siteType == 'yahoo') {
                     var m = mutations[0];
 					var thisMutTgt = m['target'];
@@ -4634,7 +4819,7 @@ function watchForChanges() {
                         acceptedChange = true;
                     }
                     else {
-                        for (m=0; m < mutations.length; m++) {
+                        for (var m=0; m < mutations.length; m++) {
                             var md = mutations[m];
                             var thisMutNodes = md['addedNodes'];
                             if (thisMutNodes && thisMutNodes.length) {
