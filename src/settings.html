@@ -1,8 +1,294 @@
 <html>
     <head>
+        <title>FantasyPlus Settings</title>
+        <script type="text/javascript" src="ga.js"></script>
+        <script type="text/javascript" src="lib/jquery.min.js"></script>
+        <script type="text/javascript" src="lib/rangeslider.min.js"></script>
         <script type="text/javascript" src="settings.js"></script>
+        <link rel="stylesheet" href="lib/rangeslider.css" type="text/css" charset="utf-8">
+        <link rel="stylesheet" href="lib/bootstrap.min.css" type="text/css" charset="utf-8">
+        <link rel="stylesheet" href="settings.css" type="text/css" charset="utf-8">
     </head>
     <body>
-		Settings
+        <div class="settings-body">
+        
+            <div class="heading center-contents">
+                <div class="center">
+                    <img src="img/FantasyPlusIcon-128.png" height="70" width="70">
+                </div>
+                <div class="center">
+                    <h1>FantasyPlus Settings</h1>
+                </div>
+            </div>
+        
+            <div class="heading main-content">
+            
+                <div class="settings">
+                
+                    <div class="panel">
+                        <div class="panel-heading">
+                            <h4>Add/Remove Columns</h4>
+                        </div>
+                        <div id="columns">
+                            <table>
+                                <tbody>
+                                    <tr class="no-border">
+                                        <td class="left" rowspan=2>
+                                            <span>General</span>
+                                            <div class="sites">
+                                                <img src="img/espn.png">
+                                                <img src="img/yahoo.png">
+                                                <img src="img/fleaflicker.png">
+                                            </div>
+                                        </td>
+                                        <td class="top" colspan=2>
+                                            <div class="onoffswitch">
+                                                <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="showproj" checked>
+                                                <label class="onoffswitch-label" for="showproj">
+                                                    <span class="onoffswitch-inner">
+                                                        <span>Projections</span>
+                                                    </span>
+                                                    <span class="onoffswitch-switch"></span>
+                                                </label>
+                                            </div>
+                                        </td>
+                                        <td class="spacer"></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="bottom">
+                                            <div class="onoffswitch">
+                                                <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="showdepth" checked>
+                                                <label class="onoffswitch-label" for="showdepth">
+                                                    <span class="onoffswitch-inner">
+                                                        Depth Charts
+                                                    </span>
+                                                    <span class="onoffswitch-switch"></span>
+                                                </label>
+                                            </div>
+                                        </td>
+                                        <td class="bottom">
+                                            <div class="onoffswitch">
+                                                <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="showspark" checked>
+                                                <label class="onoffswitch-label" for="showspark">
+                                                    <span class="onoffswitch-inner">
+                                                        Trendlines
+                                                    </span>
+                                                    <span class="onoffswitch-switch"></span>
+                                                </label>
+                                            </div>
+                                        </td>
+                                        <td class="spacer"></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="top bottom left">
+                                            <span>Ranks</span>
+                                            <div class="sites">
+                                                <img src="img/espn.png">
+                                                <img src="img/yahoo.png">
+                                                <img src="img/fleaflicker.png">
+                                            </div>
+                                        </td>
+                                        <td class="top bottom">
+                                            <div class="onoffswitch">
+                                                <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="showrank" checked>
+                                                <label class="onoffswitch-label" for="showrank">
+                                                    <span class="onoffswitch-inner">
+                                                        Weekly
+                                                    </span>
+                                                    <span class="onoffswitch-switch"></span>
+                                                </label>
+                                            </div>
+                                        </td>
+                                        <td class="top bottom">
+                                            <div class="onoffswitch">
+                                                <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="showros" checked>
+                                                <label class="onoffswitch-label" for="showros">
+                                                    <span class="onoffswitch-inner">
+                                                        Rest of Season
+                                                    </span>
+                                                    <span class="onoffswitch-switch"></span>
+                                                </label>
+                                            </div>
+                                        </td>
+                                        <td class="spacer"></td>
+                                    </tr>
+                                    <tr class="no-border">
+                                        <td class="top bottom left">
+                                            <span>Enhancements</span>
+                                            <div class="sites">
+                                                <img src="img/espn.png">
+                                            </div>
+                                        </td>
+                                        <td class="top bottom">
+                                            <div class="onoffswitch">
+                                                <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="showavg" checked>
+                                                <label class="onoffswitch-label" for="showavg">
+                                                    <span class="onoffswitch-inner">
+                                                        Injury Averages
+                                                    </span>
+                                                    <span class="onoffswitch-switch"></span>
+                                                </label>
+                                            </div>
+                                        </td>
+                                        <td class="top bottom">
+                                            <div class="onoffswitch">
+                                                <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="showcurrent" checked>
+                                                <label class="onoffswitch-label" for="showcurrent">
+                                                    <span class="onoffswitch-inner">
+                                                        Current Score
+                                                    </span>
+                                                    <span class="onoffswitch-switch"></span>
+                                                </label>
+                                            </div>
+                                        </td>
+                                        <td class="spacer"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="panel">
+                        <div class="panel-heading">
+                            <h4>Update Frequency</h4>
+                        </div>
+                        <div class="extra-padding-med">
+                            <div class="freq-range center-contents">
+                                <input data-name="player" type="range" min="1" max="60" value="30">
+                                <div class="freq-select">
+                                    <select class="freq-typ" data-name="player">
+                                      <option value="m">Minutes</option>
+                                      <option value="h">Hours</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="panel">
+                        <div class="panel-heading">
+                            <h4>FantasyPros Experts</h4>
+                        </div>
+                        <div id="experts" class="center-contents extra-padding">
+                            <!--
+                            Expert List<br>Top 10<br>Updated Recently
+                            -->
+                            <i>[Coming Soon]</i>
+                        </div>
+                    </div>
+                    
+                    <div class="panel panel-bottom">
+                        <div class="panel-heading">
+                            <h4>Miscellaneous</h4>
+                        </div>
+                        <div id="misc">
+                            <table>
+                                <tbody>
+                                    <tr class="no-border">
+                                        <td class="top bottom left">
+                                            <span>Pages</span>
+                                            <div class="sites">
+                                                <img src="img/espn.png">
+                                                <img src="img/yahoo.png">
+                                                <img src="img/fleaflicker.png">
+                                            </div>
+                                        </td>
+                                        <td class="top bottom">
+                                            <div class="onoffswitch">
+                                                <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="remove_ads" checked>
+                                                <label class="onoffswitch-label" for="remove_ads">
+                                                    <span class="onoffswitch-inner">
+                                                        Hide Annoying Elements
+                                                    </span>
+                                                    <span class="onoffswitch-switch"></span>
+                                                </label>
+                                            </div>
+                                        </td>
+                                        <td class="top bottom double">
+                                            <div class="onoffswitch">
+                                                <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="fix_css" checked>
+                                                <label class="onoffswitch-label" for="fix_css">
+                                                    <span class="onoffswitch-inner">
+                                                        Fix Broken CSS
+                                                    </span>
+                                                    <span class="onoffswitch-switch"></span>
+                                                </label>
+                                            </div>
+                                        </td>
+                                        <td class="spacer"></td>
+                                    </tr>
+
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                </div>
+                
+                <div class="changelog">
+                
+                    <div class="panel">
+                        <div class="panel-heading">
+                            <h4>Report Bug/Request Feature</h4>
+                        </div>
+                        <div class="report center-contents">
+                            <a role="button" class="btn btn-warning left" href="https://github.com/flipperbw/FantasyPlus/issues" target="_blank">Github</a>
+                            <a role="button" class="btn btn-primary left" href="https://chrome.google.com/webstore/detail/fantasyplus/gojndgicjncbiobejfpjpcahadininga/support" target="_blank">Chrome Store</a>
+                            <a role="button" class="btn btn-info" href="https://www.reddit.com/message/compose?to=flipperbw&subject=FantasyPlus%20Bug%2FRequest" target="_blank">Reddit</a>
+                        </div>
+                    </div>
+                    
+                    <div class="panel panel-bottom changes">
+                        <div class="panel-heading">
+                            <h4>Changelog</h4>
+                        </div>
+                        <div class="panel-body">
+                            <ul>
+                                <li>
+                                    <h3>3.0.0 (2016-10-05)</h3>
+                                    <ul>
+                                        <li><b>Added extension options page</b></li>
+                                        <li><b>Added extension icon and dropdown</b></li>
+                                        <li>Fix for Yahoo DST projections</li>
+                                        <li>Fix for Yahoo bye week cells</li>
+                                        <li>Added projections for first downs</li>
+                                        <li>Performance improvements</li>
+                                    </ul>
+
+                                    <h3>2.3.4 (2016-09-26)</h3>
+                                    <ul>
+                                        <li>Better detection for incorrect player names and positions</li>
+                                    </ul>
+                                    
+                                    <h3>2.3.3 (2016-09-20)</h3>
+                                    <ul>
+                                        <li><b>FleaFlicker support added</b></li>
+                                        <li>Fix for CURR column in ESPN</li>
+                                        <li>Fix for yahoo league bonus settings</li>
+                                        <li>Fix for IDP projections</li>
+                                    </ul>
+
+                                    <h3>2.2.2 (2016-09-13)</h3>
+                                    <ul>
+                                        <li><b>Added Depth Charts</b></li>
+                                        <li>Fix for Yahoo matchup page</li>
+                                        <li>Small fixes for Current scores and Trendlines</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                </div>
+                
+            </div>
+            
+            <div class="save center-contents">
+                <button type="button" autocomplete="off" id="save" class="btn btn-success save-btn" disabled="disabled">
+                    Save (no changes)
+                </button>
+            </div>
+            
+        </div>
     </body>
 </html>

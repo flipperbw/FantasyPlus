@@ -1,0 +1,42 @@
+body {
+    font-size: 1em;
+    margin: 0;
+}
+
+.settings-body {
+    margin: 10px auto;
+    width: 700px;
+}
+
+.center-contents {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.heading {
+    padding: 15px 0px;
+    width: 100%;
+}
+
+.center {
+    display: inline-block;
+    padding: 0px 10px;
+}
+
+.main-content {
+    display: flex;
+}
+
+.panel {
+    border: 1px solid transparent;
+    border-radius: 4px;
+    border-color: #ddd;
+    display: inline-block;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.panel-body {
+    padding: 30px;
+}

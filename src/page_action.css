@@ -1,0 +1,30 @@
+#action-body {
+    width: 220px;
+    height: 135px;
+    margin: 5px 10px;
+    overflow: hidden;
+}
+
+.center-contents {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.separator {
+    padding: 15px 0px;
+    border-bottom: 1px solid transparent;
+    border-color: #a09e9e;
+}
+
+.set-btn {
+    width: 75% !important;
+}
+
+.set-left {
+    margin-right: 15px;
+}
+
+.set-body {
+    padding: 20px;
+}

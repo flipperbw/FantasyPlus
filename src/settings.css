@@ -1,0 +1,247 @@
+body {
+    font-size: 0.9em;
+    margin: 0;
+}
+
+.settings-body {
+    margin: 10px auto;
+    width: 1050px;
+}
+
+.center-contents {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.heading {
+    padding: 15px 0px;
+    width: 100%;
+}
+
+.center {
+    display: inline-block;
+    padding: 0px 10px;
+}
+
+.main-content {
+    display: flex;
+}
+
+.panel {
+    border: 1px solid transparent;
+    border-radius: 4px;
+    border-color: #ddd;
+    display: inline-block;
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 25px;
+}
+
+.panel-bottom {
+    margin-bottom: 0px !important;
+}
+
+.panel-heading {
+    color: #333;
+    background-color: #f5f5f5;
+    border-bottom: 1px solid transparent;
+    border-color: #ddd;
+    padding: 10px 15px;
+    border-top-right-radius: 3px;
+    border-top-left-radius: 3px;
+}
+
+.panel-heading h4{
+    margin-top: 0;
+    margin-bottom: 0;
+    font-size: 16px;
+}
+
+.panel-body {
+    padding: 10px;
+}
+
+.extra-padding-med {
+    padding: 15px 10px;
+}
+
+.extra-padding {
+    padding: 20px 10px;
+}
+
+.settings {
+    width: 62%;
+    padding-right: 4%;
+}
+
+.changelog {
+    width: 38%;
+}
+
+table {
+    width: 100%;
+    table-layout: fixed;
+    /*border-collapse: separate;
+    border-spacing: 0.7em;*/
+}
+
+#columns tr {
+    border-bottom: 1px solid #ddd;
+}
+
+#columns tr.no-border {
+    border-bottom: none;
+}
+
+td {
+    padding: 8px 10px;
+    word-wrap: break-word;
+}
+
+td.left {
+    width: 30%;
+    text-align: center;
+}
+
+td.top {
+    padding-top: 15px;
+}
+
+td.bottom {
+    padding-bottom: 15px;
+}
+
+td.spacer {
+    padding: 0;
+    width: 3%;
+}
+
+td.double {
+    line-height: 2em;
+}
+
+.sites {
+    line-height: 0;
+    padding: 5px 0;
+}
+
+.report {
+    padding: 15px 10px;
+}
+
+.changes {
+    height: 630px;
+    overflow-y: auto;
+}
+
+.panel-body > ul {
+    list-style-type: none;
+    padding-right: 10px;
+    -webkit-padding-start: 10px;
+    margin: 0;
+    line-height: 1.4em;
+}
+
+li > ul {
+    -webkit-padding-start: 33px;
+    padding-bottom: 10px;
+}
+
+ul > li > b {
+    color: green;
+}
+
+.panel-body > ul > li > h3:nth-of-type(1) {
+    font-size: 1.5em;
+    margin: 10px 0px 15px;
+}
+
+.panel-body > ul > li > ul:nth-of-type(1) {
+    font-size: 1.05em;
+}
+
+.btn.left {
+    margin-right: 30px;
+}
+
+.btn.disabled, .btn[disabled], fieldset[disabled] .btn {
+    cursor: auto !important;
+}
+
+.onoffswitch {
+    position: relative;
+    -webkit-user-select:none; -moz-user-select:none; -ms-user-select: none;
+}
+.onoffswitch-checkbox {
+    display: none;
+}
+.onoffswitch-label {
+    display: block; overflow: hidden; cursor: pointer;
+    border: 2px solid #999999; border-radius: 15px;
+}
+.onoffswitch-inner {
+    display: block;
+    padding: 10px 30px;
+    font-size: 15px; font-family: Trebuchet, Arial, sans-serif; font-weight: bold;
+    box-sizing: border-box; text-align: center;
+    background-color: #EEEEEE; color: #999999;
+    transition: all 0.2s ease-in 0s;
+}
+.onoffswitch-switch {
+    display: block; width: 15px; margin: 11px 8.5px;
+    background: #FFFFFF;
+    position: absolute; top: 0; bottom: 0;
+    left: 3px;
+    border: 2px solid #999999; border-radius: 15px;
+    transition: all 0.2s ease-in 0s;
+}
+.onoffswitch-checkbox:checked + .onoffswitch-label .onoffswitch-inner {
+    background-color: #34A7C1; color: #FFFFFF;
+}
+.onoffswitch-checkbox:checked + .onoffswitch-label .onoffswitch-switch {
+    left: calc(100% - 32px);
+}
+
+.freq-range {
+    height: 50px;
+}
+
+.freq-select {
+    padding-left: 30px;
+}
+
+.freq-select select {
+    width: 88px;
+}
+
+.rangeslider, input[type='range'] {
+    max-width: 72%;
+}
+
+.rangeslider__handle {
+    border-radius: 22px;
+    min-width: 50px;
+    line-height: 42px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.rangeslider__handle:after {
+    background: 0;
+}
+
+.rangeslider__fill     {
+    background: #34a7c1;
+}
+
+.save {
+    padding: 25px 0 10px;
+}
+
+.save-btn {
+    line-height: 2.3em;
+    font-size: 1.2em;
+    width: 100%;
+}

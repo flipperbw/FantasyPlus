@@ -1,14 +1,25 @@
 <html>
     <head>
+        <title>FantasyPlus Extension</title>
+        <script type="text/javascript" src="ga.js"></script>
+        <script type="text/javascript" src="lib/jquery.min.js"></script>
         <script type="text/javascript" src="page_action.js"></script>
-        <!--<link rel="stylesheet" href="main.css" type="text/css" charset="utf-8">-->
+        <link rel="stylesheet" href="lib/bootstrap.min.css" type="text/css" charset="utf-8">
+        <link rel="stylesheet" href="page_action.css" type="text/css" charset="utf-8">
     </head>
-    <body>
-        <div id="settings-btn">
-            <span>Settings</span>
+    <body id="action-body">
+        <div class="separator center-contents">
+            <button id="refresh-data" class="set-btn btn btn-success">
+                &#8634; Refresh Data
+            </button>
         </div>
-        <div>
-            Tweet us a bug
+        <div class="set-body center-contents">
+            <button id="settings-btn" class="btn btn-info set-left">
+                &#9881; Settings
+            </button>
+            <button id="report-bug" class="btn btn-primary">
+                &#9993; Contact
+            </button>
         </div>
     </body>
 </html>
