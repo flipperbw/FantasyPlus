@@ -1,7 +1,7 @@
 {
   "name": "FantasyPlus",
   "short_name": "FantasyPlus",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "manifest_version": 2,
   "update_url": "https://clients2.google.com/service/update2/crx",
   "description": "Adds extra data and information (projections, stats, depth charts, etc.) to fantasy football sites (ESPN, Yahoo, and FleaFlicker).",
@@ -54,7 +54,7 @@
 	  ],
 	  "js": [
 		"lib/jquery.min.js",
-		"lib/jquery.sparkline.min.js",
+		"lib/jquery.sparkline.js",
 		"lib/table2CSV.js",
 		"lib/tooltipster.bundle.min.js",
 		"contentscript.js"

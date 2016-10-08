@@ -28,6 +28,9 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
         ga('send', 'pageview', sender.url);
         chrome.pageAction.show(sender.tab.id);
     }
+    else if (req == 'fetch_fail') {
+        ga('send', 'event', 'Fetch fail', val);
+    }
 });
 
 /*

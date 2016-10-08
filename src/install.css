@@ -1,11 +1,13 @@
 body {
+    font-family: "Segoe UI", Tahoma, sans-serif;
     font-size: 1em;
+    line-height: normal;
     margin: 0;
 }
 
 .settings-body {
     margin: 10px auto;
-    width: 700px;
+    width: 610px;
 }
 
 .center-contents {

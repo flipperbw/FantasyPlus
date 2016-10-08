@@ -1,11 +1,21 @@
 body {
-    font-size: 0.9em;
+    font-family: "Segoe UI", Tahoma, sans-serif;
+    line-height: normal;
     margin: 0;
 }
 
 .settings-body {
     margin: 10px auto;
-    width: 1050px;
+    width: 1100px;
+}
+
+.settings {
+    width: 64%;
+    padding-right: 4%;
+}
+
+.changelog {
+    width: 36%;
 }
 
 .center-contents {
@@ -52,10 +62,16 @@ body {
     border-top-left-radius: 3px;
 }
 
+h1 {
+    font-size: 1.9em;
+    margin: 0.4em 0;
+}
+
 .panel-heading h4{
-    margin-top: 0;
-    margin-bottom: 0;
+    margin: 0;
     font-size: 16px;
+    display: inline-block;
+    vertical-align: text-top;
 }
 
 .panel-body {
@@ -67,16 +83,7 @@ body {
 }
 
 .extra-padding {
-    padding: 20px 10px;
-}
-
-.settings {
-    width: 62%;
-    padding-right: 4%;
-}
-
-.changelog {
-    width: 38%;
+    padding: 26px 60px;
 }
 
 table {
@@ -121,6 +128,13 @@ td.double {
     line-height: 2em;
 }
 
+span.label {
+    display: inline-block;
+    margin-left: 5px;
+    padding: 0.4em .6em;
+    vertical-align: middle;
+}
+
 .sites {
     line-height: 0;
     padding: 5px 0;
@@ -131,7 +145,7 @@ td.double {
 }
 
 .changes {
-    height: 630px;
+    height: 645px;
     overflow-y: auto;
 }
 
@@ -169,6 +183,41 @@ ul > li > b {
     cursor: auto !important;
 }
 
+.btn-round {
+    border-radius: 12px;
+}
+
+.btn {
+    outline: none !important;
+}
+
+.btn-group>.btn:not(:first-child):not(:last-child):not(.dropdown-toggle) {
+    border-left: 0;
+    border-right: 0;
+}
+
+.btn-custom {
+    color: #999999;
+    background-color: #EEEEEE;
+    border-color: #999999;
+    font-size: 15px;
+    font-family: Trebuchet, Arial, sans-serif;
+    font-weight: bold;
+}
+
+.btn-custom:active, .btn-custom.active {
+    color: #FFF;
+    background-color: #34A7C1;
+}
+
+.btn-custom:hover:not(.active,:active) {
+    color: black;
+}
+
+/*.btn-custom:focus, .btn-custom.focus {
+    color: black;
+}*/
+
 .onoffswitch {
     position: relative;
     -webkit-user-select:none; -moz-user-select:none; -ms-user-select: none;
@@ -179,6 +228,7 @@ ul > li > b {
 .onoffswitch-label {
     display: block; overflow: hidden; cursor: pointer;
     border: 2px solid #999999; border-radius: 15px;
+    margin: 0;
 }
 .onoffswitch-inner {
     display: block;
@@ -189,8 +239,8 @@ ul > li > b {
     transition: all 0.2s ease-in 0s;
 }
 .onoffswitch-switch {
-    display: block; width: 15px; margin: 11px 8.5px;
-    background: #FFFFFF;
+    display: block; width: 15px; margin: 10px 8.5px;
+    background: #fdc6c6;
     position: absolute; top: 0; bottom: 0;
     left: 3px;
     border: 2px solid #999999; border-radius: 15px;
@@ -201,6 +251,8 @@ ul > li > b {
 }
 .onoffswitch-checkbox:checked + .onoffswitch-label .onoffswitch-switch {
     left: calc(100% - 32px);
+    background: #bcf5bc;
+    border: 2px solid #487748;
 }
 
 .freq-range {

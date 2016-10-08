@@ -4,6 +4,7 @@
         <script type="text/javascript" src="ga.js"></script>
         <script type="text/javascript" src="lib/jquery.min.js"></script>
         <script type="text/javascript" src="lib/rangeslider.min.js"></script>
+        <script type="text/javascript" src="lib/bootstrap.min.js"></script>
         <script type="text/javascript" src="settings.js"></script>
         <link rel="stylesheet" href="lib/rangeslider.css" type="text/css" charset="utf-8">
         <link rel="stylesheet" href="lib/bootstrap.min.css" type="text/css" charset="utf-8">
@@ -14,7 +15,7 @@
         
             <div class="heading center-contents">
                 <div class="center">
-                    <img src="img/FantasyPlusIcon-128.png" height="70" width="70">
+                    <img src="img/FantasyPlusIcon-128.png" height="65" width="65">
                 </div>
                 <div class="center">
                     <h1>FantasyPlus Settings</h1>
@@ -168,12 +169,20 @@
                     <div class="panel">
                         <div class="panel-heading">
                             <h4>FantasyPros Experts</h4>
+                            <span class="label label-success">New</span>
                         </div>
-                        <div id="experts" class="center-contents extra-padding">
-                            <!--
-                            Expert List<br>Top 10<br>Updated Recently
-                            -->
-                            <i>[Coming Soon]</i>
+                        <div class="extra-padding">
+                            <div id="experts" class="btn-group btn-group-justified" data-toggle="buttons">
+                              <label class="btn btn-round btn-custom active">
+                                <input type="radio" name="options" id="experts-all" autocomplete="off" checked> All
+                              </label>
+                              <label class="btn btn-custom">
+                                <input type="radio" name="options" id="experts-acc" autocomplete="off"> Top 10 Accuracy
+                              </label>
+                              <label class="btn btn-round btn-custom">
+                                <input type="radio" name="options" id="experts-upd" autocomplete="off"> Recently Updated
+                              </label>
+                            </div>
                         </div>
                     </div>
                     
@@ -198,13 +207,13 @@
                                                 <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="remove_ads" checked>
                                                 <label class="onoffswitch-label" for="remove_ads">
                                                     <span class="onoffswitch-inner">
-                                                        Hide Annoying Elements
+                                                        Hide Ads/Promos
                                                     </span>
                                                     <span class="onoffswitch-switch"></span>
                                                 </label>
                                             </div>
                                         </td>
-                                        <td class="top bottom double">
+                                        <td class="top bottom">
                                             <div class="onoffswitch">
                                                 <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="fix_css" checked>
                                                 <label class="onoffswitch-label" for="fix_css">
@@ -245,6 +254,15 @@
                         <div class="panel-body">
                             <ul>
                                 <li>
+                                    <h3>3.1.0 (2016-10-06)</h3>
+                                    <ul>
+                                        <li><b>Added option to select experts</b></li>
+                                        <li>Improved load speed/timing for iAvg and Trendlines</li>
+                                        <li>Trendlines now show whether the player was Out or on a Bye (gray dot)</li>
+                                        <li>Current score will now update frequently during a game, but not otherwise</li>
+                                        <li>Improved loading indicator</li>
+                                    </ul>
+                                    
                                     <h3>3.0.0 (2016-10-05)</h3>
                                     <ul>
                                         <li><b>Added extension options page</b></li>
@@ -257,7 +275,7 @@
 
                                     <h3>2.3.4 (2016-09-26)</h3>
                                     <ul>
-                                        <li>Better detection for incorrect player names and positions</li>
+                                        <li>Better detection for incorrect names and positions</li>
                                     </ul>
                                     
                                     <h3>2.3.3 (2016-09-20)</h3>
@@ -266,13 +284,6 @@
                                         <li>Fix for CURR column in ESPN</li>
                                         <li>Fix for yahoo league bonus settings</li>
                                         <li>Fix for IDP projections</li>
-                                    </ul>
-
-                                    <h3>2.2.2 (2016-09-13)</h3>
-                                    <ul>
-                                        <li><b>Added Depth Charts</b></li>
-                                        <li>Fix for Yahoo matchup page</li>
-                                        <li>Small fixes for Current scores and Trendlines</li>
                                     </ul>
                                 </li>
                             </ul>
