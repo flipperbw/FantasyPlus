@@ -125,8 +125,11 @@ var total_players = 0;
 var total_players_depth = 0;
 
 var updated_times = {};
+var updated_types = {};
 var updated_league = 0;
 var updated_depth = 0;
+
+var ajax_timeout = 5000;
 
 var show_proj = true;
 var show_rank = true;
@@ -138,19 +141,16 @@ var show_current = true;
 
 var check_minutes = 30;
 var check_minutes_avg = 60 * 24;
+var check_minutes_avg_done = 20;
 var check_minutes_avg_live = 1;
 var check_minutes_depth = 120;
 
-var ajax_timeout = 5000;
+var experts = {
+    'all': 'all'
+};
 
 var remove_ads = true;
 var fix_css = true;
-
-var user_settings = {
-    'columns': {},
-    'update_freq': {},
-    'misc': {}
-};
 
 season_start_map = {
 	'2014': [8, 2],
@@ -417,8 +417,9 @@ if (document.URL.match(/games.espn.com/)) {
     var storageLeagueUpdateKey = 'fp_espn_last_updated_league_' + league_id;
     var storagePlayerKey = 'fp_espn_player_data_' + league_id;
     var storageUpdateKey = 'fp_espn_last_updated_' + league_id;
+    var storageUpdateTypeKey = 'fp_espn_last_updated_type_' + league_id;
     
-    storageKeys.push(storageLeagueKey, storageLeagueUpdateKey, storagePlayerKey, storageUpdateKey);
+    storageKeys.push(storageLeagueKey, storageLeagueUpdateKey, storagePlayerKey, storageUpdateKey, storageUpdateTypeKey);
 	
 	getUserSettings();	
 }
@@ -471,10 +472,11 @@ else if (document.URL.match(/football.fantasysports.yahoo.com/)) {
     var storageLeagueUpdateKey = 'fp_yahoo_last_updated_league_' + league_id;
     var storagePlayerKey = 'fp_yahoo_player_data_' + league_id;
     var storageUpdateKey = 'fp_yahoo_last_updated_' + league_id;
+    var storageUpdateTypeKey = 'fp_yahoo_last_updated_type_' + league_id;
     var storageTranslationKey = 'fp_yahoo_translation';
     var storageTranslationUpdateKey = 'fp_yahoo_translation_updated';
     
-    storageKeys.push(storageLeagueKey, storageLeagueUpdateKey, storagePlayerKey, storageUpdateKey, storageTranslationKey, storageTranslationUpdateKey);
+    storageKeys.push(storageLeagueKey, storageLeagueUpdateKey, storagePlayerKey, storageUpdateKey, storageUpdateTypeKey, storageTranslationKey, storageTranslationUpdateKey);
 
     show_avg = false; //TODO remove
     show_current = false;
@@ -515,9 +517,10 @@ else if (document.URL.match(/fleaflicker.com/)) {
     var storageLeagueUpdateKey = 'fp_fleaflicker_last_updated_league_' + league_id;
     var storagePlayerKey = 'fp_fleaflicker_player_data_' + league_id;
     var storageUpdateKey = 'fp_fleaflicker_last_updated_' + league_id;
+    var storageUpdateTypeKey = 'fp_fleaflicker_last_updated_type_' + league_id;
     var storageTranslationKey = 'fp_fleaflicker_translation';
     
-    storageKeys.push(storageLeagueKey, storageLeagueUpdateKey, storagePlayerKey, storageUpdateKey, storageTranslationKey);
+    storageKeys.push(storageLeagueKey, storageLeagueUpdateKey, storagePlayerKey, storageUpdateKey, storageUpdateTypeKey, storageTranslationKey);
 	
     show_avg = false;
     show_current = false;
@@ -1155,85 +1158,81 @@ function getUserSettings() {
         dlog('user settings:');
         dlog(stored_user_settings);
         
+        var user_settings = {};
         if (isObj(stored_user_settings)) {
             user_settings = jQuery.extend(true, {}, stored_user_settings);
-            
-            var col_settings = {};
-            if (user_settings.hasOwnProperty('columns')) {
-                col_settings = user_settings.columns;
+        }
+        
+        var col_settings = {};
+        if (isObj(user_settings.columns)) {
+            col_settings = user_settings.columns;
+        }
+        
+        jQuery.each(col_settings, function (k, v) {
+            if (k == 'proj' && show_proj) {
+                show_proj = v;
             }
-            else {
-                user_settings.columns = {};
+            else if (k == 'rank' && show_rank) {
+                show_rank = v;
             }
-            
-            jQuery.each(col_settings, function (k, v) {
-                if (k == 'proj' && show_proj) {
-                    show_proj = v;
-                }
-                else if (k == 'rank' && show_rank) {
-                    show_rank = v;
-                }
-                else if (k == 'ros' && show_ros) {
-                    show_ros = v;
-                }
-                else if (k == 'depth' && show_depth) {
-                    show_depth = v;
-                }
-                else if (k == 'spark' && show_spark) {
-                    show_spark = v;
-                }
-                else if (k == 'avg' && show_avg) {
-                    show_avg = v;
-                }
-                else if (k == 'current' && show_current) {
-                    show_current = v;
-                }
-            });
-            
-            var update_settings = {};
-            if (user_settings.hasOwnProperty('update_freq')) {
-                update_settings = user_settings.update_freq;
+            else if (k == 'ros' && show_ros) {
+                show_ros = v;
             }
-            else {
-                user_settings.update_freq = {};
+            else if (k == 'depth' && show_depth) {
+                show_depth = v;
             }
+            else if (k == 'spark' && show_spark) {
+                show_spark = v;
+            }
+            else if (k == 'avg' && show_avg) {
+                show_avg = v;
+            }
+            else if (k == 'current' && show_current) {
+                show_current = v;
+            }
+        });
+        
+        var update_settings = {};
+        if (isObj(user_settings.update_freq)) {
+            update_settings = user_settings.update_freq;
+        }
+        
+        jQuery.each(update_settings, function (k,v) {
+            if (!isObj(v)) {
+                v = {};
+            }
+            var update_settings_time = v.time;
+            var update_settings_typ  = v.typ;
             
-            jQuery.each(update_settings, function (k,v) {
-                if (!isObj(v)) {
-                    v = {};
+            if (update_settings_time && update_settings_typ) {
+                var new_mins = update_settings_time;
+                if (update_settings_typ == 'h') {
+                    new_mins *= 60;
                 }
-                var update_settings_time = v.time;
-                var update_settings_typ  = v.typ;
                 
-                if (update_settings_time && update_settings_typ) {
-                    var new_mins = update_settings_time;
-                    if (update_settings_typ == 'h') {
-                        new_mins *= 60;
-                    }
-                    
-                    if (k == 'player') {
-                        check_minutes = Math.max(new_mins, 1);
-                    }
+                if (k == 'player') {
+                    check_minutes = Math.max(new_mins, 1);
                 }
-            });
-            
-            var misc_settings = {};
-            if (user_settings.hasOwnProperty('misc')) {
-                misc_settings = user_settings.misc;
             }
-            else {
-                user_settings.misc = {};
-            }
-            
-            var misc_remove_ads = misc_settings.remove_ads;
-            var misc_fix_css  = misc_settings.fix_css;
-            
-            if (typeof misc_remove_ads !== "undefined") {
-                remove_ads = misc_remove_ads;
-            }
-            if (typeof misc_fix_css !== "undefined") {
-                fix_css = misc_fix_css;
-            }
+        });
+        
+        if (isObj(user_settings.experts)) {
+            experts = user_settings.experts;
+        }
+        
+        var misc_settings = {};
+        if (isObj(user_settings.misc)) {
+            misc_settings = user_settings.misc;
+        }
+        
+        var misc_remove_ads = misc_settings.remove_ads;
+        var misc_fix_css  = misc_settings.fix_css;
+        
+        if (typeof misc_remove_ads !== "undefined") {
+            remove_ads = misc_remove_ads;
+        }
+        if (typeof misc_fix_css !== "undefined") {
+            fix_css = misc_fix_css;
         }
         
         fixPage();
@@ -1412,8 +1411,23 @@ function isDataCurrent(l) {
             else if (s == 'ros' && !show_ros) {
                 return true;
             }
-
+            
             v = updated_times[s];
+
+            var upd_type = 'all';
+            var upd_val = 'all';
+            if (experts['all'] !== "undefined" && experts['all'] !== false) {
+                upd_val = experts['all'];
+            }
+            else if (experts[s] !== "undefined" && experts[s] !== false) {
+                upd_type = s;
+                upd_val = experts[s];
+            }
+            
+            if (updated_types[upd_type] !== upd_val) {
+                dlog('Different update type for: ' + upd_type + ', stored is: ' + updated_types[upd_type] + ', want: ' + upd_val);
+                v = 0;
+            }
         }
         
         var r = false;
@@ -1452,8 +1466,11 @@ function isActivityDataCurrent(pid, upd, typ, live) {
     var chk_mins;
     var r = true;
     if (typ == 'league') {
-        if (live) {
+        if (live === 'live') {
             chk_mins = check_minutes_avg_live;
+        }
+        else if (live === 'done') {
+            chk_mins = check_minutes_avg_done;
         }
         else {
             chk_mins = check_minutes_avg;
@@ -1462,7 +1479,7 @@ function isActivityDataCurrent(pid, upd, typ, live) {
         r = (current_time - upd) < (1000 * 60 * chk_mins);
     }
     else if (typ == 'games') {
-        //timezones?
+        //todo timezones? maybe add a check to make sure length is expected somehow
         var update_week = Math.max(Math.ceil(((upd - seasonstart_avg_week) / 86400000) / 7), 1);
         dlog('update week for player: ' + pid + ': ' + update_week);
         if (update_week != current_week_avg) {
@@ -1485,7 +1502,7 @@ function runMain() {
             alldata = r[storagePlayerKey];
             if (isObj(alldata)) {
                 updated_times = r[storageUpdateKey];
-                if (!(isObj(updated_times))) {
+                if (!isObj(updated_times)) {
                     updated_times = {};
                 }
             }
@@ -1495,6 +1512,12 @@ function runMain() {
                 updated_times = {};
             }
             dlog(updated_times, 1);
+            
+            updated_types = r[storageUpdateTypeKey];
+            dlog(updated_types);
+            if (!isObj(updated_types)) {
+                updated_types = {};
+            }
             
             // Translation data
             if (siteType == 'yahoo') {
@@ -1604,6 +1627,7 @@ function updatePlayerStorage() {
             var setPlayerData = {};
             setPlayerData[storagePlayerKey] = alldata;
             setPlayerData[storageUpdateKey] = updated_times;
+            setPlayerData[storageUpdateTypeKey] = updated_types;
             chrome.storage.local.set(setPlayerData);
         }
     });
@@ -2992,11 +3016,9 @@ function parseLeagueSettings(league_data, siteType) {
 function fetchPositionData(position, type, cb) {
     var source_site = '';
     var source_type = 'offense';
-    var rank_ppr = '';
-    var ros_url = '';
-    //var experts = [11, 44, 45, 71, 73, 120, 152, 469, 859];
     
     if ((type == 'rank') || (type == 'ros')) {
+        var rank_ppr = '';
         if (position == 'rb' || position == 'wr' || position == 'te') {
             if (league_settings['rec_att'] == 0.5) {
                 rank_ppr = 'half-point-ppr-';
@@ -3005,55 +3027,57 @@ function fetchPositionData(position, type, cb) {
                 rank_ppr = 'ppr-';
             }
         }
+        
+        var ros_url = '';
         if (type == 'ros') {
             ros_url = 'ros-';
         }
-        //TODO: filters here?
+
         source_site = 'https://www.fantasypros.com/nfl/rankings/' + ros_url + rank_ppr + position + '.php';
     }
     else if (off_positions_proj.indexOf(position) > -1 || position == '6') {
-        //TODO: add back the filters as form data:
         if (position == '6') {
             //todo dunno if i need week anymore
             source_site = 'https://www.fantasypros.com/nfl/projections/dst.php?week=' + current_week;
         } else {
             source_site = 'https://www.fantasypros.com/nfl/projections/' + position + '.php?week=' + current_week;
         }
-        /*
-        if (siteType == "espn") {		
-            experts.splice(experts.indexOf(71), 1);
-        }		
-        else if (siteType == "yahoo") {		
-            experts.splice(experts.indexOf(73), 1);
-        }
-        source_site += '&expert%5B%5D=' + experts.join('&expert%5B%5D=');
-        */
     }
     else {
-        //TODO delay fantasy sharks, maybe find some way to only loop over each position when the relevant calls are done
         source_type = 'idp';
         //source_site = 'http://www.fantasysharks.com/apps/bert/forecasts/projections.php?csv=1&Position=' + position + '&Segment=' + (563 + current_week);
         source_site = 'http://www.fantasysharks.com/apps/bert/forecasts/projections.php?csv=1&Position=' + position;
     }
     
-    if ((document.location.protocol == 'https:') && (source_type == 'idp')) {
-        cb(position, 'error');
+    if (source_type == 'idp') {
+        if (document.location.protocol == 'https:') {
+            cb(position, 'error');
+        }
+        else {
+            jQuery.ajax({
+                url: source_site,
+                timeout: ajax_timeout
+            }).done(function(data) {
+                cb(position, data.trim());
+            }).fail(function() {
+                idp_fetch_fail = true;
+                chrome.runtime.sendMessage({ request: 'fetch_fail', value: source_site });
+                cb(position, 'error');
+            });
+        }
     }
     else {
+        //var expert_type = experts[type];
+        var expert_type = experts['all'];
+    
         jQuery.ajax({
             url: source_site,
             timeout: ajax_timeout
         }).done(function(data) {
             cb(position, data.trim());
         }).fail(function() {
-            if (source_type == 'offense') {
-                fetch_fail = true;
-                chrome.runtime.sendMessage({ request: 'fetch_fail', value: source_site });
-            }
-            else {
-                idp_fetch_fail = true;
-                chrome.runtime.sendMessage({ request: 'fetch_fail', value: source_site });
-            }
+            fetch_fail = true;
+            chrome.runtime.sendMessage({ request: 'fetch_fail', value: source_site });
             cb(position, 'error');
         });
     }
@@ -3283,6 +3307,8 @@ function getPosProjections() {
             ready_proj = ready_proj - 1;
             if (ready_proj === 0) {
                 updated_times.proj = current_time;
+                //updated_types.proj = experts.proj;
+                updated_types['all'] = experts['all'];
                 addProjections();
             }
         });
@@ -3357,6 +3383,8 @@ function getPosRankings() {
             ready_rank = ready_rank - 1;
             if (ready_rank === 0) {
                 updated_times.rank = current_time;
+                //updated_types.rank = experts.rank;
+                updated_types['all'] = experts['all'];
                 addRankings();
             }
         });
@@ -3432,6 +3460,8 @@ function getRosRankings() {
             ready_ros = ready_ros - 1;
             if (ready_ros === 0) {
                 updated_times.ros = current_time;
+                //updated_types.ros = experts.ros;
+                updated_types['all'] = experts['all'];
                 addRos();
             }
         });
@@ -3706,6 +3736,7 @@ function getAllData(c_type) {
         if (!isDataCurrent(c_type)) {
             alldata = {};
             updated_times = {}; //todo just clear the out of date one
+            updated_types = {}; //todo just clear the out of date one
             
             updatePlayerStorage();
             getPlayerData();
@@ -4131,8 +4162,14 @@ function getProjectionData(datatype, currRow, cell) {
                 
                 if (show_current) {
                     var game_time_text = currRow.find('.gameStatusDiv').text().trim();
-                    if (game_time_text && game_time_text.indexOf('-') > -1 && game_time_text[1] !== ' ') {
-                        live_game = true;
+                    if (game_time_text && game_time_text.indexOf('-') > -1) {
+                        if (game_time_text[1] !== ' ') {
+                            dlog('found live game: ' + game_time_text);
+                            live_game = 'live';
+                        }
+                        else {
+                            live_game = 'done';
+                        }
                         //var dow = game_time_text.split(' ')[0];
                         //game_time = new Date(); 
                         //game_time.setDate(game_time.getDate() + (dow + (7 - game_time.getDay())) % 7);
@@ -4159,6 +4196,11 @@ function getProjectionData(datatype, currRow, cell) {
                 if (player_stored_activity.hasOwnProperty('translation')) {
                     new_player_id = player_stored_activity['translation'];
                     dlog('found translation data for: ' + player_id + ', is: ' + new_player_id);
+                    
+                    delete player_stored_activity['games_played'];
+                    delete player_stored_activity['games_played_updated'];
+                    delete player_stored_activity[league_id];
+                    
                     if (!activity_data_current_season_site.hasOwnProperty(new_player_id)) {
                         dlog('did not find rookie player data from translation');
                         activity_data_current_season_site[new_player_id] = {};
@@ -4329,7 +4371,6 @@ function getProjectionData(datatype, currRow, cell) {
                                 calcAdjAvg(currRow, pid, p_data['games_played'], p_data_league['weekly_points']);
                             }
                             else {
-                                //var espn_player_link = "//espn.com/nfl/player/gamelog/_/id/" + pid + "/year/" + current_season_avg_week;
                                 var espn_player_link = "//m.espn.com/nfl/playergamelog";
                                 var espn_data = {
                                     playerId: pid,
@@ -4372,7 +4413,6 @@ function getProjectionData(datatype, currRow, cell) {
                                         
                                         var postseason_row = jQuery('tr td:contains("POSTSEASON")', adata).parents('tr');
                                         var week_rows = jQuery('tr td:contains("REGULAR SEASON")', adata).parents('tr').nextUntil(postseason_row);
-                                            
                                         week_rows.each(function(i, v) {
                                             var week_row = jQuery(v);
                                             
@@ -4386,6 +4426,9 @@ function getProjectionData(datatype, currRow, cell) {
                                         });
                                         
                                         for (var g=0; g<p_data['games_played'].length; g++) {
+                                            if (p_data['games_played'][g] === null && g < (current_week_avg - 1)) {
+                                                p_data['games_played'][g] = 0;
+                                            }
                                             if (p_data['games_played'][g] !== 1) {
                                                 p_data_league['weekly_points'][g] = null;
                                             }
@@ -5729,6 +5772,7 @@ function refreshData(fetch) {
     
     if (fetch === true) {
         updated_times = {};
+        updated_types = {};
         updated_depth = 0;
         
         activity_data[current_season][siteType] = {};

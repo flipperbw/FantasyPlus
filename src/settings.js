@@ -23,7 +23,9 @@ var update_freq = {
         'typ': 'm'
     }
 };
-//var experts = [];
+var experts = {
+    'all': 'all'
+};
 var misc = {
     'remove_ads': true,
     'fix_css': true,
@@ -32,7 +34,7 @@ var misc = {
 var changes = {};
 changes.columns = $.extend(true, {}, columns);
 changes.update_freq = $.extend(true, {}, update_freq);
-//changes.experts = $.extend(true, {}, experts);
+changes.experts = $.extend(true, {}, experts);
 changes.misc = $.extend(true, {}, misc);
 
 var has_change = false;
@@ -83,6 +85,7 @@ $(function () {
     var column_settings = $('#columns input');
     var freq_ranges = $('input[type="range"]');
     var freq_typs = $('.freq-typ');
+    var expert_sel = $('#experts :input');
     var misc_settings = $('#misc input');
     
     chrome.storage.local.get('fp_user_settings', function(r) {
@@ -105,11 +108,12 @@ $(function () {
                 update_freq[k] = v;
             });
         }
-        /*
         if (user_settings.hasOwnProperty('experts')) {
-            experts = user_settings.experts;
+            var stored_experts = user_settings.experts;
+            $.each(stored_experts, function(k,v) {
+                experts[k] = v;
+            });
         }
-        */
         if (user_settings.hasOwnProperty('misc')) {
             var stored_misc = user_settings.misc;
             $.each(stored_misc, function(k,v) {
@@ -193,7 +197,22 @@ $(function () {
         });
         
         // Experts
-        //$('#experts').val(experts);
+        $.each(experts, function (k, v) {
+            $('#experts-' + k + '-' + v).click();
+        });
+        
+        expert_sel.change(function() {
+            var section = 'experts';
+
+            var expert_set = $(this);
+            var check_split = expert_set.attr('id').split('-');
+            var check_id = check_split[1];
+            var check_status = check_split[2];
+            
+            changes[section][check_id] = experts[check_id] !== check_status;
+            
+            change_button();
+        });
         
         // Misc
         $.each(misc, function (k, v) {
@@ -243,7 +262,12 @@ $(function () {
         storage_settings.update_freq = new_update_freq;
         
         // Experts
-        //storage_settings.experts = $('#experts').val();
+        var new_experts = {};
+        $.each(experts, function (k, v) {
+            var expert_val = $('#experts-' + k).find(':checked').attr('id').split('-')[2];
+            new_experts[k] = expert_val;
+        });
+        storage_settings.experts = new_experts;
         
         // Misc
         var new_misc = {};
@@ -261,6 +285,7 @@ $(function () {
             
             columns = new_columns;
             update_freq = new_update_freq;
+            experts = new_experts;
             misc = new_misc;
             
             check_recursive(changes, 'set');

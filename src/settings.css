@@ -10,12 +10,12 @@ body {
 }
 
 .settings {
-    width: 64%;
+    width: 62%;
     padding-right: 4%;
 }
 
 .changelog {
-    width: 36%;
+    width: 38%;
 }
 
 .center-contents {
@@ -145,7 +145,7 @@ span.label {
 }
 
 .changes {
-    height: 645px;
+    height: 646px;
     overflow-y: auto;
 }
 
