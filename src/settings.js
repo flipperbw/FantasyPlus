@@ -24,7 +24,23 @@ var update_freq = {
     }
 };
 var experts = {
-    'all': 'all'
+    'proj': {
+        'selection': ['all']
+    },
+    'rank': {
+        'selection': ['all'],
+        'num': {
+            'top': 10,
+            'updated': 1
+        }
+    },
+    'ros': {
+        'selection': ['all'],
+        'num': {
+            'top': 5,
+            'updated': 7
+        }
+    }
 };
 var misc = {
     'remove_ads': true,
@@ -53,6 +69,10 @@ function check_recursive(d, t) {
                 if (v === true) {
                     has_change = true;
                 }
+                else if (v === 'error') {
+                    has_change = 'error';
+                    break;
+                }
             }
         }
     }
@@ -72,7 +92,12 @@ $(function () {
     save_btn.text('Loading...');
     
     function change_button() {
-        if (is_changed()) {
+        var change_status = is_changed();
+        if (change_status === 'error') {
+            save_btn.attr('disabled', 'disabled');
+            save_btn.text('Save (fix errors)');
+        }
+        else if (change_status === true) {
             save_btn.removeAttr('disabled');
             save_btn.text('Save');
         }
@@ -87,6 +112,19 @@ $(function () {
     var freq_typs = $('.freq-typ');
     var expert_sel = $('#experts :input');
     var misc_settings = $('#misc input');
+    
+    $('input[type="text"][id$=top]').tooltip({
+        placement: 'bottom',
+        trigger: 'manual',
+        template: '<div class="tooltip tooltip-error" role="tooltip"><div class="tooltip-arrow"></div><div class="tooltip-inner"></div></div>',
+        title: 'Must be an integer greater than 1'
+    });
+    $('input[type="text"][id$=updated]').tooltip({
+        placement: 'bottom',
+        trigger: 'manual',
+        template: '<div class="tooltip tooltip-error" role="tooltip"><div class="tooltip-arrow"></div><div class="tooltip-inner"></div></div>',
+        title: 'Must be a positive integer'
+    });
     
     chrome.storage.local.get('fp_user_settings', function(r) {
         save_btn.text('Save (no changes)');
@@ -198,7 +236,23 @@ $(function () {
         
         // Experts
         $.each(experts, function (k, v) {
-            $('#experts-' + k + '-' + v).click();
+            var exp_list = v['selection'];
+            if (exp_list.indexOf('all') > -1) {
+                $('#experts-' + k + '-selection-all').click();
+            }
+            else {
+                for (var e=0; e<exp_list.length; e++) {
+                    var e_val = exp_list[e].toLowerCase();
+                    $('#experts-' + k + '-selection-' + e_val).click();
+                }
+            }
+
+            if (k == 'rank' || k == 'ros') {
+                var nums = v['num'];
+                $.each(nums, function (a, b) {
+                    $('#experts-' + k + '-num-' + a).val(b);
+                });
+            }
         });
         
         expert_sel.change(function() {
@@ -206,11 +260,102 @@ $(function () {
 
             var expert_set = $(this);
             var check_split = expert_set.attr('id').split('-');
-            var check_id = check_split[1];
-            var check_status = check_split[2];
+            var fetch_type = check_split[1];
+            var sub_type = check_split[2];
+            var fetch_val = check_split[3];
             
-            changes[section][check_id] = experts[check_id] !== check_status;
+            var stored_experts = experts[fetch_type][sub_type];
+            var check_val = false;
+            var check_status;
             
+            var expert_set_tooltip = expert_set.siblings('.tooltip-error');
+            
+            if (sub_type == 'num') {
+                check_status = expert_set.val();
+                check_status = Number(check_status);
+                var min_num = 0;
+                if (fetch_val == 'top') {
+                    min_num = 1;
+                }
+                if (!check_status || !Number.isInteger(check_status) || check_status <= min_num) {
+                    expert_set.tooltip('show');
+                    check_val = 'error';
+                }
+                else if (expert_set_tooltip.length) {
+                    expert_set.tooltip('hide');
+                }
+            }
+            else if (sub_type == 'selection') {
+                var row_btns = expert_set.parents('.row').find(':input[type=checkbox]');
+                var all_btn = row_btns.filter(function() {
+                    return $(this).attr('id').match(/-all$/);
+                });
+                
+                if (fetch_val == 'all') {
+                    row_btns.not(expert_set).each(function() {
+                        var b = $(this);
+                        if (b.prop('checked') === true) {
+                            b.parents('.btn').removeClass('active');
+                            b.prop('checked', false);
+                        }
+                    });
+                    
+                    if (expert_set.prop('checked') !== true) {
+                        expert_set.parents('.btn').addClass('active');
+                        expert_set.prop('checked', true);
+                    }
+                }
+                else {
+                    if (all_btn.prop('checked') === true) {
+                        all_btn.parents('.btn').removeClass('active');
+                        all_btn.prop('checked', false);
+                    }
+                    
+                    if (fetch_type == 'rank' || fetch_type == 'ros') {
+                        var top_section = expert_set.parents('#experts-' + fetch_type + '-top');
+                        
+                        if (top_section.length === 1) {
+                            var other_top_btns = top_section.find(':input[type=checkbox]').not(expert_set);
+                            
+                            other_top_btns.each(function() {
+                                var oth_btn = $(this);
+                                if (oth_btn.prop('checked') === true) {
+                                    oth_btn.parents('.btn').removeClass('active');
+                                    oth_btn.prop('checked', false);
+                                }
+                            });
+                        }
+                    }
+                }
+                
+                var checked_btns = row_btns.filter(function() {
+                    return $(this).prop('checked') == true;
+                });
+                
+                if (checked_btns.length === 0) {
+                    all_btn.parents('.btn').addClass('active');
+                    all_btn.prop('checked', true);
+                    checked_btns = all_btn;
+                }
+                
+                check_status = [];
+                checked_btns.each(function() {
+                    check_status.push($(this).attr('id').split('-').pop());
+                });
+            }
+            
+            
+            if (Array.isArray(check_status) && Array.isArray(stored_experts)) {
+                check_val = !(stored_experts.length === check_status.length && stored_experts.every(el => check_status.includes(el)));
+                changes[section][fetch_type][sub_type] = check_val;
+            }
+            else {
+                if (check_val !== 'error') {
+                    check_val = stored_experts[fetch_val] !== check_status;
+                }
+                changes[section][fetch_type][sub_type][fetch_val] = check_val;
+            }
+
             change_button();
         });
         
@@ -230,6 +375,11 @@ $(function () {
             
             change_button();
         });
+        
+        var settings_height = $('.settings').outerHeight(true);
+        var contact_height = $('.contact').outerHeight(true);
+        var contact_border_height = $('.contact').outerHeight() - $('.contact').innerHeight();
+        $('.changes').height(settings_height - contact_height - contact_border_height);
     });
     
     save_btn.click(function() {
@@ -264,11 +414,36 @@ $(function () {
         // Experts
         var new_experts = {};
         $.each(experts, function (k, v) {
-            var expert_val = $('#experts-' + k).find(':checked').attr('id').split('-')[2];
-            new_experts[k] = expert_val;
+            var exp_dict = {};
+            var exp_section = $('#experts-' + k);
+            
+            var exp_sel_checked = exp_section.find(':checked');
+            var exp_sel_vals = [];
+            
+            exp_sel_checked.each(function() {
+                var exp_sel_type = $(this).attr('id').split('-').pop();
+                exp_sel_vals.push(exp_sel_type);
+            });
+            
+            exp_dict['selection'] = exp_sel_vals;
+            
+            if (k == 'rank' || k == 'ros') {
+                var exp_num_dict = {};
+                var text_inputs = exp_section.find('input[type=text]');
+                
+                text_inputs.each(function() {
+                    var exp_num_type = $(this).attr('id').split('-').pop();
+                    var exp_num_val = Number($(this).val());
+                    exp_num_dict[exp_num_type] = exp_num_val;
+                });
+                
+                exp_dict['num'] = exp_num_dict;
+            }
+            
+            new_experts[k] = exp_dict;
         });
         storage_settings.experts = new_experts;
-        
+
         // Misc
         var new_misc = {};
         $.each(misc, function (k, v) {

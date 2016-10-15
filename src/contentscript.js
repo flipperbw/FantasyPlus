@@ -38,8 +38,8 @@ document.body.appendChild(tag);
 
 chrome.runtime.sendMessage({ request: 'valid_site' });
 
-var debug_mode = 0;
-//var debug_mode = -1;
+//var debug_mode = 0;
+var debug_mode = -1;
 
 function dlog(o, level) {
     level = typeof level === "undefined" ? 0 : level;
@@ -124,6 +124,8 @@ var depth_fail = false;
 var total_players = 0;
 var total_players_depth = 0;
 
+var user_settings = {};
+
 var updated_times = {};
 var updated_types = {};
 var updated_league = 0;
@@ -146,7 +148,31 @@ var check_minutes_avg_live = 1;
 var check_minutes_depth = 120;
 
 var experts = {
-    'all': 'all'
+    'proj': {
+        'selection': ['all']
+    },
+    'rank': {
+        'selection': ['all'],
+        'num': {
+            'top': 10,
+            'updated': 1
+        }
+    },
+    'ros': {
+        'selection': ['all'],
+        'num': {
+            'top': 5,
+            'updated': 7
+        }
+    }
+};
+
+var expert_map = {
+    'cbs': '11',
+    'espn': '71',
+    'numberfire': '73',
+    'stats': '120',
+    'fftoday': '152'
 };
 
 var remove_ads = true;
@@ -1158,7 +1184,6 @@ function getUserSettings() {
         dlog('user settings:');
         dlog(stored_user_settings);
         
-        var user_settings = {};
         if (isObj(stored_user_settings)) {
             user_settings = jQuery.extend(true, {}, stored_user_settings);
         }
@@ -1166,6 +1191,9 @@ function getUserSettings() {
         var col_settings = {};
         if (isObj(user_settings.columns)) {
             col_settings = user_settings.columns;
+        }
+        else {
+            user_settings.columns = {};
         }
         
         jQuery.each(col_settings, function (k, v) {
@@ -1196,6 +1224,9 @@ function getUserSettings() {
         if (isObj(user_settings.update_freq)) {
             update_settings = user_settings.update_freq;
         }
+        else {
+            user_settings.update_freq = {};
+        }
         
         jQuery.each(update_settings, function (k,v) {
             if (!isObj(v)) {
@@ -1219,10 +1250,16 @@ function getUserSettings() {
         if (isObj(user_settings.experts)) {
             experts = user_settings.experts;
         }
+        else {
+            user_settings.experts = {};
+        }
         
         var misc_settings = {};
         if (isObj(user_settings.misc)) {
             misc_settings = user_settings.misc;
+        }
+        else {
+            user_settings.misc = {};
         }
         
         var misc_remove_ads = misc_settings.remove_ads;
@@ -1401,31 +1438,35 @@ function isDataCurrent(l) {
                 v = updated_depth;
             }
         }
+        else if (s == 'proj' && !show_proj) {
+            return true;
+        }
+        else if (s == 'rank' && !show_rank) {
+            return true;
+        }
+        else if (s == 'ros' && !show_ros) {
+            return true;
+        }
         else if (isObj(updated_times)) {
-            if (s == 'proj' && !show_proj) {
-                return true;
-            }
-            else if (s == 'rank' && !show_rank) {
-                return true;
-            }
-            else if (s == 'ros' && !show_ros) {
-                return true;
-            }
-            
             v = updated_times[s];
 
-            var upd_type = 'all';
-            var upd_val = 'all';
-            if (experts['all'] !== "undefined" && experts['all'] !== false) {
-                upd_val = experts['all'];
-            }
-            else if (experts[s] !== "undefined" && experts[s] !== false) {
-                upd_type = s;
-                upd_val = experts[s];
+            var s_type = s;
+            
+            var exp_type_dict = experts[s_type] || {};
+            var exp_val = exp_type_dict.selection || 'none';
+            var exp_val_str = exp_val.toString();
+            if (s_type == 'rank' || s_type == 'ros') {
+                var exp_num_dict = exp_type_dict.num || {};
+                var exp_top = exp_num_dict['top'] || 10;
+                var exp_updated = exp_num_dict['updated'] || 7;
+                
+                exp_val_str += '-' + exp_top + '-' + exp_updated;
             }
             
-            if (updated_types[upd_type] !== upd_val) {
-                dlog('Different update type for: ' + upd_type + ', stored is: ' + updated_types[upd_type] + ', want: ' + upd_val);
+            dlog(exp_val_str);
+            
+            if (updated_types[s_type] !== exp_val_str) {
+                dlog('Different update type for: ' + s_type + ', stored is: ' + updated_types[s_type] + ', want: ' + exp_val_str);
                 v = 0;
             }
         }
@@ -3016,9 +3057,10 @@ function parseLeagueSettings(league_data, siteType) {
 function fetchPositionData(position, type, cb) {
     var source_site = '';
     var source_type = 'offense';
+    var rank_ppr;
     
     if ((type == 'rank') || (type == 'ros')) {
-        var rank_ppr = '';
+        rank_ppr = '';
         if (position == 'rb' || position == 'wr' || position == 'te') {
             if (league_settings['rec_att'] == 0.5) {
                 rank_ppr = 'half-point-ppr-';
@@ -3056,10 +3098,13 @@ function fetchPositionData(position, type, cb) {
         else {
             jQuery.ajax({
                 url: source_site,
+                custom_data: {'cb': cb},
                 timeout: ajax_timeout
             }).done(function(data) {
+                var cb = this.custom_data.cb;
                 cb(position, data.trim());
             }).fail(function() {
+                var cb = this.custom_data.cb;
                 idp_fetch_fail = true;
                 chrome.runtime.sendMessage({ request: 'fetch_fail', value: source_site });
                 cb(position, 'error');
@@ -3067,31 +3112,213 @@ function fetchPositionData(position, type, cb) {
         }
     }
     else {
-        //var expert_type = experts[type];
-        var expert_type = experts['all'];
-    
-        jQuery.ajax({
-            url: source_site,
-            timeout: ajax_timeout
-        }).done(function(data) {
-            cb(position, data.trim());
-        }).fail(function() {
-            fetch_fail = true;
-            chrome.runtime.sendMessage({ request: 'fetch_fail', value: source_site });
-            cb(position, 'error');
-        });
+        var expert_type = experts[type] || {};
+        var expert_selection = expert_type.selection || [];
+        
+        if (type == 'proj' && expert_selection.length === 1) {
+            jQuery.ajax({
+                url: source_site,
+                custom_data: {'cb': cb},
+                timeout: ajax_timeout
+            }).done(function(data) {
+                var cb = this.custom_data.cb;
+                cb(position, data.trim());
+            }).fail(function() {
+                var cb = this.custom_data.cb;
+                fetch_fail = true;
+                chrome.runtime.sendMessage({ request: 'fetch_fail', value: source_site });
+                cb(position, 'error');
+            });
+        }
+        else if (type == 'proj') {
+            var send_data = {
+                'scoring': 'STD',
+                'expert[]': []
+            };
+            
+            for (var e=0; e<expert_selection.length; e++) {
+                var e_val = expert_selection[e];
+                var e_conv = expert_map[e_val];
+                if (e_conv) {
+                    send_data['expert[]'].push(e_conv);
+                }
+            }
+            
+            jQuery.ajax({
+                url: source_site,
+                method: 'get',
+                data: send_data,
+                traditional: true,
+                custom_data: {'cb': cb},
+                timeout: ajax_timeout
+            }).done(function(data) {
+                var cb = this.custom_data.cb;
+                cb(position, data.trim());
+            }).fail(function() {
+                var cb = this.custom_data.cb;
+                fetch_fail = true;
+                chrome.runtime.sendMessage({ request: 'fetch_fail', value: source_site });
+                cb(position, 'error');
+            });
+        }
+        else {
+            jQuery.ajax({
+                url: source_site,
+                custom_data: {'cb': cb},
+                timeout: ajax_timeout
+            }).done(function(data) {
+                var cb = this.custom_data.cb;
+                
+                var send_data = {
+                    'expert[]': []
+                };
+                
+                var expert_list = send_data['expert[]'];
+                            
+                if (rank_ppr == 'half-point-ppr-') {
+                    send_data['scoring'] = 'HALF';
+                }
+                else if (rank_ppr == 'ppr-') {
+                    send_data['scoring'] = 'PPR';
+                }
+                else {
+                    send_data['scoring'] = 'STD';
+                }
+                
+                var expert_type = experts[type] || {};
+                var expert_selection = expert_type.selection || [];
+                var expert_num = expert_type.num || {};
+                var ex_num_top = expert_num['top'] || 10;
+                var ex_num_upd = expert_num['updated'] || 7;
+                
+                var expert_data = jQuery(data).find('#edit-experts #experts');
+                if (expert_data.length) {
+                    var ex_rows = expert_data.find('tbody tr');
+                    
+                    var ex_headers = expert_data.find('thead tr');
+                    var id_idx = ex_headers.find('th:first').index();
+                    var acc_ovr_idx = ex_headers.find('th.accuracy.overall:contains(In-Season)').index();
+                    var acc_pos_idx = ex_headers.find('th.accuracy.position:contains(In-Season)').index();
+                    var date_idx = ex_headers.find('th:contains(Date)').index();
+                    
+                    if (expert_selection.indexOf('all') == -1) {
+                        var staff_id = ex_rows.find('td').filter(function() {
+                            return jQuery(this).text() == 'FantasyPros Staff';
+                        }).parents('tr').find('td:eq(' + id_idx +') input').val();
+                        
+                        if (jQuery.isNumeric(staff_id)) {
+                            expert_list.push(staff_id);
+                        }
+                        
+                        var want_updated = expert_selection.indexOf('updated') > -1;
+                        var want_overall = expert_selection.indexOf('overall') > -1;
+                        var want_position = expert_selection.indexOf('position') > -1;
+                        
+                        if ((want_overall || want_position) && ex_num_top && ex_rows.length > ex_num_top) {
+                            var want_idx = -1;
+                            if (want_overall) {
+                                want_idx = acc_ovr_idx;
+                            }
+                            else if (want_position) {
+                                want_idx = acc_pos_idx;
+                            }
+                            
+                            ex_rows.sort(function(a,b) {
+                                var n_b = jQuery(b).find('td:eq(' + want_idx + ')').text().replace('#', '') || Infinity;
+                                var n_a = jQuery(a).find('td:eq(' + want_idx + ')').text().replace('#', '') || Infinity;
+                                return n_a - n_b;
+                            });
+                            
+                            ex_rows = ex_rows.slice(0, ex_num_top);
+                        }
+                        
+                        if (want_updated && ex_num_upd) {
+                            var this_month = current_month + 1;
+                            
+                            var ex_rows_updated = ex_rows.filter(function() {
+                                var this_date_txt = jQuery(this).find('td:eq(' + date_idx + ')').text();
+                                var this_date_year = current_year;
+                                if (this_month < this_date_txt.split('/')[0]) {
+                                    this_date_year -= 1;
+                                }
+                                var this_date = new Date(this_date_txt + ' ' + this_date_year);
+                                if (((current_date - this_date) / 1000 / 60 / 60 / 24) < (ex_num_upd + 1)) {
+                                    return this;
+                                }
+                            });
+                            
+                            if (ex_rows_updated.length > 1) {
+                                ex_rows = ex_rows_updated;
+                            }
+                            else {
+                                ex_rows.sort(function(a,b) {
+                                    var n_b_txt = jQuery(b).find('td:eq(' + date_idx + ')').text();
+                                    var n_a_txt = jQuery(a).find('td:eq(' + date_idx + ')').text();
+                                    
+                                    var n_b_year = current_year;
+                                    if (this_month < n_b_txt.split('/')[0]) {
+                                        n_b_year -= 1;
+                                    }
+                                    var n_b = new Date(n_b_txt + ' ' + n_b_year);
+                                    
+                                    var n_a_year = current_year;
+                                    if (this_month < n_a_txt.split('/')[0]) {
+                                        n_a_year -= 1;
+                                    }
+                                    var n_a = new Date(n_a_txt + ' ' + n_a_year);
+                                    
+                                    return n_b - n_a;
+                                });
+                                
+                                ex_rows = ex_rows.slice(0, 2);
+                            }
+                        }
+                    }
+                    
+                    ex_rows.each(function() {
+                        var ex_row = jQuery(this);
+                        var ex_id = ex_row.find('td').eq(id_idx).find('input').val();
+                        expert_list.push(ex_id);
+                    });
+                }
+                
+                dlog(expert_list);
+                
+                jQuery.ajax({
+                    url: source_site,
+                    method: 'get',
+                    data: send_data,
+                    custom_data: {'cb': cb},
+                    timeout: ajax_timeout
+                }).done(function(data) {
+                    var cb = this.custom_data.cb;
+                    cb(position, data.trim());
+                }).fail(function() {
+                    var cb = this.custom_data.cb;
+                    fetch_fail = true;
+                    chrome.runtime.sendMessage({ request: 'fetch_fail', value: source_site });
+                    cb(position, 'error');
+                });
+            }).fail(function() {
+                var cb = this.custom_data.cb;
+                fetch_fail = true;
+                chrome.runtime.sendMessage({ request: 'fetch_fail', value: source_site });
+                cb(position, 'error');
+            });
+        }
     }
 }
 
-// credit to stackoverflow
 function parsesiteCSV(str) {
     var arr = [];
     var quote = false;
     
     for (var row = col = c = 0; c < str.length; c++) {
-        var cc = str[c], nc = str[c+1];
+        var cc = str[c];
+        var nc = str[c+1];
         arr[row] = arr[row] || [];
         arr[row][col] = arr[row][col] || '';
+        if (cc == ',' && typeof nc === "undefined") { col++; arr[row][col] = ''; }
         
         if (cc == '"' && quote && nc == '"') { arr[row][col] += cc; ++c; continue; }  
         if (cc == '"') { quote = !quote; continue; }
@@ -3307,8 +3534,7 @@ function getPosProjections() {
             ready_proj = ready_proj - 1;
             if (ready_proj === 0) {
                 updated_times.proj = current_time;
-                //updated_types.proj = experts.proj;
-                updated_types['all'] = experts['all'];
+                updated_types.proj = ((experts.proj || {}).selection || 'none').toString();
                 addProjections();
             }
         });
@@ -3373,7 +3599,7 @@ function getPosRankings() {
                             alldata[full_name] = {};
                         }
                         
-                        for (var j = player_name_header + 2; j < headers.length; j++) {
+                        for (var j = player_name_header + 1; j < headers.length; j++) {
                             alldata[full_name][headers[j].trim()] = currentline[j].trim();
                         }
                     }
@@ -3383,8 +3609,9 @@ function getPosRankings() {
             ready_rank = ready_rank - 1;
             if (ready_rank === 0) {
                 updated_times.rank = current_time;
-                //updated_types.rank = experts.rank;
-                updated_types['all'] = experts['all'];
+                var exp_rank = experts.rank || {};
+                var exp_rank_num = exp_rank.num || {};
+                updated_types.rank = (exp_rank.selection || 'none').toString() + '-' + (exp_rank_num['top'] || 0) + '-' + (exp_rank_num['updated'] || 0);
                 addRankings();
             }
         });
@@ -3450,7 +3677,7 @@ function getRosRankings() {
                             alldata[full_name] = {};
                         }
                         
-                        for (var j = player_name_header + 2; j < headers.length; j++) {
+                        for (var j = player_name_header + 1; j < headers.length; j++) {
                             alldata[full_name][headers[j].trim() + ' Ros'] = currentline[j].trim();
                         }
                     }
@@ -3460,8 +3687,9 @@ function getRosRankings() {
             ready_ros = ready_ros - 1;
             if (ready_ros === 0) {
                 updated_times.ros = current_time;
-                //updated_types.ros = experts.ros;
-                updated_types['all'] = experts['all'];
+                var exp_ros = experts.ros || {};
+                var exp_ros_num = exp_ros.num || {};
+                updated_types.ros = (exp_ros.selection || 'none').toString() + '-' + (exp_ros_num['top'] || 0) + '-' + (exp_ros_num['updated'] || 0);
                 addRos();
             }
         });

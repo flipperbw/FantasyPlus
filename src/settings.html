@@ -34,7 +34,7 @@
                             <table>
                                 <tbody>
                                     <tr class="no-border">
-                                        <td class="left" rowspan=2>
+                                        <td class="left center-text" rowspan=2>
                                             <span>General</span>
                                             <div class="sites">
                                                 <img src="img/espn.png">
@@ -81,7 +81,7 @@
                                         <td class="spacer"></td>
                                     </tr>
                                     <tr>
-                                        <td class="top bottom left">
+                                        <td class="top bottom left center-text">
                                             <span>Ranks</span>
                                             <div class="sites">
                                                 <img src="img/espn.png">
@@ -114,7 +114,7 @@
                                         <td class="spacer"></td>
                                     </tr>
                                     <tr class="no-border">
-                                        <td class="top bottom left">
+                                        <td class="top bottom left center-text">
                                             <span>Enhancements</span>
                                             <div class="sites">
                                                 <img src="img/espn.png">
@@ -171,17 +171,149 @@
                             <h4>FantasyPros Experts</h4>
                             <span class="label label-success">New</span>
                         </div>
-                        <div id="experts" class="extra-padding">
-                            <div id="experts-all" class="btn-group btn-group-justified" data-toggle="buttons">
-                              <label class="btn btn-round btn-custom active">
-                                <input type="radio" name="options" id="experts-all-all" autocomplete="off" checked> All
-                              </label>
-                              <label class="btn btn-custom">
-                                <input type="radio" name="options" id="experts-all-acc" autocomplete="off"> Top 10 Accuracy
-                              </label>
-                              <label class="btn btn-round btn-custom">
-                                <input type="radio" name="options" id="experts-all-upd" autocomplete="off"> Recently Updated
-                              </label>
+                        <div id="experts">
+                            <div class="container-fluid">
+                                <div class="row spacing" id="experts-proj">
+                                    <div class="col-xs-3 col-xs-3s center-contents center-text">
+                                        <span>Projections</span>
+                                    </div>
+                                    <div class="col-xs-2">
+                                        <div class="btn-group btn-group-justified" data-toggle="buttons">
+                                            <label class="btn btn-round btn-custom">
+                                                <input type="checkbox" id="experts-proj-selection-all" autocomplete="off">All
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-7 col-xs-7l">
+                                        <div class="btn-group btn-group-justified btn-group-spread" data-toggle="buttons">
+                                            <label class="btn btn-round btn-custom">
+                                                <input type="checkbox" id="experts-proj-selection-cbs" autocomplete="off">CBS
+                                            </label>
+                                            <label class="btn btn-custom">
+                                                <input type="checkbox" id="experts-proj-selection-espn" autocomplete="off">ESPN
+                                            </label>
+                                            <label class="btn btn-custom">
+                                                <input type="checkbox" id="experts-proj-selection-numberfire" autocomplete="off">numberFire
+                                            </label>
+                                            <label class="btn btn-custom">
+                                                <input type="checkbox" id="experts-proj-selection-stats" autocomplete="off">STATS
+                                            </label>
+                                            <label class="btn btn-round btn-custom">
+                                                <input type="checkbox" id="experts-proj-selection-fftoday" autocomplete="off">FFToday
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row spacing" id="experts-rank">
+                                    <div class="col-xs-3 col-xs-3s center-contents center-text">
+                                        <span>Weekly Ranks</span>
+                                    </div>
+                                    <div class="col-xs-2">
+                                        <div class="btn-group btn-group-justified" data-toggle="buttons">
+                                            <label class="btn btn-round btn-custom btn-double">
+                                                <input type="checkbox" id="experts-rank-selection-all" autocomplete="off">All
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-4 col-xs-4l">
+                                        <div class="row">
+                                            <div class="col-xs-12">
+                                            <div id="experts-rank-top" class="btn-group btn-group-justified" data-toggle="buttons">
+                                                <label class="btn btn-round btn-custom">
+                                                    <input type="checkbox" id="experts-rank-selection-overall" autocomplete="off">Top Overall
+                                                </label>
+                                                <label class="btn btn-round btn-custom">
+                                                    <input type="checkbox" id="experts-rank-selection-position" autocomplete="off">Top Position
+                                                </label>
+                                            </div>
+                                            </div>
+                                            <div class="col-xs-12">
+                                                <div class="center-contents">
+                                                    <div class="input-group input-group-top">
+                                                        <span class="input-group-addon"># of Experts</span>
+                                                        <input type="text" class="form-control center-text" placeholder="10" id="experts-rank-num-top">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-3">
+                                        <div class="row">
+                                            <div class="col-xs-12">
+                                                <div class="btn-group btn-group-justified" data-toggle="buttons">
+                                                    <label class="btn btn-round btn-custom">
+                                                        <input type="checkbox" id="experts-rank-selection-updated" autocomplete="off">Last Updated
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-xs-12">
+                                                <div class="center-contents">
+                                                    <div class="input-group input-group-update">
+                                                        <span class="input-group-addon"># of Days</span>
+                                                        <input type="text" class="form-control center-text" placeholder="1" id="experts-rank-num-updated">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row spacing" id="experts-ros">
+                                    <div class="col-xs-3 col-xs-3s center-contents center-text">
+                                        <span>Rest of Season Ranks</span>
+                                    </div>
+                                    <div class="col-xs-2">
+                                        <div class="btn-group btn-group-justified" data-toggle="buttons">
+                                            <label class="btn btn-round btn-custom btn-double">
+                                                <input type="checkbox" id="experts-ros-selection-all" autocomplete="off">All
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-4 col-xs-4l">
+                                        <div class="row">
+                                            <div class="col-xs-12">
+                                            <div id="experts-ros-top" class="btn-group btn-group-justified" data-toggle="buttons">
+                                                <label class="btn btn-round btn-custom">
+                                                    <input type="checkbox" id="experts-ros-selection-overall" autocomplete="off">Top Overall
+                                                </label>
+                                                <label class="btn btn-round btn-custom">
+                                                    <input type="checkbox" id="experts-ros-selection-position" autocomplete="off">Top Position
+                                                </label>
+                                            </div>
+                                            </div>
+                                            <div class="col-xs-12">
+                                                <div class="center-contents">
+                                                    <div class="input-group input-group-top">
+                                                        <span class="input-group-addon"># of Experts</span>
+                                                        <input type="text" class="form-control center-text" placeholder="5" id="experts-ros-num-top">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-3">
+                                        <div class="row">
+                                            <div class="col-xs-12">
+                                                <div class="btn-group btn-group-justified" data-toggle="buttons">
+                                                    <label class="btn btn-round btn-custom">
+                                                        <input type="checkbox" id="experts-ros-selection-updated" autocomplete="off">Last Updated
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-xs-12">
+                                                <div class="center-contents">
+                                                    <div class="input-group input-group-update">
+                                                        <span class="input-group-addon"># of Days</span>
+                                                        <input type="text" class="form-control center-text" placeholder="7" id="experts-ros-num-updated">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -194,7 +326,7 @@
                             <table>
                                 <tbody>
                                     <tr class="no-border">
-                                        <td class="top bottom left">
+                                        <td class="top bottom left center-text">
                                             <span>Pages</span>
                                             <div class="sites">
                                                 <img src="img/espn.png">
@@ -236,7 +368,7 @@
                 
                 <div class="changelog">
                 
-                    <div class="panel">
+                    <div class="panel contact">
                         <div class="panel-heading">
                             <h4>Report Bug/Request Feature</h4>
                         </div>
@@ -254,12 +386,12 @@
                         <div class="panel-body">
                             <ul>
                                 <li>
-                                    <h3>3.1.0 (2016-10-06)</h3>
+                                    <h3>3.1.0 (2016-10-15)</h3>
                                     <ul>
                                         <li><b>Added option to select experts</b></li>
                                         <li>Improved speed/timing for iAvg and Trendlines</li>
                                         <li>Trendlines now show whether the player was Out or on a Bye (gray dot)</li>
-                                        <li>Current score will now update frequently during a game, but not otherwise</li>
+                                        <li>Current score now updates frequently during a game, but not otherwise</li>
                                         <li>Improved loading indicator</li>
                                     </ul>
                                     
@@ -281,9 +413,14 @@
                                     <h3>2.3.3 (2016-09-20)</h3>
                                     <ul>
                                         <li><b>FleaFlicker support added</b></li>
-                                        <li>Fix for CURR column in ESPN</li>
                                         <li>Fix for yahoo league bonus settings</li>
                                         <li>Fix for IDP projections</li>
+                                    </ul>
+                                    
+                                    <h3>2.2.2 (2016-09-13)</h3>
+                                    <ul>
+                                        <li><b>Added Depth Charts</b></li>
+                                        <li>Fix for Yahoo matchup page</li>
                                     </ul>
                                 </li>
                             </ul>

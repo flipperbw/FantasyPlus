@@ -6,7 +6,7 @@ body {
 
 .settings-body {
     margin: 10px auto;
-    width: 1100px;
+    width: 1200px;
 }
 
 .settings {
@@ -86,11 +86,47 @@ h1 {
     padding: 26px 60px;
 }
 
+.row {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.row > [class*='col-'] {
+  display: flex;
+  flex-direction: column;
+}
+
+.container-fluid > .row:not(:last-child) {
+    border-bottom: 1px solid #ddd;
+}
+
+.row.spacing {
+    padding: 20px 0;
+}
+
+.row span:first-child:not(.input-group-addon) {
+    font-size: 15px;
+}
+
+.col-xs-3s {
+    width: 20%;
+}
+
+.col-xs-3m {
+    width: 23%;
+}
+
+.col-xs-4l {
+    width: 36%;
+}
+
+.col-xs-7l {
+    width: 61%;
+}
+
 table {
     width: 100%;
     table-layout: fixed;
-    /*border-collapse: separate;
-    border-spacing: 0.7em;*/
 }
 
 #columns tr {
@@ -107,16 +143,19 @@ td {
 }
 
 td.left {
-    width: 30%;
-    text-align: center;
+    width: 23%;
+}
+
+td.bottom {
+    padding-bottom: 15px;
 }
 
 td.top {
     padding-top: 15px;
 }
 
-td.bottom {
-    padding-bottom: 15px;
+.center-text {
+    text-align: center;
 }
 
 td.spacer {
@@ -124,8 +163,8 @@ td.spacer {
     width: 3%;
 }
 
-td.double {
-    line-height: 2em;
+td.experts-space button {
+    width: 100%;
 }
 
 span.label {
@@ -145,7 +184,7 @@ span.label {
 }
 
 .changes {
-    height: 646px;
+    height: 100px;
     overflow-y: auto;
 }
 
@@ -191,16 +230,18 @@ ul > li > b {
     outline: none !important;
 }
 
-.btn-group>.btn:not(:first-child):not(:last-child):not(.dropdown-toggle) {
+.btn-group > .btn:not(:first-child) {
     border-left: 0;
-    border-right: 0;
+}
+
+.btn-group-spread {
+    table-layout: auto;
 }
 
 .btn-custom {
-    color: #999999;
-    background-color: #EEEEEE;
-    border-color: #999999;
-    font-size: 15px;
+    color: #999;
+    background-color: #EEE;
+    border-color: #999;
     font-family: Trebuchet, Arial, sans-serif;
     font-weight: bold;
 }
@@ -210,13 +251,47 @@ ul > li > b {
     background-color: #34A7C1;
 }
 
-.btn-custom:hover:not(.active,:active) {
-    color: black;
+.btn-custom:focus:not(.active):not(:active):not(:hover), .btn-custom.focus:not(.active):not(:active):not(:hover) {
+    color: #999;
 }
 
-/*.btn-custom:focus, .btn-custom.focus {
-    color: black;
-}*/
+.btn-double {
+    padding-top: 27%;
+    padding-bottom: 27%;
+}
+
+#experts .btn-group {
+    z-index: 5;
+}
+
+#experts .input-group-top {
+    width: 64%;
+}
+
+#experts .input-group-update {
+    width: 88%;
+}
+
+.input-group-addon {
+    border-top-left-radius: 0;
+    background-color: #f7f7f7;
+    border-top: 0;
+}
+
+.form-control {
+    border-top-right-radius: 0;
+    border-top: 0;
+}
+
+input[type="text"] ~ .tooltip .tooltip-inner {
+    min-width: 110px;
+    padding: 6px 12px;
+    background-color: #a23838;
+}
+
+input[type="text"] ~ .tooltip .tooltip-arrow {
+    border-bottom-color: #a23838;
+}
 
 .onoffswitch {
     position: relative;
