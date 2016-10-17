@@ -5,7 +5,6 @@
 - return yardage
 - firefox/safari
 - sortable? doubt it
-- option for experts
 - timeout for loading gif
 - start doing things before the document is ready. https://gist.github.com/raw/2625891/waitForKeyElements.js, waitForKeyElements ("a.Inline", delinkChangeStat); -- this probably doesnt apply since its an extension
 - use window temporary data instead of recalculating when changes are made
@@ -15,13 +14,12 @@
 - clicking too fast disables it until the next click...
 - store historical projections
 - add projected to Yahoo roster page
-- add a CURR total for espn
 - add bye week for espn
 - highlight players with higher ROS/rank than on roster
 - weather/dome information
 - injury info for relevant players
 - replicate fantasy finder
-- trade values
+- trade values / calculator
 - stdev of points
 - add weekly projections second header to projs for fleaflicker
 - fall back to ros if ppr-ros doesnt work
@@ -53,23 +51,14 @@ function isObj(o) {
 }
 
 var storageUserSettingsKey = 'fp_user_settings';
-var resetKey = 'fp_reset_2016';
 
-function clearStoredData(res) {
-    res = typeof res === "undefined" ? false : res;
-    
+function clearStoredData() {
     chrome.storage.local.get(null, function(d) { 
         jQuery.each(d, function(k,v) {
             if (k != storageUserSettingsKey) {
                 chrome.storage.local.remove(k);
             }
         });
-        
-        if (res) {
-            var reset_dict = {};
-            reset_dict[resetKey] = true;
-            chrome.storage.local.set(reset_dict);
-        }
     });
 }
 
@@ -399,15 +388,6 @@ var storageDepthKey = 'fp_depth_data';
 var storageDepthUpdateKey = 'fp_last_updated_depth';
 
 var storageKeys = [storageActivityKey, storageDepthKey, storageDepthUpdateKey];
-
-// Temporary clearing of cache, not sure if this is needed every season or not.
-chrome.storage.local.get(resetKey, function(d) { 
-    if (!d.hasOwnProperty(resetKey) || (d[resetKey] !== true)) {
-        dlog('resetting all data for new season');
-        clearStoredData(true);
-    }
-});
-
 
 if (document.URL.match(/games.espn.com/)) {
     siteType = 'espn';
@@ -5980,7 +5960,6 @@ function insertDepth(cell, depthData) {
     if (total_players_depth === 0) {
         dlog('depth done');
         depthDone.resolve();
-        
         //todo add into alldata
     }
 }
