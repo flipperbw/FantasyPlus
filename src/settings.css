@@ -364,7 +364,7 @@ input[type="text"] ~ .tooltip .tooltip-arrow {
 }
 
 .save {
-    padding: 25px 0 10px;
+    padding: 25px 0 25px;
 }
 
 .save-btn {

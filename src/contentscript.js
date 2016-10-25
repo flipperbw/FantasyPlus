@@ -38,8 +38,8 @@ chrome.runtime.sendMessage({ request: 'valid_site' });
 
 jQuery.noConflict();
 
-var debug_mode = 0;
-//var debug_mode = -1;
+//var debug_mode = 0;
+var debug_mode = -1;
 
 function dlog(o, level) {
     level = typeof level === "undefined" ? 0 : level;
@@ -1212,6 +1212,7 @@ function addLeagueSettings() {
         if ($scoring.length > 0) {
             var roster_fetch = {'xhr': 1, 'edit': 'false', 'leagueId': league_id};
             jQuery.get('//games.espn.com/ffl/leaguesetup/sections/roster', roster_fetch, function(po) {
+				po = po.replace(/(<(\b(img|style|head|link)\b)(([^>]*\/>)|([^\7]*(<\/\2[^>]*>)))|(<\bimg\b)[^>]*>|(\b(background|style)\b=\s*"[^"]*"))/g,"");
                 $roster = jQuery(po);
                 doRosterSettings($roster);
             });
@@ -1724,6 +1725,7 @@ function runMain() {
                 league_settings = {};
                 dlog('Fetching league data, Updated time: ' + updated_league + ', Current Time: ' + current_time);
                 jQuery.get(league_settings_url, function(d) {
+					d = d.replace(/(<(\b(img|style|head|link)\b)(([^>]*\/>)|([^\7]*(<\/\2[^>]*>)))|(<\bimg\b)[^>]*>|(\b(background|style)\b=\s*"[^"]*"))/g,"");
                     var setSettings = parseLeagueSettings(d, siteType);
                     var setLeagueData = {};
                     setLeagueData[storageLeagueKey] = setSettings;
@@ -3181,6 +3183,7 @@ function fetchPositionData(position, type, cb) {
                 timeout: ajax_timeout
             }).done(function(data) {
                 var cb = this.custom_data.cb;
+				data = data.replace(/(<(\b(img|style|head|link)\b)(([^>]*\/>)|([^\7]*(<\/\2[^>]*>)))|(<\bimg\b)[^>]*>|(\b(background|style)\b=\s*"[^"]*"))/g,"");				
                 cb(position, data.trim());
             }).fail(function() {
                 var cb = this.custom_data.cb;
@@ -3201,6 +3204,7 @@ function fetchPositionData(position, type, cb) {
                 timeout: ajax_timeout
             }).done(function(data) {
                 var cb = this.custom_data.cb;
+				data = data.replace(/(<(\b(img|style|head|link)\b)(([^>]*\/>)|([^\7]*(<\/\2[^>]*>)))|(<\bimg\b)[^>]*>|(\b(background|style)\b=\s*"[^"]*"))/g,"");
                 cb(position, data.trim());
             }).fail(function() {
                 var cb = this.custom_data.cb;
@@ -3232,6 +3236,7 @@ function fetchPositionData(position, type, cb) {
                 timeout: ajax_timeout
             }).done(function(data) {
                 var cb = this.custom_data.cb;
+				data = data.replace(/(<(\b(img|style|head|link)\b)(([^>]*\/>)|([^\7]*(<\/\2[^>]*>)))|(<\bimg\b)[^>]*>|(\b(background|style)\b=\s*"[^"]*"))/g,"");
                 cb(position, data.trim());
             }).fail(function() {
                 var cb = this.custom_data.cb;
@@ -3247,6 +3252,7 @@ function fetchPositionData(position, type, cb) {
                 timeout: ajax_timeout
             }).done(function(data) {
                 var cb = this.custom_data.cb;
+				data = data.replace(/(<(\b(img|style|head|link)\b)(([^>]*\/>)|([^\7]*(<\/\2[^>]*>)))|(<\bimg\b)[^>]*>|(\b(background|style)\b=\s*"[^"]*"))/g,"");
                 
                 var send_data = {
                     'expert[]': []
@@ -3371,6 +3377,7 @@ function fetchPositionData(position, type, cb) {
                     timeout: ajax_timeout
                 }).done(function(data) {
                     var cb = this.custom_data.cb;
+					data = data.replace(/(<(\b(img|style|head|link)\b)(([^>]*\/>)|([^\7]*(<\/\2[^>]*>)))|(<\bimg\b)[^>]*>|(\b(background|style)\b=\s*"[^"]*"))/g,"");
                     cb(position, data.trim());
                 }).fail(function() {
                     var cb = this.custom_data.cb;
@@ -3479,6 +3486,7 @@ function getYahooIds() {
         url: yahoo_list_url,
         timeout: ajax_timeout
     }).done(function(pl) {
+		pl = pl.replace(/(<(\b(img|style|head|link)\b)(([^>]*\/>)|([^\7]*(<\/\2[^>]*>)))|(<\bimg\b)[^>]*>|(\b(background|style)\b=\s*"[^"]*"))/g,"");
         var pldata = jQuery(pl);
         var player_rows = pldata.find('tr[class^=ysprow]');
 
@@ -4000,6 +4008,7 @@ function getDepth() {
         url: depth_url,
         timeout: ajax_timeout
     }).done(function(data) {
+		data = data.replace(/(<(\b(img|style|head|link)\b)(([^>]*\/>)|([^\7]*(<\/\2[^>]*>)))|(<\bimg\b)[^>]*>|(\b(background|style)\b=\s*"[^"]*"))/g,"");
         parseDepth(data);
     }).fail(function() {
         depth_fail = true;
@@ -4627,31 +4636,31 @@ function getProjectionData(datatype, currRow, cell) {
                     delete player_stored_activity['games_played_updated'];
                     delete player_stored_activity[league_id];
                     
-                    if (!activity_data_current_season_site.hasOwnProperty(new_player_id)) {
+                    if (!goodVal(activity_data_current_season_site, new_player_id, 'object')) {
                         dlog('did not find rookie player data from translation');
                         activity_data_current_season_site[new_player_id] = {};
                     }
                     player_stored_activity = activity_data_current_season_site[new_player_id];
                 }
                 
-                if (!player_stored_activity.hasOwnProperty('games_played')) {
+                if (!goodVal(player_stored_activity, 'games_played', 'array')) {
                     player_stored_activity['games_played'] = [];
                 }
                 var player_stored_activity_games = player_stored_activity['games_played'];
                 
-                if (!player_stored_activity.hasOwnProperty('games_played_updated')) {
+                if (!goodVal(player_stored_activity, 'games_played_updated', 'number')) {
                     player_stored_activity['games_played_updated'] = 0;
                 }
                 var player_stored_activity_games_updated = player_stored_activity['games_played_updated'];
                 
                 
-                if (!player_stored_activity.hasOwnProperty(league_id)) {
+                if (!goodVal(player_stored_activity, league_id, 'object')) {
                     player_stored_activity[league_id] = {};
                 } 
                 var player_stored_activity_league = player_stored_activity[league_id];
                 
                 
-                if (!player_stored_activity_league.hasOwnProperty('weekly_points')) {
+                if (!goodVal(player_stored_activity_league, 'weekly_points', 'array')) {
                     player_stored_activity_league['weekly_points'] = [];
                 }
                 var player_stored_activity_league_pts = player_stored_activity_league['weekly_points'];
@@ -4709,6 +4718,7 @@ function getProjectionData(datatype, currRow, cell) {
                             insertAdjAvg(currRow, null, [], []);
                         }
                         else {
+							po = po.replace(/(<(\b(img|style|head|link)\b)(([^>]*\/>)|([^\7]*(<\/\2[^>]*>)))|(<\bimg\b)[^>]*>|(\b(background|style)\b=\s*"[^"]*"))/g,"");
                             var podata = jQuery(po);
                             
                             var p_data = activity_data_current_season_site[pid];
@@ -4835,6 +4845,7 @@ function getProjectionData(datatype, currRow, cell) {
                                         insertAdjAvg(currRow, null, [], p_data_league['weekly_points']);
                                     }
                                     else {
+										p = p.replace(/(<(\b(img|style|head|link)\b)(([^>]*\/>)|([^\7]*(<\/\2[^>]*>)))|(<\bimg\b)[^>]*>|(\b(background|style)\b=\s*"[^"]*"))/g,"");
                                         var adata = jQuery(p);
                                         
                                         var postseason_row = jQuery('tr td:contains("POSTSEASON")', adata).parents('tr');
@@ -4898,6 +4909,7 @@ function getProjectionData(datatype, currRow, cell) {
                             insertAdjAvg(currRow, null, [], []);
                         }
                         else {
+							po = po.replace(/(<(\b(img|style|head|link)\b)(([^>]*\/>)|([^\7]*(<\/\2[^>]*>)))|(<\bimg\b)[^>]*>|(\b(background|style)\b=\s*"[^"]*"))/g,"");
                             var podata = jQuery(po);
                             
                             var p_data = activity_data_current_season_site[pid];
@@ -5064,6 +5076,7 @@ function getProjectionData(datatype, currRow, cell) {
                         url: player_href,
                         timeout: ajax_timeout
                     }).done(function(pl) {
+						pl = pl.replace(/(<(\b(img|style|head|link)\b)(([^>]*\/>)|([^\7]*(<\/\2[^>]*>)))|(<\bimg\b)[^>]*>|(\b(background|style)\b=\s*"[^"]*"))/g,"");
                         var pldata = jQuery(pl);
                         var n = pldata.find('#left-container > div.panel > div.panel-heading').text();
                         
@@ -6170,6 +6183,7 @@ function refreshData(fetch) {
 
         dlog('Refreshing data, Current Time: ' + current_time);
         jQuery.get(league_settings_url, function(d) {
+			d = d.replace(/(<(\b(img|style|head|link)\b)(([^>]*\/>)|([^\7]*(<\/\2[^>]*>)))|(<\bimg\b)[^>]*>|(\b(background|style)\b=\s*"[^"]*"))/g,"");
             var setSettings = parseLeagueSettings(d, siteType);
             var setLeagueData = {};
             setLeagueData[storageLeagueKey] = setSettings;
