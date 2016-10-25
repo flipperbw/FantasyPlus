@@ -24,7 +24,6 @@
 - add weekly projections second header to projs for fleaflicker
 - fall back to ros if ppr-ros doesnt work
 - add a db of confirmed player names and positions
-- improve coloring on trendlines to match averages
 */
 
 /*
