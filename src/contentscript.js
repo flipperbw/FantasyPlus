@@ -35,8 +35,6 @@ document.body.appendChild(tag);
 
 chrome.runtime.sendMessage({ request: 'valid_site' });
 
-jQuery.noConflict();
-
 //var debug_mode = 0;
 var debug_mode = -1;
 
@@ -46,6 +44,8 @@ function dlog(o, level) {
         console.log(o);
     }
 }
+
+jQuery.noConflict();
 
 function isObj(o) {
     return jQuery.isPlainObject(o) && !jQuery.isEmptyObject(o);
@@ -4993,7 +4993,7 @@ function getProjectionData(datatype, currRow, cell) {
         }
         else if (siteType == "yahoo") {
             if (onMatchupPreviewPage || onFreeAgencyPage) {
-                var player_href = player_name_cell.find('a').attr('href');
+                var player_href = player_cell.find('.ysf-player-name').find('a').attr('href');
                 var player_id = player_href.split('/').pop();
                 var seenId = storage_translation_data.hasOwnProperty('ID_' + player_id);
                 dlog('id is ' + player_id + ', seen is ' + seenId, 1);
