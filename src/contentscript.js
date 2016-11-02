@@ -24,6 +24,7 @@
 - add weekly projections second header to projs for fleaflicker
 - fall back to ros if ppr-ros doesnt work
 - add a db of confirmed player names and positions
+- waiver wire
 */
 
 /*
@@ -353,7 +354,9 @@ var player_name_fix = {
     'Malcolm Brown': 'Malcom Brown',
     'Dante Fowler': 'Dante Fowler Jr.',
     'Vic Beasley Jr.': 'Vic Beasley',
-    'Nickell Robey': 'Nickell Robey-Coleman'
+    'Nickell Robey': 'Nickell Robey-Coleman',
+    'Terrod Ward': 'Terron Ward',
+    'Steven Hauschka': 'Stephen Hauschka'
 };
 
 var player_name_translations = {
@@ -1587,12 +1590,15 @@ function isActivityDataCurrent(pid, upd, typ, live) {
     var r = true;
     if (typ == 'league') {
         if (live === 'live') {
+            dlog('using live');
             chk_mins = check_minutes_avg_live;
         }
         else if (live === 'done') {
+            dlog('using done');
             chk_mins = check_minutes_avg_done;
         }
         else {
+            dlog('using day');
             chk_mins = check_minutes_avg;
         }
         
