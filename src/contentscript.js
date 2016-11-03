@@ -5055,7 +5055,12 @@ function getProjectionData(datatype, currRow, cell) {
                 var player_last = player_href.split('/').pop();
                 var player_name_split = player_last.split('-');
                 var player_id = player_name_split.pop();
-                var player_href_name = player_name_split.map(i => i.toUpperCase()).join(' ');
+                
+                var player_split_cap = [];
+                for (var i=0; i<player_name_split.length; i++) {
+                    player_split_cap.push(player_name_split[i].toUpperCase());
+                }
+                var player_href_name = player_split_cap.join(' ');
 
                 var seenId = storage_translation_data.hasOwnProperty('ID_' + player_id);
                 var hasAllData = alldata.hasOwnProperty(player_href_name + '|' + pos_name + '|' + team_name);
