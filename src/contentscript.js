@@ -25,6 +25,7 @@
 - fall back to ros if ppr-ros doesnt work
 - add a db of confirmed player names and positions
 - waiver wire
+- hide IR on free agency (intercept)
 */
 
 /*
@@ -36,8 +37,8 @@ document.body.appendChild(tag);
 
 chrome.runtime.sendMessage({ request: 'valid_site' });
 
-//var debug_mode = 0;
-var debug_mode = -1;
+var debug_mode = 0;
+//var debug_mode = -1;
 
 function dlog(o, level) {
     level = typeof level === "undefined" ? 0 : level;
@@ -381,6 +382,8 @@ var player_name_translations = {
 };
 
 var player_position_fix = {
+    'Ty Montgomery': 'RB',
+    
     'Julius Peppers': 'LB',
     'Jadeveon Clowney': 'LB',
     'Derrick Morgan': 'LB',
@@ -461,6 +464,7 @@ var depth_type_map = {
     'blue': 'Starter',
     'green': 'Situational',
     'red': 'Fill-in',
+    'brown': 'Fill-in',
     'black': 'Reserve'
 };
 
@@ -2701,6 +2705,8 @@ function parseLeagueSettings(league_data, siteType) {
         
         league_settings['fumbles'] = getValue('Total Fumbles Lost (FUML)') || 0;
 
+        //TODO Total tackle here.
+        // http://games.espn.com/ffl/leaguesetup/settings?leagueId=609328
         league_settings['ff'] = getValue('Each Fumble Forced (FF)') || 0;
         league_settings['tka'] = getValue('Assisted Tackles (TKA)') || 0;
         league_settings['tks'] = getValue('Solo Tackles (TKS)') || 0;
@@ -4216,6 +4222,7 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
     var player_data;
     
     if (datatype == 'proj-default') {
+        //fix
         if (jQuery.isArray(pos_name)) {
             pos_name = pos_name[0];
         }
@@ -4243,7 +4250,6 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
                 pos_name = player_fix[1];
                 player_name_data = player_name.toUpperCase();
                 full_name = player_name_data + "|" + pos_name + "|" + team_name;
-            
                 player_data = alldata[full_name];
             }
             else {
