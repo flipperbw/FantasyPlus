@@ -3777,7 +3777,12 @@ function getRosRankings() {
                         }
                         
                         for (var j = player_name_header + 1; j < headers.length; j++) {
-                            alldata[full_name][headers[j].trim() + ' Ros'] = currentline[j].trim();
+                            if (currentline[j]) {
+                                alldata[full_name][headers[j].trim() + ' Ros'] = currentline[j].trim();
+                            }
+                            else {
+                                alldata[full_name][headers[j].trim() + ' Ros'] = '';
+                            }
                         }
                     }
                 }
