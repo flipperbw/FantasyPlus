@@ -26,6 +26,7 @@
 - add a db of confirmed player names and positions
 - waiver wire
 - hide IR on free agency (intercept)
+- snap pcts http://www.footballoutsiders.com/stats/snapcounts
 */
 
 /*
@@ -179,7 +180,8 @@ var fix_css = true;
 var season_start_map = {
 	'2014': [8, 2],
 	'2015': [8, 8],
-	'2016': [8, 6]
+	'2016': [8, 6],
+    '2017': [8, 5]
 };
 
 // from 2014-2015 season data
