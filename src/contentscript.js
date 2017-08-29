@@ -27,6 +27,7 @@
 - waiver wire
 - hide IR on free agency (intercept)
 - snap pcts http://www.footballoutsiders.com/stats/snapcounts
+- how to use com.espn.games...?
 */
 
 /*
@@ -38,8 +39,8 @@ document.body.appendChild(tag);
 
 chrome.runtime.sendMessage({ request: 'valid_site' });
 
-//var debug_mode = 0;
-var debug_mode = -1;
+var debug_mode = 0;
+//var debug_mode = -1;
 
 function dlog(o, level) {
     level = typeof level === "undefined" ? 0 : level;
@@ -1750,6 +1751,14 @@ function runMain() {
     }
 }
 
+function resetLeagueYear() {
+	if (siteType == 'espn' && ((current_season != current_season_avg) || (current_season != current_season_avg_week))) {
+		//doing this to reset back to current season
+		var espn_points_data = {'leagueId': league_id, 'seasonId': current_season, 'xhr': '1'};
+		jQuery.get('//games.espn.com/ffl/freeagency', espn_points_data);
+	}
+}
+
 function updatePlayerStorage() {
     jQuery.when(projDone, rankDone, rosDone).done(function() {
         dlog('Attempting to set new player data');
@@ -1761,7 +1770,9 @@ function updatePlayerStorage() {
             setPlayerData[storagePlayerKey] = alldata;
             setPlayerData[storageUpdateKey] = updated_times;
             setPlayerData[storageUpdateTypeKey] = updated_types;
-            chrome.storage.local.set(setPlayerData);
+            chrome.storage.local.set(setPlayerData, function() {
+				resetLeagueYear();
+			});
         }
     });
 }
@@ -1775,7 +1786,9 @@ function updateDepthStorage() {
             var setDepthData = {};
             setDepthData[storageDepthKey] = depth_data;
             setDepthData[storageDepthUpdateKey] = updated_depth;
-            chrome.storage.local.set(setDepthData);
+            chrome.storage.local.set(setDepthData, function() {
+				resetLeagueYear();
+			});
         }
     });
 }
@@ -1786,11 +1799,7 @@ function updateActivityStorage() {
         var setActivityData = {};
         setActivityData[storageActivityKey] = activity_data;
         chrome.storage.local.set(setActivityData, function() {
-            if (siteType == 'espn' && ((current_season != current_season_avg) || (current_season != current_season_avg_week))) {
-                //doing this to reset back to current season
-                var espn_points_data = {'leagueId': league_id, 'seasonId': current_season, 'xhr': '1'};
-                jQuery.get('//games.espn.com/ffl/freeagency', espn_points_data);
-            }
+			resetLeagueYear();
         });
     });
 }
@@ -5991,6 +6000,8 @@ function addAvg() {
         
         getProjectionData(datatype, currRow, '');
     });
+	
+	resetLeagueYear();
 }
 
 function addDepth() {
@@ -6013,6 +6024,8 @@ function addDepth() {
         
         getProjectionData(datatype, currRow, cell);
     });
+	
+	resetLeagueYear();
 }
 
 function insertDepth(cell, depthData) {
