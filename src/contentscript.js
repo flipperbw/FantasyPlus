@@ -309,7 +309,7 @@ var team_abbrevs = {
     'Carolina Panthers': 'CAR',
     'Arizona Cardinals': 'ARI',
     'Denver Broncos': 'DEN',
-    'Los Angeles Rams': 'LA',
+    'Los Angeles Rams': 'LAR',
     'Houston Texans': 'HOU',
     'Kansas City Chiefs': 'KC',
     'Cincinnati Bengals': 'CIN',
@@ -333,7 +333,7 @@ var team_abbrevs = {
     'Tampa Bay Buccaneers': 'TB',
     'Washington Redskins': 'WAS',
     'Atlanta Falcons': 'ATL',
-    'San Diego Chargers': 'SD',
+    'Los Angeles Chargers': 'LAC',
     'Indianapolis Colts': 'IND',
     'New Orleans Saints': 'NO',
     'Dallas Cowboys': 'DAL'
@@ -3503,6 +3503,8 @@ function convertFProsToCSV(raw_data, type, pos_name) {
 
 function getYahooIds() {
     storage_translation_data = {};
+
+	//https://sports.yahoo.com/site/api/resource/sports.league.playerssearch;count=10;league=nfl;name=;pos=nfl.pos.9;start=?bkt=%5B%22spdmtest%22%2C%22mlb-gamechannel%22%2C%22sp-football-reg-options-expanded%22%2C%22sp-footballl-signup-primary-join%22%2C%22sp-survival-promo-ctl%22%5D&device=desktop&feature=canvassOffnet%2CnewContentAttribution%2Clivecoverage%2Ccanvass&intl=us&lang=en-US&partner=none&prid=as7g78lcqbjvm&region=US&site=sports&tz=America%2FNew_York&ver=1.0.1932&returnMeta=true
     
     jQuery.ajax({
         url: yahoo_list_url,
