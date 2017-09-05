@@ -534,11 +534,6 @@ else if (document.URL.match(/football.fantasysports.yahoo.com/)) {
     
     var yahooIdsDone = jQuery.Deferred();
     var updated_translation = 0;
-    var yahoo_list_url = 'https://sports.yahoo.com/nfl/players?type=lastname';
-	jQuery.getJSON(chrome.extension.getURL('yahoo_ids.json'), function(settings) {
-		console.log('asdasdasdasad');
-		console.log(settings);
-	});
     
     var is_FA_current = false;
 	
@@ -3509,44 +3504,25 @@ function getYahooIds() {
     storage_translation_data = {};
 
 	//https://sports.yahoo.com/site/api/resource/sports.league.playerssearch;count=10;league=nfl;name=;pos=nfl.pos.9;start=?bkt=%5B%22spdmtest%22%2C%22mlb-gamechannel%22%2C%22sp-football-reg-options-expanded%22%2C%22sp-footballl-signup-primary-join%22%2C%22sp-survival-promo-ctl%22%5D&device=desktop&feature=canvassOffnet%2CnewContentAttribution%2Clivecoverage%2Ccanvass&intl=us&lang=en-US&partner=none&prid=as7g78lcqbjvm&region=US&site=sports&tz=America%2FNew_York&ver=1.0.1932&returnMeta=true
-    
-    jQuery.ajax({
-        url: yahoo_list_url,
-        timeout: ajax_timeout
-    }).done(function(pl) {
-		pl = pl.replace(/(<(\b(img|style|head|link)\b)(([^>]*\/>)|([^\7]*(<\/\2[^>]*>)))|(<\bimg\b)[^>]*>|(\b(background|style)\b=\s*"[^"]*"))/g,"");
-        var pldata = jQuery(pl);
-        var player_rows = pldata.find('tr[class^=ysprow]');
-
-        player_rows.each(function() {
-            var player_row = jQuery(this);
-            // maybe grab the position and team data for the future
-            var player_td = player_row.find('td:first a:first');
-            
-            if (player_td.length === 1) {
-                var p_name = player_td.text().trim();
-                var p_href = player_td.attr('href');
-                var p_href_id = p_href.split('/').pop();
-                
-                if (p_name && parseFloat(p_href_id)) {
-                    storage_translation_data['ID_' + p_href_id] = p_name;
-                }
-            }
-        });
+	jQuery.getJSON(chrome.extension.getURL('yahoo_ids.json')
+	).done(function(yahoo_json) {
+		storage_translation_data = yahoo_json;
         
-        updated_translation = current_time;
+		dlog('yahoo IDs done');
+        yahooIdsDone.resolve();
+        
+		updated_translation = current_time;
         
         var new_id_data = {};
         new_id_data[storageTranslationKey] = storage_translation_data;
         new_id_data[storageTranslationUpdateKey] = updated_translation;
         chrome.storage.local.set(new_id_data);
-    }).fail(function() {
-        dlog('Could not fetch yahoo ID table');
-        chrome.runtime.sendMessage({ request: 'fetch_fail', value: yahoo_list_url });
-    }).always(function() {
-        dlog('yahoo IDs done');
-        yahooIdsDone.resolve();
-    });
+	}).fail(function( jqxhr, textStatus, error ) {
+		var err = textStatus + ", " + error;
+		dlog('Could not fetch yahoo ID data');
+		dlog(err);
+		chrome.runtime.sendMessage({ request: 'fetch_fail', value: err });
+	});
 }
 
 function getPosProjections() {

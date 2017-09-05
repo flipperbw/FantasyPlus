@@ -50,7 +50,9 @@
 		"http://football.fantasysports.yahoo.com/f1/*",
 		"https://football.fantasysports.yahoo.com/f1/*",
 		"http://www.fleaflicker.com/nfl/leagues/*",
-		"http://fleaflicker.com/nfl/leagues/*"
+		"https://www.fleaflicker.com/nfl/leagues/*",
+		"http://fleaflicker.com/nfl/leagues/*",
+		"https://fleaflicker.com/nfl/leagues/*"
 	  ],
 	  "js": [
 		"lib/jquery.min.js",
