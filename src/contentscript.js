@@ -535,6 +535,10 @@ else if (document.URL.match(/football.fantasysports.yahoo.com/)) {
     var yahooIdsDone = jQuery.Deferred();
     var updated_translation = 0;
     var yahoo_list_url = 'https://sports.yahoo.com/nfl/players?type=lastname';
+	jQuery.getJSON(chrome.extension.getURL('yahoo_ids.json'), function(settings) {
+		console.log('asdasdasdasad');
+		console.log(settings);
+	});
     
     var is_FA_current = false;
 	

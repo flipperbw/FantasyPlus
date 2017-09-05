@@ -22,6 +22,9 @@
   "background": {
     "page": "background.html"
   },
+  "web_accessible_resources": [
+	"yahoo_ids.json"
+  ],
   "page_action": {
     "default_icon": {
       "19": "img/FantasyPlusIcon-19.png",
