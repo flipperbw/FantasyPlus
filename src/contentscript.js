@@ -39,8 +39,8 @@ document.body.appendChild(tag);
 
 chrome.runtime.sendMessage({ request: 'valid_site' });
 
-var debug_mode = 0;
-//var debug_mode = -1;
+//var debug_mode = 0;
+var debug_mode = -1;
 
 function dlog(o, level) {
     level = typeof level === "undefined" ? 0 : level;
@@ -647,7 +647,7 @@ function fixPage() {
                 jQuery('iframe[src*="streak.espn.com"]').parent().remove();
             }
             else if (onLeaguePage) {
-                jQuery('.games-rightcol-spacer, a[href*="pizzahut"], div.promotional-info').remove();
+                jQuery('.games-rightcol-spacer, a[href*="pizzahut"], div.promotional-info, div.header-ad, div[class^="games-ad"]').remove();
             }
         }
         if (fix_css) {
