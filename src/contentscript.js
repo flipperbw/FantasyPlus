@@ -438,6 +438,10 @@ var player_position_fix_sharks = {
     'Su\'a Cravens': 'DB'
 };
 
+var team_abbrev_fix_fleaflicker = {
+	'LA': 'LAR'	
+};
+
 var off_positions_proj = ['qb', 'rb', 'wr', 'te', 'k', 'dst'];
 var def_positions_proj = ['8', '9', '10'];
 var all_positions_proj = off_positions_proj.concat(def_positions_proj);
@@ -4565,6 +4569,10 @@ function getPlayerDataFromCell(player_cell, player_cell_text) {
                 pos_name.push(np.trim());
             });
         }
+
+		if (team_name in team_abbrev_fix_fleaflicker) {
+			team_name = team_abbrev_fix_fleaflicker[team_name];
+		}
 
         player_name = player_name.replace('*', '');
     }
