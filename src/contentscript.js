@@ -28,6 +28,7 @@
 - hide IR on free agency (intercept)
 - snap pcts http://www.footballoutsiders.com/stats/snapcounts
 - how to use com.espn.games...?
+- button to maximize projected points
 */
 
 /*
