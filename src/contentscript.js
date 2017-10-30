@@ -31,6 +31,10 @@
 - fix CURR for seasons start
 - fix when blocking certain sites loading
 - make optimize work with classic clubhouse in espn
+- https://developer.yahoo.com/fantasysports/guide/player-resource.html#player-resource-desc
+- navving back and forth negates player_name_fix
+- some dts are blank history
+- some history is straight up wrong, like nyj kicker
 */
 
 /*
@@ -42,8 +46,8 @@ document.body.appendChild(tag);
 
 chrome.runtime.sendMessage({ request: 'valid_site' });
 
-var debug_mode = 0;
-//var debug_mode = -1;
+//var debug_mode = 0;
+var debug_mode = -1;
 
 function dlog(o, level) {
     level = typeof level === "undefined" ? 0 : level;
@@ -365,7 +369,8 @@ var player_name_fix = {
     'Vic Beasley Jr.': 'Vic Beasley',
     'Nickell Robey': 'Nickell Robey-Coleman',
     'Terrod Ward': 'Terron Ward',
-    'Steven Hauschka': 'Stephen Hauschka'
+    'Steven Hauschka': 'Stephen Hauschka',
+    'Adoree\' Jackson': 'Adoree Jackson'
 };
 
 var player_name_translations = {
@@ -379,6 +384,8 @@ var player_name_translations = {
     'Robert': 'Rob',
     'Mike': 'Michael',
     'Michael': 'Mike',
+    'Mitchell': 'Mitch',
+    'Mitch': 'Mitchell',
     'John': 'Johnathan',
     'Johnathan': 'John',
     'Jon': 'Jonathan',
@@ -501,10 +508,16 @@ var storageKeys = [storageActivityKey, storageDepthKey, storageDepthUpdateKey];
 if (document.URL.match(/games.espn.com/)) {
     siteType = 'espn';
     
-    //jQuery('body').append('<div data-pp-linker-content><p>Mike Evans</p></div>');
-    //jQuery('body').append("<script>window._pp = window._pp || {}; window._pp['linker'] = 'modal';</script>");
-    //jQuery('body').append('<script src="https://d998027e2znu1.cloudfront.net/widgets/embed.js"></script>');
-    //jQuery('body').append('<div data-pp-linker-content>Mike Evans</div>');
+    /*
+    //need to disable calls to prototypeJS for espn and maybe others. otherwise this breaks. also lots of api errors.
+    //https://www.playerprofiler.com/wp-admin/admin-ajax.php?action=playerprofiler_api&endpoint=%2Fplayer%2FME-0600
+    //https://www.playerprofiler.com/api/v1/embed/game-log/ME-0600
+    //https://www.playerprofiler.com/nfl/mike-evans/#/game-log
+    jQuery('body').append('<div data-pp-linker-content><p>Mike Evans</p></div>');
+    jQuery('body').append("<script>window._pp = window._pp || {}; window._pp['linker'] = 'modal';</script>");
+    jQuery('body').append('<script src="https://d998027e2znu1.cloudfront.net/widgets/embed.js"></script>');
+    jQuery('body').append('<div data-pp-linker-content>Mike Evans</div>');
+    */
     
 	var onMatchupPreviewPage = document.URL.match(/ffl\/matchuppreview/);
     var onClubhousePage = document.URL.match(/ffl\/(clubhouse|dropplayers|rosterfix)/);
@@ -3470,8 +3483,7 @@ function convertFProsToCSV(raw_data, type, pos_name) {
     var new_raw_data = jQuery(raw_data);
     new_raw_data.find('thead tr:has(td)').remove();
     new_raw_data.find('tbody tr:not([class^="mpb-player"])').remove();
-    var new_data = jQuery('table#data', new_raw_data);
-    
+    var new_data = jQuery('table#data, table#rank-data', new_raw_data).first();
     var header_cell = new_data.find('thead th:contains("Player")');
     var new_header_cell = header_cell.clone();
     new_header_cell.text('Team');
@@ -4167,8 +4179,6 @@ function validPosition(player_pos, slot_pos) {
 }
 
 function optimizeLineup() {
-    dlog('optimizing');
-    
     observer_disconned = true;
     if (observer) {
         observer.disconnect();
@@ -4209,6 +4219,7 @@ function optimizeLineup() {
     var starter_rows = table_headers.first().nextUntil(table_headers.last()).not('.playerTableBgRowHead, .FantasyPlus');
     var wait_timer = 0;
     var wait_increase = 100;
+    var move_list = [];
     starter_rows.each(function(i){
         var this_row = jQuery(this);
         var row_pos_text = this_row.find(player_cell_pos_selector).text().trim();
@@ -4241,22 +4252,64 @@ function optimizeLineup() {
                 if (this_row_pos_text != row_pos_text) {
                     var p_move_cell = this_player_row.find('.pncButtonMove');
                     if (p_move_cell.length) {
-                        setTimeout(function(){
-                            p_move_cell.trigger('click');
-                            var new_this_row = player_table_body.find(this_row);
-                            var move_here_cell = new_this_row.find('.pncButtonHere');
-                            move_here_cell.trigger('click');
-                        }, wait_timer);
-                        wait_timer += wait_increase;
+                        move_list.push([p_move_cell, this_row]);
+                        
+                        var dest_move_cell = this_row.find('.pncButtonMove');
+                        if (dest_move_cell.length) {
+                            move_list.push([dest_move_cell, null]);
+                        }
                     }
                 }
             }
         }
     });
     
+    var new_move_list = [];
+    var bench_area = player_table_body.find('tr.playerTableBgRowHead:last');
+    move_list.forEach(function(mov) {
+        var p_move_cell = mov[0];
+        var this_row = mov[1];
+        
+        var mov_type = p_move_cell.parents('tr').first().find(player_cell_pos_selector).text().trim();
+        if (mov_type != 'Bench') {
+            setTimeout(function() {
+                p_move_cell.trigger('click');
+                var bench_move = bench_area.nextAll(player_table_row_selector).not('.irRow').find('.pncButtonHere:visible').first();
+                var bench_parent_id = bench_move.parent('td').attr('id');
+                if (this_row) {
+                    new_move_list.push([bench_parent_id, this_row]);
+                }
+                
+                bench_move.trigger('click');
+            }, wait_timer);
+            
+            wait_timer += wait_increase;
+        }
+    });
+    
     if (wait_timer != 0) {
-        setTimeout(function(){
-            refreshData();
+        setTimeout(function() {
+            var new_wait_timer = 0;
+            new_move_list.forEach(function(mov) {
+                var p_move_parent = mov[0];
+                debugger;
+                var p_move_cell = p_move_parent.find('.pncButtonMove:visible').first();
+                var this_row = mov[1];
+                
+                setTimeout(function() {
+                    p_move_cell.trigger('click');
+                    var new_this_row = player_table_body.find(this_row);
+                    var move_here_cell = new_this_row.find('.pncButtonHere:visible').first();
+                    move_here_cell.trigger('click');
+                }, new_wait_timer);
+                
+                new_wait_timer += wait_increase;
+            });
+            
+            setTimeout(function(){
+                refreshData();
+            }, new_wait_timer + wait_increase);
+        
         }, wait_timer + wait_increase);
     }
 }
