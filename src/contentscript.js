@@ -148,6 +148,7 @@ var show_ros = true;
 var show_depth = true;
 var show_spark = true;
 var show_avg = true;
+var show_med = true;
 var show_current = true;
 
 var check_minutes = 30;
@@ -613,6 +614,7 @@ else if (document.URL.match(/football.fantasysports.yahoo.com/)) {
     storageKeys.push(storageLeagueKey, storageLeagueUpdateKey, storagePlayerKey, storageUpdateKey, storageUpdateTypeKey, storageTranslationKey, storageTranslationUpdateKey);
 
     show_avg = false; //TODO remove
+    show_med = false; //TODO remove
     show_current = false;
     show_spark = false; //TODO remove
     show_ros = false; //TODO remove
@@ -657,6 +659,7 @@ else if (document.URL.match(/fleaflicker.com/)) {
     storageKeys.push(storageLeagueKey, storageLeagueUpdateKey, storagePlayerKey, storageUpdateKey, storageUpdateTypeKey, storageTranslationKey);
 	
     show_avg = false;
+    show_med = false;
     show_current = false;
 
 	getUserSettings();
@@ -1327,6 +1330,9 @@ function getUserSettings() {
             else if (k == 'avg' && show_avg) {
                 show_avg = v;
             }
+            else if (k == 'med' && show_med) {
+                show_med = v;
+            }
             else if (k == 'current' && show_current) {
                 show_current = v;
             }
@@ -1525,6 +1531,7 @@ function setSelectors(firstrun) {
         show_depth = false;
         show_spark = false;
         show_avg = false;
+        show_med = false;
         show_current = false;
     }
     
@@ -1919,6 +1926,7 @@ function addColumns() {
         }
         else {
             var adjavg_header = '<td class="playertableStat FantasyPlus FantasyPlusAvg FantasyPlusAvgHeader" title="Injury/Suspension-adjusted average points for the season (via FantasyPlus)">iAVG</td>';
+            var median_header = '<td class="playertableStat FantasyPlus FantasyPlusMedian FantasyPlusMedianHeader" title="Injury/Suspension-adjusted median points for the season (via FantasyPlus)">MED</td>';
             var current_header = '<td class="playertableStat FantasyPlus FantasyPlusCurrent FantasyPlusCurrentHeader" title="Points scored this week (via FantasyPlus)">CURR</td>';
             var spark_header = '<td class="playertableStat FantasyPlus FantasyPlusSpark FantasyPlusSparkHeader" title="Graph of fantasy points over previous weeks (via FantasyPlus)">TREND</td>';
             var top_rank_header = '<th class="FantasyPlus" colspan="2" title="Projected position rank (lower is better) with 95% confidence interval from FantasyPros (via FantasyPlus)">PROJ RANK (±RANGE)</th>';
@@ -1927,6 +1935,7 @@ function addColumns() {
             var depth_header = '<td class="playertableStat FantasyPlus FantasyPlusDepth FantasyPlusDepthHeader" title="Depth chart information (via FantasyPlus)">DEPTH</td>';
             
             var adjavg_cell = '<td class="playertableStat FantasyPlus FantasyPlusAvg FantasyPlusAvgData">' + loadingDiv + '</td>';
+            var median_cell = '<td class="playertableStat FantasyPlus FantasyPlusMedian FantasyPlusMedianData">' + loadingDiv + '</td>';
             var current_cell = '<td class="playertableStat FantasyPlus FantasyPlusCurrent FantasyPlusCurrentData">' + loadingDiv + '</td>';
             var spark_cell = '<td class="playertableStat FantasyPlus FantasyPlusSpark FantasyPlusSparkData">' + loadingDiv + '</td>';
             var rank_cell = '<td class="playertableStat FantasyPlus FantasyPlusRankings FantasyPlusRankingsData">' + loadingDiv + '</td>';
@@ -2012,13 +2021,13 @@ function addColumns() {
             }
             
             var season_num = 0;
-            var season_adds = [show_avg, show_current, show_spark];
+            var season_adds = [show_avg, show_med, show_current, show_spark];
             for (var s=0; s<season_adds.length; s++) {
                 if (season_adds[s] === true) {
                     season_num += 1;
                 }
             }
-            if (show_avg || show_current || show_spark) {
+            if (show_avg || show_med || show_current || show_spark) {
                 var avg_header_col = section_header.find('th:contains(SEASON)');
                 avg_header_col.attr({'colspan': 4 + season_num, 'title': 'Season statistics'});
             }
@@ -2027,6 +2036,9 @@ function addColumns() {
             var avg_header_index = avg_head.first().index();
             if (show_depth) {
                 avg_header_index -= 1;
+            }
+            if (show_med) {
+                avg_head.after(median_header);
             }
             if (show_avg) {
                 avg_head.after(adjavg_header);
@@ -2058,6 +2070,10 @@ function addColumns() {
                 var adj_last_header_index = (byeweek_text == "** BYE **" ? last_header_index - 1 : last_header_index);
                 var index_adj = 0;
                 
+                if (show_med) {
+                    currRow.find('td').eq(adj_avg_header_index).after(median_cell);
+                    index_adj += 1;
+                }
                 if (show_avg) {
                     currRow.find('td').eq(adj_avg_header_index).after(adjavg_cell);
                     index_adj += 1;
@@ -4125,7 +4141,7 @@ function getAllData(c_type) {
         rosDone.resolve();
     }
     
-    if (show_avg || show_spark || show_current) {
+    if (show_avg || show_med || show_spark || show_current) {
         updateActivityStorage(); //always, could have a "changed" flag for all the players
         addAvg();
     }
@@ -4804,9 +4820,13 @@ function getProjectionData(datatype, currRow, cell) {
             var avg_cell = currRow.find('FantasyPlusAvgData');
             normavg = avg_cell.prev().text();
         }
+        else if (show_med) {
+            var med_cell = currRow.find('FantasyPlusMedianData');
+            normavg = med_cell.prev().text();
+        }
         
         if ((!player_cell_text) || (normavg == "--")) {
-            insertAdjAvg(currRow, null, [], []);
+            insertAdjAvg(currRow, null, null, [], []);
         }
         else {
             var player_id;
@@ -4839,7 +4859,7 @@ function getProjectionData(datatype, currRow, cell) {
             }
             
             if (!player_id) {
-                insertAdjAvg(currRow, null, [], []);
+                insertAdjAvg(currRow, null, null, [], []);
             }
             else {
                 if (!goodVal(activity_data_current_season_site, player_id, 'object')) {
@@ -4890,6 +4910,11 @@ function getProjectionData(datatype, currRow, cell) {
                 }
                 var player_stored_activity_league_avg = player_stored_activity_league['pts_avg'];
                 
+                if (!player_stored_activity_league.hasOwnProperty('pts_med')) {
+                    player_stored_activity_league['pts_med'] = null;
+                }
+                var player_stored_activity_league_med = player_stored_activity_league['pts_med'];
+                
                 if (!player_stored_activity_league.hasOwnProperty('last_updated')) {
                     player_stored_activity_league['last_updated'] = 0;
                 }
@@ -4899,7 +4924,7 @@ function getProjectionData(datatype, currRow, cell) {
                 
                 if (isActivityDataCurrent(new_player_id, player_stored_activity_league_updated, 'league', live_game) && isActivityDataCurrent(new_player_id, player_stored_activity_games_updated, 'games')) {
                     dlog('Using cache for player activity: ' + new_player_id);
-                    insertAdjAvg(currRow, player_stored_activity_league_avg, player_stored_activity_games, player_stored_activity_league_pts);
+                    insertAdjAvg(currRow, player_stored_activity_league_avg, player_stored_activity_league_med, player_stored_activity_games, player_stored_activity_league_pts);
                 }
                 else if (siteType == 'espn') {
                     var espn_points_data = {
@@ -4925,7 +4950,7 @@ function getProjectionData(datatype, currRow, cell) {
                         var old_pid = this.custom_data.old_id;
                         var currRow = this.custom_data.curr_row;
                         dlog('failed to get player pop: ' + old_pid);
-                        insertAdjAvg(currRow, null, [], []);
+                        insertAdjAvg(currRow, null, null, [], []);
                     }).done(function(po) {
                         var cust_data = this.custom_data;
                         var pid = cust_data.id;
@@ -4935,7 +4960,7 @@ function getProjectionData(datatype, currRow, cell) {
                             
                         if (!po) {
                             dlog('No data in pop: ' + old_pid);
-                            insertAdjAvg(currRow, null, [], []);
+                            insertAdjAvg(currRow, null, null, [], []);
                         }
                         else {
 							po = po.replace(jquery_regex_repl,"");
@@ -4969,6 +4994,7 @@ function getProjectionData(datatype, currRow, cell) {
                                 
                                 p_data_league['weekly_points'] = [];
                                 p_data_league['pts_avg'] = null;
+                                p_data_league['pts_med'] = null;
                                 p_data_league['last_updated'] = 0;
                             }
                             
@@ -4996,6 +5022,9 @@ function getProjectionData(datatype, currRow, cell) {
                                 if (is_bye_week) {
                                     p_data['games_played'][i] = 'BYE';
                                 }
+                                else if (player_cell_text.match(/(D\/ST|TQB|HC)$/) && jQuery.isNumeric(player_activity_pts[i])) {
+                                    p_data['games_played'][i] = 1;
+                                }
                                 else if (typeof p_data['games_played'][i] === "undefined") {
                                     p_data['games_played'][i] = null;
                                 }
@@ -5019,7 +5048,7 @@ function getProjectionData(datatype, currRow, cell) {
                             if (player_cell_text.match(/(D\/ST|TQB|HC)$/)) {
                                 dlog('inserting avg for dsts, etc. for: ' + pid);
                                 p_data['games_played_updated'] = current_time;
-                                insertAdjAvg(currRow, normavg, p_data['games_played'], p_data_league['weekly_points']);
+                                calcAdjAvg(currRow, pid, p_data['games_played'], p_data_league['weekly_points']);
                             }
                             // Only fetch on tuesday
                             else if (isActivityDataCurrent(pid, p_data['games_played_updated'], 'games')) {
@@ -5051,7 +5080,7 @@ function getProjectionData(datatype, currRow, cell) {
                                     var p_data_league_pts = activity_data_current_season_site[pid][league_id]['weekly_points'];
                                     
                                     dlog('failed to get player card: ' + pid);
-                                    insertAdjAvg(currRow, null, [], p_data_league_pts);
+                                    insertAdjAvg(currRow, null, null, [], p_data_league_pts);
                                 }).done(function(p) {
                                     var cust_data = this.custom_data;
                                     var pid = cust_data.id;
@@ -5062,23 +5091,27 @@ function getProjectionData(datatype, currRow, cell) {
                         
                                     if (!p) {
                                         dlog('No data in player card: ' + pid);
-                                        insertAdjAvg(currRow, null, [], p_data_league['weekly_points']);
+                                        insertAdjAvg(currRow, null, null, [], p_data_league['weekly_points']);
                                     }
                                     else {
 										p = p.replace(jquery_regex_repl,"");
                                         var adata = jQuery(p);
                                         
                                         var postseason_row = jQuery('tr td:contains("POSTSEASON")', adata).parents('tr');
-                                        var week_rows = jQuery('tr td:contains("REGULAR SEASON")', adata).parents('tr').nextUntil(postseason_row);
+                                        var week_rows = jQuery('tr td:contains("REGULAR SEASON")', adata).parents('tr').nextUntil(postseason_row).filter(function(i) {
+                                            return jQuery(this).find('td').length > 1
+                                        });
                                         week_rows.each(function(i, v) {
-                                            var week_row = jQuery(v);
-                                            
-                                            var week_row_text = week_row.text();
-                                            if (week_row_text.indexOf('DID NOT PLAY') > -1) {
-                                                p_data['games_played'][i] = 0;
-                                            }
-                                            else if (week_row_text.indexOf('BYE') == -1) {
-                                                p_data['games_played'][i] = 1;
+                                            if (p_data['games_played'][i] !== 'BYE') {
+                                                var week_row = jQuery(v);
+                                                var week_row_text = week_row.text();
+                                                
+                                                if (week_row_text.indexOf('DID NOT PLAY') > -1) {
+                                                    p_data['games_played'][i] = 0;
+                                                }
+                                                else if (week_row_text.indexOf('BYE') == -1) {
+                                                    p_data['games_played'][i] = 1;
+                                                }
                                             }
                                         });
                                         
@@ -5091,7 +5124,6 @@ function getProjectionData(datatype, currRow, cell) {
                                             }
                                         }
                                         
-                                        dlog(p_data['games_played']);
                                         p_data['games_played_updated'] = current_time;
                                         
                                         calcAdjAvg(currRow, pid, p_data['games_played'], p_data_league['weekly_points']);
@@ -5117,7 +5149,7 @@ function getProjectionData(datatype, currRow, cell) {
                         var currRow = cust_data.curr_row;
                         
                         dlog('Could not get player info: ' + player_href);
-                        insertAdjAvg(currRow, null, [], []);
+                        insertAdjAvg(currRow, null, null, [], []);
                     }).done(function(po) {
                         var cust_data = this.custom_data;
                         var player_href = cust_data.p_href;
@@ -5126,7 +5158,7 @@ function getProjectionData(datatype, currRow, cell) {
                         
                         if (!po) {
                             dlog('No data in player info: ' + player_href);
-                            insertAdjAvg(currRow, null, [], []);
+                            insertAdjAvg(currRow, null, null, [], []);
                         }
                         else {
 							po = po.replace(jquery_regex_repl,"");
@@ -5168,7 +5200,7 @@ function getProjectionData(datatype, currRow, cell) {
                             p_data_league['last_updated'] = current_time;
                             p_data_league['weekly_points'] = player_activity_pts;
 
-                            insertAdjAvg(currRow, null, p_data['games_played'], p_data_league['weekly_points']);
+                            insertAdjAvg(currRow, null, null, p_data['games_played'], p_data_league['weekly_points']);
                         }
                     });
                 }
@@ -5338,12 +5370,18 @@ function calcAdjAvg(thisrow, player_id, games_played, weekly_points) {
     var playertotpts = 0;
     var totalplayergames = 0;
     var player_adjavg_rnd = null;
+    var player_median_rnd = null;
     
     var past_weekly_points_data = weekly_points.slice(0, current_week_avg - 1);
+    var past_points_played = [];
+    
+    dlog(past_weekly_points_data);
+    dlog(games_played);
     
     for (var g=0; g < past_weekly_points_data.length; g++) {
         if (games_played[g] === 1) {
             var weekpt = parseFloat(past_weekly_points_data[g]) || 0;
+            past_points_played.push(weekpt);
             playertotpts += weekpt;
             totalplayergames++;
         }
@@ -5352,24 +5390,54 @@ function calcAdjAvg(thisrow, player_id, games_played, weekly_points) {
     if (totalplayergames > 0) {
         var player_adjavg = (parseFloat(playertotpts) / parseFloat(totalplayergames));
         player_adjavg_rnd = (Math.round(player_adjavg * 10) / 10).toFixed(1);
+        
+        var sorted_pts = past_points_played.sort(function(a, b){ return a - b; });
+        var half_pts_len = sorted_pts.length / 2;
+        var player_median = half_pts_len % 1 == 0 ? (sorted_pts[half_pts_len - 1] + sorted_pts[half_pts_len]) / 2 : sorted_pts[Math.floor(half_pts_len)];
+        player_median_rnd = (Math.round(player_median * 10) / 10).toFixed(1);
     }
     
     activity_data_current_season_site[player_id][league_id]['pts_avg'] = player_adjavg_rnd;
+    activity_data_current_season_site[player_id][league_id]['pts_med'] = player_median_rnd;
     
-    insertAdjAvg(thisrow, player_adjavg_rnd, games_played, weekly_points);
+    insertAdjAvg(thisrow, player_adjavg_rnd, player_median_rnd, games_played, weekly_points);
 }
 
-function insertAdjAvg(thisrow, p_avg, games_played, weekly_points) {
+function insertAdjAvg(thisrow, p_avg, p_med, games_played, weekly_points) {
+    var old_avg;
+    
     if (show_avg) {
         var thiscell = thisrow.find('.FantasyPlusAvgData');
+        old_avg = parseFloat(thiscell.prev().text());
+        
         if (!jQuery.isNumeric(p_avg)) {
             thiscell.text('--');
         }
-        else if (p_avg > parseFloat(thiscell.prev().text())) {
+        else if (p_avg > old_avg) {
             thiscell.html('<span style="color:green">' + p_avg + '</span>');
         }
         else {
             thiscell.text(p_avg);
+        }
+    }
+    
+    if (show_med) {
+        var thiscell = thisrow.find('.FantasyPlusMedianData');
+        if (parseFloat(old_avg)) {
+            old_avg = parseFloat(p_avg);
+        }
+        
+        if (!jQuery.isNumeric(p_med)) {
+            thiscell.text('--');
+        }
+        else if (p_med > old_avg) {
+            thiscell.html('<span style="color:green">' + p_med + '</span>');
+        }
+        else if (p_med < old_avg) {
+            thiscell.html('<span style="color:red">' + p_med + '</span>');
+        }
+        else {
+            thiscell.text(p_med);
         }
     }
 	
@@ -5563,7 +5631,7 @@ function addAllData() {
     if (header_index > -1 || ((siteType == 'fleaflicker') && hasProjectionTable)) {
         addPlayerData();
         
-        if (show_avg || show_spark || show_current) {
+        if (show_avg || show_med || show_spark || show_current) {
             addAvg();
         }
         else {
