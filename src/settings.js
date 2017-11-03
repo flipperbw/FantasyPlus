@@ -15,6 +15,7 @@ var columns = {
     'depth': true,
     'spark': true,
     'avg': true,
+    'med': true,
     'current': true
 };
 var update_freq = {

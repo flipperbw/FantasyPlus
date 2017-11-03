@@ -34,7 +34,7 @@
                             <table>
                                 <tbody>
                                     <tr class="no-border">
-                                        <td class="left center-text" rowspan=2>
+                                        <td class="left center-text" rowspan=2 style="border-bottom: 1px solid #ddd;">
                                             <span>General</span>
                                             <div class="sites">
                                                 <img src="img/espn.png">
@@ -114,13 +114,13 @@
                                         <td class="spacer"></td>
                                     </tr>
                                     <tr class="no-border">
-                                        <td class="top bottom left center-text">
+                                        <td class="left center-text" rowspan=2>
                                             <span>Enhancements</span>
                                             <div class="sites">
                                                 <img src="img/espn.png">
                                             </div>
                                         </td>
-                                        <td class="top bottom">
+                                        <td class="top">
                                             <div class="onoffswitch">
                                                 <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="showavg" checked>
                                                 <label class="onoffswitch-label" for="showavg">
@@ -131,7 +131,21 @@
                                                 </label>
                                             </div>
                                         </td>
-                                        <td class="top bottom">
+                                        <td class="top">
+                                            <div class="onoffswitch">
+                                                <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="showmed" checked>
+                                                <label class="onoffswitch-label" for="showmed">
+                                                    <span class="onoffswitch-inner">
+                                                        Injury Medians
+                                                    </span>
+                                                    <span class="onoffswitch-switch"></span>
+                                                </label>
+                                            </div>
+                                        </td>
+                                        <td class="spacer"></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="bottom" colspan=2>
                                             <div class="onoffswitch">
                                                 <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="showcurrent" checked>
                                                 <label class="onoffswitch-label" for="showcurrent">
@@ -386,6 +400,18 @@
                         <div class="panel-body">
                             <ul>
                                 <li>
+									<h3>3.3.0 (2017-11-02)</h3>
+									<ul>
+										<li>Added medians</li>
+										<li>Fixed inaccurate trendlines if the player was traded</li>
+									</ul>
+
+									<h3>3.2.0 (2017-10-29)</h3>
+									<ul>
+										<li>Fixing more FPros data</li>
+										<li>Early Lineup Optimizer setup</li>
+									</ul>
+
 									<h3>3.1.7 (2017-09-05)</h3>
                                     <ul>
                                         <li>Fixing Yahoo projections</li>
@@ -411,11 +437,10 @@
 									
                                     <h3>3.1.0 (2016-10-15)</h3>
                                     <ul>
-                                        <li><b>Added option to select experts</b></li>
+                                        <li>Added option to select experts</li>
                                         <li>Improved speed/timing for iAvg and Trendlines</li>
                                         <li>Trendlines now show whether the player was Out or on a Bye (gray dot)</li>
                                         <li>Current score now updates frequently during a game, but not otherwise</li>
-                                        <li>Improved loading indicator</li>
                                     </ul>
                                 </li>
                             </ul>
