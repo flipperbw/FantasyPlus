@@ -1,6 +1,5 @@
 /*-- TODO
 - somehow adjust OPRK for opp teams, snap %
-- median
 - nfl / myfantasyleague / cbs
 - return yardage
 - firefox/safari
@@ -33,7 +32,7 @@
 - make optimize work with classic clubhouse in espn
 - https://developer.yahoo.com/fantasysports/guide/player-resource.html#player-resource-desc
 - navving back and forth negates player_name_fix
-- some dts are blank history
+- some dsts are blank history, probably from tuesday or gameday updates
 - some history is straight up wrong, like nyj kicker
 */
 
@@ -85,6 +84,14 @@ function clearStoredData() {
 
 //clearStoredData();
 //chrome.storage.local.get('fp_player_activity_data', function(d) { console.info(d); });
+
+var res_num = 1;
+chrome.storage.local.get('fp_data_reset', function(res) {
+    if (!res || !isObj(res) || res < res_num) {
+        clearStoredData();
+        chrome.storage.local.set({'fp_data_reset': res_num});
+    }
+});
 
 // GLOBALS
 var alldata,
@@ -371,7 +378,9 @@ var player_name_fix = {
     'Nickell Robey': 'Nickell Robey-Coleman',
     'Terrod Ward': 'Terron Ward',
     'Steven Hauschka': 'Stephen Hauschka',
-    'Adoree\' Jackson': 'Adoree Jackson'
+    'Stephen Hauschka': 'Steven Hauschka',
+    'Adoree\' Jackson': 'Adoree Jackson',
+    'Daniel Sorensen': 'Daniel Sorenson'
 };
 
 var player_name_translations = {
@@ -415,7 +424,7 @@ var player_position_fix = {
     
     'Jabaal Sheard': 'DL',
     'Frank Clark': 'DL',
-    'Khalil Mack': 'DL'
+    'Khalil Mack': 'LB' //DE
 };
 
 var player_position_fix_depth = {
@@ -449,7 +458,8 @@ var player_position_fix_depth = {
 };
 
 var player_position_fix_sharks = {
-    'Su\'a Cravens': 'DB'
+    'Su\'a Cravens': 'DB',
+    'Khalil Mack': 'LB'
 };
 
 var team_abbrev_fix_fleaflicker = {
