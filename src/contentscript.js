@@ -650,10 +650,10 @@ else if (document.URL.match(/fleaflicker.com/)) {
     hasProjectionTable = onMatchupPreviewPage || onClubhousePage || onFreeAgencyPage || onGeneralProjPage;
     
     base_table_selector = '#body-center-main';
-    player_table_selector = '[id^=table_]';
+    player_table_selector = 'table';
     player_table_body_selector = 'tbody';
     player_table_header_selector = 'thead tr';
-    player_table_row_selector = 'tr[id^=row], tr.repeated';
+    player_table_row_selector = 'tr:not(:has(td.vertical-spacer))';
     player_name_selector = 'div.player';
     
     league_id = document.URL.match(/nfl\/leagues\/(\d+)/)[1];
@@ -2971,10 +2971,10 @@ function parseLeagueSettings(league_data, siteType) {
             
             var this_header = league_headers.find("td.table-heading:contains('" + point_type + "')").closest('tr');
             if (this_header.parent('thead').length > 0) {
-                var league_tds = league_table.find('tbody tr:first').nextUntil(league_headers, 'tr[id^=row]').addBack();
+                var league_tds = league_table.find('tbody tr:first').nextUntil(league_headers, 'tr').addBack();
             }
             else {
-                var league_tds = this_header.nextUntil(league_headers, 'tr[id^=row]');
+                var league_tds = this_header.nextUntil(league_headers, 'tr');
             }
             var search_regex = new RegExp('^' + setting_name + '(?:(s|es))?(?: [(]Quantity[)])?$');
             var settingTds = league_tds.find("td.left strong").filter(function() { return search_regex.test(jQuery(this).text()); }).closest('td.left');
