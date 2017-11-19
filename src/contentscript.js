@@ -85,7 +85,7 @@ function clearStoredData() {
 //clearStoredData();
 //chrome.storage.local.get('fp_player_activity_data', function(d) { console.info(d); });
 
-var res_num = 1;
+var res_num = 2;
 chrome.storage.local.get('fp_data_reset', function(res) {
     if (!res || !isObj(res) || res < res_num) {
         clearStoredData();
@@ -485,11 +485,11 @@ var fpros_proj_headers = {
     'DST': ['Player', 'Team', 'def_sack', 'def_int', 'def_fr', 'def_ff', 'def_td', 'def_assist', 'def_safety', 'def_pa', 'def_tyda', 'fpts'] 
 };
 
-var fpros_rank_headers = ['Rank', 'Player', 'Team', 'Matchup', 'Best Rank', 'Worst Rank', 'Avg Rank', 'Std Dev'];
-var fpros_rank_idp_headers = ['Rank', 'Player', 'Team', 'Pos', 'Matchup', 'Best Rank', 'Worst Rank', 'Avg Rank', 'Std Dev'];
+var fpros_rank_headers = ['Rank', 'WSIS', 'Player', 'Team', 'Matchup', 'Best Rank', 'Worst Rank', 'Avg Rank', 'Std Dev'];
+var fpros_rank_idp_headers = ['Rank', 'WSIS', 'Player', 'Team', 'Pos', 'Matchup', 'Best Rank', 'Worst Rank', 'Avg Rank', 'Std Dev'];
 
-var fpros_ros_headers = ['Rank', 'Player', 'Team', 'Bye', 'Best Rank', 'Worst Rank', 'Avg Rank', 'Std Dev', 'ADP', 'vs. ADP'];
-var fpros_ros_idp_headers = ['Rank', 'Player', 'Team', 'Pos', 'Bye', 'Best Rank', 'Worst Rank', 'Avg Rank', 'Std Dev'];
+var fpros_ros_headers = ['Rank', 'WSIS', 'Player', 'Team', 'Bye', 'Best Rank', 'Worst Rank', 'Avg Rank', 'Std Dev', 'ADP', 'vs. ADP'];
+var fpros_ros_idp_headers = ['Rank', 'WSIS', 'Player', 'Team', 'Pos', 'Bye', 'Best Rank', 'Worst Rank', 'Avg Rank', 'Std Dev'];
 
 var depth_type_map = {
     'blue': 'Starter',
@@ -3511,6 +3511,7 @@ function convertFProsToCSV(raw_data, type, pos_name) {
     new_raw_data.find('tbody tr:not([class^="mpb-player"])').remove();
     var new_data = jQuery('table#data, table#rank-data', new_raw_data).first();
     var header_cell = new_data.find('thead th:contains("Player")');
+    
     var new_header_cell = header_cell.clone();
     new_header_cell.text('Team');
     new_header_cell.insertAfter(header_cell);
@@ -3543,6 +3544,7 @@ function convertFProsToCSV(raw_data, type, pos_name) {
             new_headers = fpros_rank_idp_headers;
         }
         else {
+            //TODO: fix this to be automatic
             new_headers = fpros_rank_headers;
         }
     }
