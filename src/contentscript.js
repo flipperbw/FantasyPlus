@@ -32,7 +32,6 @@
 - make optimize work with classic clubhouse in espn
 - https://developer.yahoo.com/fantasysports/guide/player-resource.html#player-resource-desc
 - navving back and forth negates player_name_fix
-- some dsts are blank history, probably from tuesday or gameday updates
 - some history is straight up wrong, like nyj kicker
 */
 
@@ -4836,7 +4835,7 @@ function getProjectionData(datatype, currRow, cell) {
             var med_cell = currRow.find('FantasyPlusMedianData');
             normavg = med_cell.prev().text();
         }
-        
+
         if ((!player_cell_text) || (normavg == "--")) {
             insertAdjAvg(currRow, null, null, [], []);
         }
@@ -4954,6 +4953,7 @@ function getProjectionData(datatype, currRow, cell) {
                         data: espn_points_data,
                         custom_data: {
                             curr_row: currRow,
+                            player_cell_text: player_cell_text,
                             norm_avg: normavg,
                             id: new_player_id,
                             old_id: player_id
@@ -4969,6 +4969,7 @@ function getProjectionData(datatype, currRow, cell) {
                         var old_pid = cust_data.old_id;
                         var currRow = cust_data.curr_row;
                         var normavg = cust_data.norm_avg;
+                        var player_cell_text = cust_data.player_cell_text;
                             
                         if (!po) {
                             dlog('No data in pop: ' + old_pid);
