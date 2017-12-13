@@ -2278,7 +2278,13 @@ function addColumns() {
                             }
                         }
 
-                        proj_cell = currRow.find('td').eq(header_index);
+                        if (currRow.find('.ysf-player-video-link').length === 0 && search_type == 'stats') {
+                            proj_cell = currRow.find('td').eq(header_index - 1);
+                        }
+                        else {
+                            proj_cell = currRow.find('td').eq(header_index);
+                        }
+                        
                         proj_cell.after(all_cells);
                     }
                     
