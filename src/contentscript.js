@@ -33,6 +33,7 @@
 - https://developer.yahoo.com/fantasysports/guide/player-resource.html#player-resource-desc
 - navving back and forth negates player_name_fix
 - some history is straight up wrong, like nyj kicker
+- find a solution for the data being >5mb
 */
 
 /*
@@ -4986,7 +4987,11 @@ function getProjectionData(datatype, currRow, cell) {
                             var podata = jQuery(po);
                             
                             var p_data = activity_data_current_season_site[pid];
+                            
                             var p_data_league = p_data[league_id];
+                            if (typeof p_data_league === "undefined") {
+                                p_data_league = {};
+                            }
                             
                             var player_card = jQuery('div#tabView0 div#moreStatsView0', podata);
                             
@@ -5038,6 +5043,10 @@ function getProjectionData(datatype, currRow, cell) {
                             
                             for (var i=0; i < player_activity_pts.length; i++) {
                                 var is_bye_week = jQuery.isNumeric(player_bye_week) && i === (player_bye_week - 1);
+                                if (typeof p_data['games_played'] === "undefined") {
+                                    p_data['games_played'] = [];
+                                }
+                                
                                 if (is_bye_week) {
                                     p_data['games_played'][i] = 'BYE';
                                 }
@@ -5063,6 +5072,9 @@ function getProjectionData(datatype, currRow, cell) {
                             
                             p_data_league['last_updated'] = current_time;
                             p_data_league['weekly_points'] = player_activity_pts;
+                            if (typeof p_data_league['weekly_points'] === "undefined") {
+                                p_data_league['weekly_points'] = [];
+                            }
 
                             if (player_cell_text.match(/(D\/ST|TQB|HC)$/)) {
                                 dlog('inserting avg for dsts, etc. for: ' + pid);
@@ -5107,6 +5119,12 @@ function getProjectionData(datatype, currRow, cell) {
                                     
                                     var p_data = activity_data_current_season_site[pid];
                                     var p_data_league = p_data[league_id];
+                                    if (typeof p_data_league === "undefined") {
+                                        p_data_league = {};
+                                    }
+                                    if (typeof p_data_league['weekly_points'] === "undefined") {
+                                        p_data_league['weekly_points'] = [];
+                                    }
                         
                                     if (!p) {
                                         dlog('No data in player card: ' + pid);
@@ -5416,6 +5434,9 @@ function calcAdjAvg(thisrow, player_id, games_played, weekly_points) {
         player_median_rnd = (Math.round(player_median * 10) / 10).toFixed(1);
     }
     
+    if (typeof activity_data_current_season_site[player_id][league_id] === "undefined") {
+        activity_data_current_season_site[player_id][league_id] = {};
+    }
     activity_data_current_season_site[player_id][league_id]['pts_avg'] = player_adjavg_rnd;
     activity_data_current_season_site[player_id][league_id]['pts_med'] = player_median_rnd;
     
