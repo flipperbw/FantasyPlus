@@ -51,8 +51,8 @@ document.body.appendChild(tag);
 
 chrome.runtime.sendMessage({ request: 'valid_site' });
 
-var debug_mode = 0;
-//var debug_mode = -1;
+//var debug_mode = 0;
+var debug_mode = -1;
 
 function dlog(o, level) {
     level = typeof level === "undefined" ? 0 : level;
@@ -78,8 +78,8 @@ function goodVal(o, v, t) {
 
 var domParse = new DOMParser();
 function cleanHTML(data) {
-    var dirty = domParse.parseFromString(data, 'text/html');
-    var tagList = dirty.querySelectorAll('head, img, link, style');
+    let dirty = domParse.parseFromString(data, 'text/html');
+    let tagList = dirty.querySelectorAll('head, img, svg, link, style');
     tagList.forEach(function(tag) {
         tag.remove();
     });
@@ -532,7 +532,11 @@ var storageDepthUpdateKey = 'fp_last_updated_depth';
 
 var storageKeys = [storageActivityKey, storageDepthKey, storageDepthUpdateKey];
 
-if (document.URL.match(/games.espn.com/)) {
+var baseUrlESPN = 'games.espn.com';
+var baseUrlYahoo = 'football.fantasysports.yahoo.com';
+var baseUrlFleaflicker = 'fleaflicker.com';
+
+if (document.URL.match(new RegExp(baseUrlESPN))) {
     siteType = 'espn';
 
     /*
@@ -586,7 +590,7 @@ if (document.URL.match(/games.espn.com/)) {
     getUserSettings();
 }
 
-else if (document.URL.match(/football.fantasysports.yahoo.com/)) {
+else if (document.URL.match(new RegExp(baseUrlYahoo))) {
     siteType = 'yahoo';
 
     var yahooIdsDone = jQuery.Deferred();
@@ -649,7 +653,7 @@ else if (document.URL.match(/football.fantasysports.yahoo.com/)) {
     getUserSettings();
 }
 
-else if (document.URL.match(/fleaflicker.com/)) {
+else if (document.URL.match(new RegExp(baseUrlFleaflicker))) {
     siteType = 'fleaflicker';
 
     var fetchFleaflickerIds = jQuery.Deferred();
@@ -1923,17 +1927,20 @@ function addColumns() {
     if (header_index == -1 && !((siteType == 'fleaflicker') && hasProjectionTable)) {
         return;
     }
+    
+    var last_header_col, projection_header, rank_header, spark_header, top_rank_header, ros_header, depth_header, all_header_cells,
+        projection_cell, rank_cell, space_cell, newprojcell, spark_cell, rank_std_cell, ros_cell, ros_std_cell, depth_cell;
 
     if (siteType == "espn") {
-        var projection_header = '<td class="playertableStat FantasyPlus FantasyPlusProjections FantasyPlusProjectionsHeader" title="Consensus point projections from FantasyPros (via FantasyPlus)">FPROS</td>';
-        var projection_cell = '<td class="playertableStat FantasyPlus FantasyPlusProjections FantasyPlusProjectionsData">' + loadingDiv + '</td>';
+        projection_header = '<td class="playertableStat FantasyPlus FantasyPlusProjections FantasyPlusProjectionsHeader" title="Consensus point projections from FantasyPros (via FantasyPlus)">FPROS</td>';
+        projection_cell = '<td class="playertableStat FantasyPlus FantasyPlusProjections FantasyPlusProjectionsData">' + loadingDiv + '</td>';
 
         if (onMatchupPreviewPage) {
             if (show_proj) {
                 proj_head.after(projection_header);
                 proj_head.text('ESPN');
 
-                var last_header_col = player_table_body.find('.playertableSectionHeader th:contains(STATS)');
+                last_header_col = player_table_body.find('.playertableSectionHeader th:contains(STATS)');
                 last_header_col.each(function() {
                     var curr_span = jQuery(this).attr("colspan");
                     jQuery(this).attr("colspan", curr_span + 1);
@@ -1952,28 +1959,29 @@ function addColumns() {
             var adjavg_header = '<td class="playertableStat FantasyPlus FantasyPlusAvg FantasyPlusAvgHeader" title="Injury/Suspension-adjusted average points for the season (via FantasyPlus)">iAVG</td>';
             var median_header = '<td class="playertableStat FantasyPlus FantasyPlusMedian FantasyPlusMedianHeader" title="Injury/Suspension-adjusted median points for the season (via FantasyPlus)">MED</td>';
             var current_header = '<td class="playertableStat FantasyPlus FantasyPlusCurrent FantasyPlusCurrentHeader" title="Points scored this week (via FantasyPlus)">CURR</td>';
-            var spark_header = '<td class="playertableStat FantasyPlus FantasyPlusSpark FantasyPlusSparkHeader" title="Graph of fantasy points over previous weeks (via FantasyPlus)">TREND</td>';
-            var top_rank_header = '<th class="FantasyPlus" colspan="2" title="Projected position rank (lower is better) with 95% confidence interval from FantasyPros (via FantasyPlus)">PROJ RANK (±RANGE)</th>';
-            var rank_header = '<td colspan="2" style="text-align: center" class="playertableStat FantasyPlus FantasyPlusRankings FantasyPlusRankingsHeader" title="Projected position rank (lower is better) for *this week* from FantasyPros (via FantasyPlus)">THIS WEEK</td>'; //say wk 9 or this week
-            var ros_header = '<td colspan="2" style="text-align: center" class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosHeader" title="Projected position rank (lower is better) for *the rest of the season* from FantasyPros (via FantasyPlus)">REMAINING</td>';
-            var depth_header = '<td class="playertableStat FantasyPlus FantasyPlusDepth FantasyPlusDepthHeader" title="Depth chart information (via FantasyPlus)">DEPTH</td>';
+            spark_header = '<td class="playertableStat FantasyPlus FantasyPlusSpark FantasyPlusSparkHeader" title="Graph of fantasy points over previous weeks (via FantasyPlus)">TREND</td>';
+            top_rank_header = '<th class="FantasyPlus" colspan="2" title="Projected position rank (lower is better) with 95% confidence interval from FantasyPros (via FantasyPlus)">PROJ RANK (±RANGE)</th>';
+            rank_header = '<td colspan="2" style="text-align: center" class="playertableStat FantasyPlus FantasyPlusRankings FantasyPlusRankingsHeader" title="Projected position rank (lower is better) for *this week* from FantasyPros (via FantasyPlus)">THIS WEEK</td>'; //say wk 9 or this week
+            ros_header = '<td colspan="2" style="text-align: center" class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosHeader" title="Projected position rank (lower is better) for *the rest of the season* from FantasyPros (via FantasyPlus)">REMAINING</td>';
+            depth_header = '<td class="playertableStat FantasyPlus FantasyPlusDepth FantasyPlusDepthHeader" title="Depth chart information (via FantasyPlus)">DEPTH</td>';
 
             var adjavg_cell = '<td class="playertableStat FantasyPlus FantasyPlusAvg FantasyPlusAvgData">' + loadingDiv + '</td>';
             var median_cell = '<td class="playertableStat FantasyPlus FantasyPlusMedian FantasyPlusMedianData">' + loadingDiv + '</td>';
             var current_cell = '<td class="playertableStat FantasyPlus FantasyPlusCurrent FantasyPlusCurrentData">' + loadingDiv + '</td>';
-            var spark_cell = '<td class="playertableStat FantasyPlus FantasyPlusSpark FantasyPlusSparkData">' + loadingDiv + '</td>';
-            var rank_cell = '<td class="playertableStat FantasyPlus FantasyPlusRankings FantasyPlusRankingsData">' + loadingDiv + '</td>';
-            var rank_std_cell = '<td class="playertableStat FantasyPlus FantasyPlusRankings FantasyPlusRankingsStdevData"></td>';
-            var ros_cell = '<td class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosData">' + loadingDiv + '</td>';
-            var ros_std_cell = '<td class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosStdevData"></td>';
-            var depth_cell = '<td class="playertableStat FantasyPlus FantasyPlusDepth FantasyPlusDepthData">' + loadingDiv + '</td>';
-            var space_cell = '<td class="FantasyPlus sectionLeadingSpacer"></td>';
+            spark_cell = '<td class="playertableStat FantasyPlus FantasyPlusSpark FantasyPlusSparkData">' + loadingDiv + '</td>';
+            rank_cell = '<td class="playertableStat FantasyPlus FantasyPlusRankings FantasyPlusRankingsData">' + loadingDiv + '</td>';
+            rank_std_cell = '<td class="playertableStat FantasyPlus FantasyPlusRankings FantasyPlusRankingsStdevData"></td>';
+            ros_cell = '<td class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosData">' + loadingDiv + '</td>';
+            ros_std_cell = '<td class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosStdevData"></td>';
+            depth_cell = '<td class="playertableStat FantasyPlus FantasyPlusDepth FantasyPlusDepthData">' + loadingDiv + '</td>';
+            space_cell = '<td class="FantasyPlus sectionLeadingSpacer"></td>';
 
-            var all_header_cells = '';
+            all_header_cells = '';
             var all_row_cells = '';
 
             var section_header = jQuery('.playerTableBgRowHead.tableHead.playertableSectionHeader');
-            var last_header_col = section_header.find('th:last');
+            
+            last_header_col = section_header.find('th:last');
 
             /*
             jQuery('#playertableFrameOuterShell').css({'width': '95%'});
@@ -2160,9 +2168,9 @@ function addColumns() {
     else if (siteType == "yahoo") {
         if (onMatchupPreviewPage) {
             if (show_proj) {
-                var projection_header = '<th style="width: 38px;" class="Ta-end Va-top FantasyPlus FantasyPlusProjections FantasyPlusProjectionsHeader" title="Consensus point projections from FantasyPros (via FantasyPlus)"><div style="width: 40px;">Proj (FP)</div></td>';
-                var projection_cell = '<td style="width: 38px;" class="Alt Ta-end F-shade Va-top FantasyPlus FantasyPlusProjections FantasyPlusProjectionsData">' + loadingDiv + '</td>';
-                var newprojcell = '<td style="width: 38px;" class="Alt Ta-end F-shade Va-top FantasyPlus FantasyPlusProjections FantasyPlusProjectionsTotal">-</td>';
+                projection_header = '<th style="width: 38px;" class="Ta-end Va-top FantasyPlus FantasyPlusProjections FantasyPlusProjectionsHeader" title="Consensus point projections from FantasyPros (via FantasyPlus)"><div style="width: 40px;">Proj (FP)</div></td>';
+                projection_cell = '<td style="width: 38px;" class="Alt Ta-end F-shade Va-top FantasyPlus FantasyPlusProjections FantasyPlusProjectionsData">' + loadingDiv + '</td>';
+                newprojcell = '<td style="width: 38px;" class="Alt Ta-end F-shade Va-top FantasyPlus FantasyPlusProjections FantasyPlusProjectionsTotal">-</td>';
 
                 playerTable.each(function() {
                     var total_cell = projection_cell;
@@ -2200,16 +2208,16 @@ function addColumns() {
             }
         }
         else {
-            var projection_header = '<th style="width: 40px; text-align: center;" class="FantasyPlus FantasyPlusProjections FantasyPlusProjectionsHeader" title="Consensus point projections from FantasyPros (via FantasyPlus)">Proj (FP)</th>';
-            var rank_header = '<th style="width: 40px; text-align: center;" class="FantasyPlus FantasyPlusRankings FantasyPlusRankingsHeader" title="Projected position rank (lower is better) for *this week* from FantasyPros (via FantasyPlus)">Rank (FP)</th>';
+            projection_header = '<th style="width: 40px; text-align: center;" class="FantasyPlus FantasyPlusProjections FantasyPlusProjectionsHeader" title="Consensus point projections from FantasyPros (via FantasyPlus)">Proj (FP)</th>';
+            rank_header = '<th style="width: 40px; text-align: center;" class="FantasyPlus FantasyPlusRankings FantasyPlusRankingsHeader" title="Projected position rank (lower is better) for *this week* from FantasyPros (via FantasyPlus)">Rank (FP)</th>';
             //var depth_header = '<th style="width: 50px; text-align: center;" class="playertableStat FantasyPlus FantasyPlusDepth FantasyPlusDepthHeader" title="Depth chart information (via FantasyPlus)">DEPTH</th>';
 
-            var projection_cell = '<td class="Nowrap Ta-end FantasyPlus FantasyPlusProjections FantasyPlusProjectionsData">' + loadingDiv + '</td>';
-            var rank_cell = '<td class="Nowrap Ta-end FantasyPlus FantasyPlusRankings FantasyPlusRankingsData">' + loadingDiv + '</td>';
+            projection_cell = '<td class="Nowrap Ta-end FantasyPlus FantasyPlusProjections FantasyPlusProjectionsData">' + loadingDiv + '</td>';
+            rank_cell = '<td class="Nowrap Ta-end FantasyPlus FantasyPlusRankings FantasyPlusRankingsData">' + loadingDiv + '</td>';
             //var depth_cell = '<td class="Nowrap Ta-end FantasyPlus FantasyPlusDepth FantasyPlusDepthData">' + loadingDiv + '</td>';
 
             custom_cols = 0;
-            var all_header_cells = '';
+            all_header_cells = '';
 
             if (show_proj) {
                 custom_cols++;
@@ -2311,9 +2319,9 @@ function addColumns() {
         }
     }
     else if (siteType == 'fleaflicker') {
-        var projection_header = '<th style="width: 2%;" class="leaf FantasyPlus FantasyPlusProjections FantasyPlusProjectionsHeader" title="Consensus point projections from FantasyPros (via FantasyPlus)">FPros</th>';
+        projection_header = '<th style="width: 2%;" class="leaf FantasyPlus FantasyPlusProjections FantasyPlusProjectionsHeader" title="Consensus point projections from FantasyPros (via FantasyPlus)">FPros</th>';
         var space_header = '<th class="FantasyPlus horizontal-spacer"></th>';
-        var space_cell = '<td class="FantasyPlus horizontal-spacer"></td>';
+        space_cell = '<td class="FantasyPlus horizontal-spacer"></td>';
         var space_v_cell = '<th class="FantasyPlus vertical-spacer bottom">&nbsp;</th>';
         var blank_cell = '<td class="FantasyPlus">&nbsp;</td>';
 
@@ -2439,8 +2447,8 @@ function addColumns() {
         };
 
         if (onMatchupPreviewPage) {
-            var projection_cell = '<td class="text-right FantasyPlus FantasyPlusProjections FantasyPlusProjectionsData">' + loadingDiv + '</td>';
-            var newprojcell = '<td class="text-right FantasyPlus FantasyPlusProjections FantasyPlusProjectionsTotal">--</td>';
+            projection_cell = '<td class="text-right FantasyPlus FantasyPlusProjections FantasyPlusProjectionsData">' + loadingDiv + '</td>';
+            newprojcell = '<td class="text-right FantasyPlus FantasyPlusProjections FantasyPlusProjectionsTotal">--</td>';
 
             if (show_proj) {
                 proj_head.each(function() {
@@ -2521,20 +2529,20 @@ function addColumns() {
             });
         }
         else {
-            var spark_header = '<th style="width: 4%;" class="leaf FantasyPlus FantasyPlusSpark FantasyPlusSparkHeader" title="Graph of fantasy points over previous weeks (via FantasyPlus)">Trend</th>';
-            var top_rank_header = '<th colspan="2" class="top left right FantasyPlus FantasyPlusRankingsTop FantasyPlusRankingsTopHeader" title="Projected position rank (lower is better) with 95% confidence interval from FantasyPros (via FantasyPlus)">Proj Rank (±Range)</th>';
-            var rank_header = '<th colspan="2" style="text-align: center;" class="leaf left FantasyPlus FantasyPlusRankings FantasyPlusRankingsHeader" title="Projected position rank (lower is better) for *this week* from FantasyPros (via FantasyPlus)">This Week</th>';
-            var ros_header = '<th colspan="2" style="text-align: center;" class="leaf right FantasyPlus FantasyPlusRos FantasyPlusRosHeader" title="Projected position rank (lower is better) for *the rest of the season* from FantasyPros (via FantasyPlus)">Remaining</th>';
-            var depth_header = '<th style="width: 4%;" class="leaf FantasyPlus FantasyPlusDepth FantasyPlusDepthHeader" title="Depth chart information (via FantasyPlus)">Depth</th>';
+            spark_header = '<th style="width: 4%;" class="leaf FantasyPlus FantasyPlusSpark FantasyPlusSparkHeader" title="Graph of fantasy points over previous weeks (via FantasyPlus)">Trend</th>';
+            top_rank_header = '<th colspan="2" class="top left right FantasyPlus FantasyPlusRankingsTop FantasyPlusRankingsTopHeader" title="Projected position rank (lower is better) with 95% confidence interval from FantasyPros (via FantasyPlus)">Proj Rank (±Range)</th>';
+            rank_header = '<th colspan="2" style="text-align: center;" class="leaf left FantasyPlus FantasyPlusRankings FantasyPlusRankingsHeader" title="Projected position rank (lower is better) for *this week* from FantasyPros (via FantasyPlus)">This Week</th>';
+            ros_header = '<th colspan="2" style="text-align: center;" class="leaf right FantasyPlus FantasyPlusRos FantasyPlusRosHeader" title="Projected position rank (lower is better) for *the rest of the season* from FantasyPros (via FantasyPlus)">Remaining</th>';
+            depth_header = '<th style="width: 4%;" class="leaf FantasyPlus FantasyPlusDepth FantasyPlusDepthHeader" title="Depth chart information (via FantasyPlus)">Depth</th>';
 
-            var projection_cell = '<td class="FantasyPlus FantasyPlusProjections FantasyPlusProjectionsData">' + loadingDiv + '</td>';
+            projection_cell = '<td class="FantasyPlus FantasyPlusProjections FantasyPlusProjectionsData">' + loadingDiv + '</td>';
 
-            var spark_cell = '<td class="FantasyPlus FantasyPlusSpark FantasyPlusSparkData">' + loadingDiv + '</td>';
-            var rank_cell = '<td style="width: 2%;" class="left FantasyPlus FantasyPlusRankings FantasyPlusRankingsData">' + loadingDiv + '</td>';
-            var rank_std_cell = '<td style="width: 2%;" class="right FantasyPlus FantasyPlusRankings FantasyPlusRankingsStdevData"></td>';
-            var ros_cell = '<td style="width: 2%;" class="FantasyPlus FantasyPlusRos FantasyPlusRosData">' + loadingDiv + '</td>';
-            var ros_std_cell = '<td style="width: 2%;" class="right FantasyPlus FantasyPlusRos FantasyPlusRosStdevData"></td>';
-            var depth_cell = '<td class="FantasyPlus FantasyPlusDepth FantasyPlusDepthData">' + loadingDiv + '</td>';
+            spark_cell = '<td class="FantasyPlus FantasyPlusSpark FantasyPlusSparkData">' + loadingDiv + '</td>';
+            rank_cell = '<td style="width: 2%;" class="left FantasyPlus FantasyPlusRankings FantasyPlusRankingsData">' + loadingDiv + '</td>';
+            rank_std_cell = '<td style="width: 2%;" class="right FantasyPlus FantasyPlusRankings FantasyPlusRankingsStdevData"></td>';
+            ros_cell = '<td style="width: 2%;" class="FantasyPlus FantasyPlusRos FantasyPlusRosData">' + loadingDiv + '</td>';
+            ros_std_cell = '<td style="width: 2%;" class="right FantasyPlus FantasyPlusRos FantasyPlusRosStdevData"></td>';
+            depth_cell = '<td class="FantasyPlus FantasyPlusDepth FantasyPlusDepthData">' + loadingDiv + '</td>';
 
             var addCells = function(idx, data, add_empty) {
                 if (Number.isInteger(idx) && idx >= 0) {

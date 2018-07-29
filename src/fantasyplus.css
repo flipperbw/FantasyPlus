@@ -1,24 +1,24 @@
 .fp-jqstooltip { 
- height: 23px !important;
- width: 60px !important;
- position: absolute;
- left: 0px;
- top: 0px;
- visibility: hidden;
- background-color: rgba(0, 0, 0, 0.6);
- color: white;
- font-style: normal;
- font-variant: normal;
- font-weight: normal;
- font-stretch: normal;
- font-size: 10px;
- line-height: normal;
- font-family: arial, "san serif";
- text-align: left;
- white-space: nowrap;
- padding: 5px;
- border: 1px solid white;
- z-index: 10000;
+    height: 23px !important;
+    width: 60px !important;
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    visibility: hidden;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: white;
+    font-style: normal;
+    font-variant: normal;
+    font-weight: normal;
+    font-stretch: normal;
+    font-size: 10px;
+    line-height: normal;
+    font-family: arial, "san serif";
+    text-align: left;
+    white-space: nowrap;
+    padding: 5px;
+    border: 1px solid white;
+    z-index: 10000;
 }
 
 .fp-spinner-cell {
