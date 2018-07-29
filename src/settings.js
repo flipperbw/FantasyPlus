@@ -1,9 +1,10 @@
 // TODO
 // add tooltips for more info
-// add experts
+// add individual experts
 // add stdev as an option
 // refresh pages when settings update
 // update freq for adjavg
+// put changes detected warning at the top
 
 var user_settings = {};
 

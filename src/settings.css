@@ -2,11 +2,13 @@ body {
     font-family: "Segoe UI", Tahoma, sans-serif;
     line-height: normal;
     margin: 0;
+    font-size: 1.3em;
 }
 
 .settings-body {
     margin: 10px auto;
     width: 1200px;
+    padding: 0 15px;
 }
 
 .settings {
@@ -69,7 +71,7 @@ h1 {
 
 .panel-heading h4{
     margin: 0;
-    font-size: 16px;
+    font-size: 1.4rem;
     display: inline-block;
     vertical-align: text-top;
 }
@@ -79,7 +81,7 @@ h1 {
 }
 
 .extra-padding-med {
-    padding: 15px 10px;
+    padding: 12px 10px;
 }
 
 .extra-padding {
@@ -138,7 +140,7 @@ table {
 }
 
 td {
-    padding: 8px 10px;
+    padding: 6px 10px;
     word-wrap: break-word;
 }
 
@@ -147,11 +149,11 @@ td.left {
 }
 
 td.bottom {
-    padding-bottom: 15px;
+    padding-bottom: 12px;
 }
 
 td.top {
-    padding-top: 15px;
+    padding-top: 12px;
 }
 
 .center-text {
@@ -230,6 +232,10 @@ ul > li > b {
     outline: none !important;
 }
 
+label.btn {
+    font-size: 0.9em !important;
+}
+
 .btn-group > .btn:not(:first-child) {
     border-left: 0;
 }
@@ -258,6 +264,41 @@ ul > li > b {
 .btn-double {
     padding-top: 27%;
     padding-bottom: 27%;
+}
+
+#panel-experts {
+    position: relative;
+    user-select: none;
+}
+
+.panel-disable {
+    z-index: 1000;
+    border: none;
+    margin: 0px;
+    padding: 0px;
+    width: 100%;
+    height: 100%;
+    top: 0px;
+    left: 0px;
+    background-color: rgb(0, 0, 0);
+    opacity: 0.5;
+    cursor: not-allowed;
+    position: absolute;
+}
+
+.panel-disable-msg {
+    z-index: 1011;
+    position: absolute;
+    padding: 0px;
+    margin: 0px;
+    width: 285px;
+    top: calc(50% - 1.585em - 4px);
+    left: calc(50% - (285px/2));
+    text-align: center;
+    color: rgb(35, 35, 35);
+    border: 2px solid rgb(123, 0, 0);
+    background-color: rgb(255, 255, 255);
+    cursor: not-allowed;
 }
 
 #experts .btn-group {
@@ -301,28 +342,40 @@ input[type="text"] ~ .tooltip .tooltip-arrow {
     display: none;
 }
 .onoffswitch-label {
-    display: block; overflow: hidden; cursor: pointer;
-    border: 2px solid #999999; border-radius: 15px;
+    display: block;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid #999999;
+    border-radius: 15px;
     margin: 0;
 }
 .onoffswitch-inner {
     display: block;
-    padding: 10px 30px;
-    font-size: 15px; font-family: Trebuchet, Arial, sans-serif; font-weight: bold;
+    padding: 0.7em 2em;
+    font-size: 0.9em;
+    /*font-family: Trebuchet, Arial, sans-serif;
+    font-weight: bold;*/
     box-sizing: border-box; text-align: center;
-    background-color: #EEEEEE; color: #999999;
+    background-color: #EEEEEE;
+    color: #999999;
     transition: all 0.2s ease-in 0s;
 }
 .onoffswitch-switch {
-    display: block; width: 15px; margin: 10px 8.5px;
+    display: block;
+    width: 15px;
+    margin: 10px 8.5px;
     background: #fdc6c6;
-    position: absolute; top: 0; bottom: 0;
+    position: absolute;
+    top: 0;
+    bottom: 0;
     left: 3px;
-    border: 2px solid #999999; border-radius: 15px;
+    border: 2px solid #999999;
+    border-radius: 15px;
     transition: all 0.2s ease-in 0s;
 }
 .onoffswitch-checkbox:checked + .onoffswitch-label .onoffswitch-inner {
-    background-color: #34A7C1; color: #FFFFFF;
+    background-color: #34A7C1;
+    color: #FFFFFF;
 }
 .onoffswitch-checkbox:checked + .onoffswitch-label .onoffswitch-switch {
     left: calc(100% - 32px);

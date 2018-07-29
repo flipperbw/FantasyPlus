@@ -144,7 +144,7 @@
                                         </td>
                                         <td class="spacer"></td>
                                     </tr>
-                                    <tr>
+                                    <tr class="no-border">
                                         <td class="bottom" colspan=2>
                                             <div class="onoffswitch">
                                                 <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="showcurrent" checked>
@@ -180,10 +180,9 @@
                         </div>
                     </div>
                     
-                    <div class="panel">
+                    <div class="panel" id="panel-experts">
                         <div class="panel-heading">
                             <h4>FantasyPros Experts</h4>
-                            <span class="label label-success">New</span>
                         </div>
                         <div id="experts">
                             <div class="container-fluid">
@@ -330,6 +329,10 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="panel-disable"></div>
+                        <div class="panel-disable-msg">
+                            <h3>Temporarily Disabled :(</h3>
+                        </div>
                     </div>
                     
                     <div class="panel panel-bottom">
@@ -400,7 +403,14 @@
                         <div class="panel-body">
                             <ul>
                                 <li>
-									<h3>3.3.0 (2017-11-02)</h3>
+									<h3>3.3.7 (2018-07-29)</h3>
+									<ul>
+                                        <li>Updating for the 2018 season</li>
+										<li>Many site-specific fixes</li>
+										<li>Temporarily removing expert selection, as FantasyPros now requires login</li>
+									</ul>
+                                    
+                                    <h3>3.3.0 (2017-11-02)</h3>
 									<ul>
 										<li>Added medians</li>
 										<li>Fixed inaccurate trendlines if the player was traded</li>
@@ -422,25 +432,6 @@
 									<h3>3.1.6 (2017-08-16)</h3>
                                     <ul>
                                         <li>Updating for the 2017 season!</li>
-                                    </ul>
-									
-									<h3>3.1.2 (2016-10-26)</h3>
-                                    <ul>
-                                        <li>Fixing missing data on Yahoo Free Agency</li>
-                                    </ul>
-								
-									<h3>3.1.1 (2016-10-25)</h3>
-                                    <ul>
-                                        <li>Trendline colors now based on historical per-position averages</li>
-                                        <li>Faster loading times for FantasyPros</li>
-                                    </ul>
-									
-                                    <h3>3.1.0 (2016-10-15)</h3>
-                                    <ul>
-                                        <li>Added option to select experts</li>
-                                        <li>Improved speed/timing for iAvg and Trendlines</li>
-                                        <li>Trendlines now show whether the player was Out or on a Bye (gray dot)</li>
-                                        <li>Current score now updates frequently during a game, but not otherwise</li>
                                     </ul>
                                 </li>
                             </ul>
