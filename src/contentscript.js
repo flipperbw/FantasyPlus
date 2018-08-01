@@ -49,10 +49,12 @@ document.body.appendChild(tag);
 //but with a catch for div > div
 //https://gist.github.com/duzun/187785d63ccb95da8883
 
+/* global chrome, console */ 
+
 chrome.runtime.sendMessage({ request: 'valid_site' });
 
-//var debug_mode = 0;
-var debug_mode = -1;
+var debug_mode = 0;
+//var debug_mode = -1;
 
 function dlog(o, level) {
     level = typeof level === "undefined" ? 0 : level;
@@ -90,8 +92,8 @@ var storageUserSettingsKey = 'fp_user_settings';
 
 function clearStoredData() {
     chrome.storage.local.get(null, function(d) {
-        jQuery.each(d, function(k,v) {
-            if (k != storageUserSettingsKey) {
+        jQuery.each(d, function(k, v) {
+            if (k !== storageUserSettingsKey) {
                 chrome.storage.local.remove(k);
             }
         });
@@ -197,6 +199,7 @@ var experts = {
     }
 };
 
+/*
 var expert_map = {
     'cbs': '11',
     'espn': '71',
@@ -204,6 +207,7 @@ var expert_map = {
     'stats': '120',
     'fftoday': '152'
 };
+*/
 
 var remove_ads = true;
 var fix_css = true;
@@ -425,44 +429,43 @@ var player_name_translations = {
 var player_position_fix = {
     'Ty Montgomery': 'RB',
 
-    'Julius Peppers': 'LB',
     'Jadeveon Clowney': 'LB',
     'Derrick Morgan': 'LB',
-    'Chandler Jones': 'LB',
     'Vic Beasley': 'LB',
     'Shea McClellin': 'LB',
     'Trent Murphy': 'LB',
-    'Jerry Hughes': 'LB',
     'Kevin Dodd': 'LB',
     'Lorenzo Alexander': 'LB',
+    'Ryan Kerrigan': 'LB',
+    'Preston Smith': 'LB',
 
     'Su\'a Cravens': 'DB',
 
     'Jabaal Sheard': 'DL',
     'Frank Clark': 'DL',
-    'Khalil Mack': 'LB' //DE
+    'Khalil Mack': 'LB', //DE
+    'Melvin Ingram': 'DE',
 };
 
 var player_position_fix_depth = {
-    'Julius Peppers': 'LB',
-    'Jadeveon Clowney': 'LB',
     'Derrick Morgan': 'LB',
-    'Chandler Jones': 'LB',
     'Vic Beasley': 'LB',
     'Shea McClellin': 'LB',
     'Trent Murphy': 'LB',
-    'Jerry Hughes': 'LB',
     'Kevin Dodd': 'LB',
     'Su\'a Cravens': 'LB',
+    'Bruce Irvin': 'LB',
+    'Ryan Kerrigan': 'LB',
+    'Preston Smith': 'LB',
 
     'Tyrann Mathieu': 'S',
     'Lamarcus Joyner': 'S',
 
+    'Jadeveon Clowney': 'DE',
     'Jabaal Sheard': 'DE',
     'Frank Clark': 'DE',
     'Emmanuel Ogbah': 'DE',
     'Dwight Freeney': 'DE',
-    'Jurrell Casey': 'DE',
     'Timmy Jernigan': 'DE',
     'Jaye Howard': 'DE',
     'Chris Baker': 'DE',
@@ -470,12 +473,17 @@ var player_position_fix_depth = {
     'Adolphus Washington': 'DE',
     'Robert Nkemdiche': 'DE',
     'DaQuan Jones': 'DE',
-    'Yannick Ngakoue': 'DE'
+    'Yannick Ngakoue': 'DE',
+    'Melvin Ingram': 'DE',
+    'Cameron Heyward': 'DE',
+    'Aaron Donald': 'DE',
+    'Akiem Hicks': 'DE',
 };
 
 var player_position_fix_sharks = {
     'Su\'a Cravens': 'DB',
-    'Khalil Mack': 'LB'
+    'Khalil Mack': 'LB',
+    'Bruce Irvin': 'DL',
 };
 
 var team_abbrev_fix_fleaflicker = {
@@ -697,7 +705,7 @@ else if (document.URL.match(new RegExp(baseUrlFleaflicker))) {
 
 
 function fixPage() {
-    if (siteType == 'espn') {
+    if (siteType === 'espn') {
         if (remove_ads) {
             jQuery('.games-footercol, .transitional-elements').remove();
             jQuery('.games-innercol2').children('br').remove();
@@ -713,24 +721,24 @@ function fixPage() {
             jQuery('.gamesmain.container').css('margin-bottom', '10px');
             if (onClubhousePage) {
                 jQuery('.games-bottomcol').css('margin', 0);
-                if (jQuery('.games-dates-mod').css('margin-top') == '19px') {
+                if (jQuery('.games-dates-mod').css('margin-top') === '19px') {
                     jQuery('.games-dates-mod').css('margin-top', '20px');
                 }
             }
             else if (onFreeAgencyPage) {
                 jQuery('#backgroundContainer').css('width', 'auto');
                 /*
-                if (jQuery('.addButton').css('background-position-x') == '-38px') {
+                if (jQuery('.addButton').css('background-position-x') === '-38px') {
                     jQuery('.addButton').css('background-position-x', '-39px');
                 }
-                if (jQuery('.dropButton').css('width') == '14px') {
+                if (jQuery('.dropButton').css('width') === '14px') {
                     jQuery('.dropButton').css('width', '15px');
                 }
                 */
             }
         }
     }
-    else if (siteType == 'yahoo') {
+    else if (siteType === 'yahoo') {
         if (remove_ads) {
             jQuery('.df-ad').remove();
             jQuery('#fantasyhero').remove();
@@ -740,14 +748,15 @@ function fixPage() {
             jQuery('.Ad').parent().remove();
         }
     }
-    else if (siteType == 'fleaflicker') {
+    else if (siteType === 'fleaflicker') {
         if (remove_ads) {
             jQuery('a[href^="/nfl/upgrade"]').remove();
             jQuery('i.icon-edge-E').remove();
+            jQuery('.alert-banner-edge').remove();
         }
         if (fix_css) {
             if (onFreeAgencyPage || onGeneralProjPage) {
-                var trade_btns = jQuery('a').filter(function(i) { return jQuery(this).text() === 'Trade'; });
+                var trade_btns = jQuery('a').filter(function() { return jQuery(this).text() === 'Trade'; });
                 trade_btns.css({
                     'background-image': 'linear-gradient(to bottom,#a070ec 0%,#6c4186 100%)',
                     'border-color': '#51427d'
@@ -756,7 +765,7 @@ function fixPage() {
                     jQuery(this).css("background-color", "rgb(108, 65, 134)");
                 });
 
-                var claim_btns = jQuery('a').filter(function(i) { return jQuery(this).text() === 'Claim'; });
+                var claim_btns = jQuery('a').filter(function() { return jQuery(this).text() === 'Claim'; });
                 claim_btns.css({
                     'background-image': 'linear-gradient(to bottom,#fbbc4a 0%,#d68306 100%)',
                     'border-color': '#9c6315'
@@ -927,14 +936,14 @@ function addLeagueSettings() {
     }
 
     function colorizeCell(td_num, def_val, $td_cell) {
-        if (td_num != def_val) {
+        if (td_num !== def_val) {
             if (td_num < def_val) {
                 $td_cell.css({'background-color': 'pink'});
             }
-            else if ((td_num > def_val) || td_num == 'No Limit') {
+            else if ((td_num > def_val) || td_num === 'No Limit') {
                 $td_cell.css({'background-color': 'lightgreen'});
             }
-            if (td_num != 'N/A') {
+            if (td_num !== 'N/A') {
                 $td_cell.attr('title', 'Default: ' + def_val);
             }
         }
@@ -970,7 +979,7 @@ function addLeagueSettings() {
             }
         }
 
-        $roster_tds.each(function(i) {
+        $roster_tds.each(function() {
             var $thistd = jQuery(this);
             var $td_row = $thistd.parent();
             $td_row.css({'background-color': 'lightblue'});
@@ -979,7 +988,7 @@ function addLeagueSettings() {
         if (missing_positions.length > 0) {
             var $last_section = $roster.find('tbody').first().children('tr').last();
             var trclassname = 'Even';
-            if ($last_section.attr("class").indexOf('Even') != -1) {
+            if ($last_section.attr("class").indexOf('Even') !== -1) {
                 trclassname = 'Odd';
             }
             var $last_td = $last_section.find('tr:nth(1)').find('td:first');
@@ -1002,7 +1011,7 @@ function addLeagueSettings() {
     }
 
     function jq_filter_parent_td_text(node, j) {
-        return jQuery(node).parents('td').eq(0).prev().text() == j;
+        return jQuery(node).parents('td').eq(0).prev().text() === j;
     }
     
     // - SCORING SETTINGS -
@@ -1093,17 +1102,19 @@ function addLeagueSettings() {
         //To identify nonstandard yard scoring
         for (let c=0; c < $scoring_tds.length; c++) {
             var s_text = jQuery($scoring_tds[c]).text();
-            let nonstand = false;
-            if ((s_text.search(/ards\s+\(PY\d+/) > -1) && (s_text.indexOf('ards (PY25)') == -1)) {
-                let nonmissing_tuple = {'typ': 'Passing', 'val': 'Passing Yards (PY)'};
+            var nonstand = false;
+            var nonmissing_tuple;
+
+            if ((s_text.search(/ards\s+\(PY\d+/) > -1) && (s_text.indexOf('ards (PY25)') === -1)) {
+                nonmissing_tuple = {'typ': 'Passing', 'val': 'Passing Yards (PY)'};
                 nonstand = true;
             }
-            else if ((s_text.search(/ards\s+\(RY\d+/) > -1) && (s_text.indexOf('ards (RY10)') == -1)) {
-                let nonmissing_tuple = {'typ': 'Rushing', 'val': 'Rushing Yards (PY)'};
+            else if ((s_text.search(/ards\s+\(RY\d+/) > -1) && (s_text.indexOf('ards (RY10)') === -1)) {
+                nonmissing_tuple = {'typ': 'Rushing', 'val': 'Rushing Yards (PY)'};
                 nonstand = true;
             }
-            else if ((s_text.search(/ards\s+\(REY\d+/) > -1) && (s_text.indexOf('ards (REY10)') == -1)) {
-                let nonmissing_tuple = {'typ': 'Receiving', 'val': 'Receiving Yards (REY)'};
+            else if ((s_text.search(/ards\s+\(REY\d+/) > -1) && (s_text.indexOf('ards (REY10)') === -1)) {
+                nonmissing_tuple = {'typ': 'Receiving', 'val': 'Receiving Yards (REY)'};
                 nonstand = true;
             }
 
@@ -1141,7 +1152,7 @@ function addLeagueSettings() {
 
             var converted_val = expected_val * denom;
             colorizeCell(td_num, converted_val, $td_cell);
-            if (td_num == converted_val) {
+            if (td_num === converted_val) {
                 return true;
             }
             else {
@@ -1149,7 +1160,7 @@ function addLeagueSettings() {
             }
         }
 
-        $scoring_tds.each(function(i) {
+        $scoring_tds.each(function() {
             let $thistd = jQuery(this);
 
             let $td_cell = $thistd.next().first();
@@ -1220,13 +1231,13 @@ function addLeagueSettings() {
             var miss_pos = all_missing_tds[p];
             let miss_pos_typ = miss_pos['typ'];
             let miss_pos_trans = [];
-            if (miss_pos_typ == 'Team Defense / Special Teams') {
+            if (miss_pos_typ === 'Team Defense / Special Teams') {
                 miss_pos_trans = ['Team Defense/Special Teams (D/ST)'];
             }
-            else if (miss_pos_typ == 'Passing') {
+            else if (miss_pos_typ === 'Passing') {
                 miss_pos_trans = ['Quarterback (QB)', 'Team Quarterback (TQB)'];
             }
-            else if (miss_pos_typ == 'Kicking') {
+            else if (miss_pos_typ === 'Kicking') {
                 miss_pos_trans = ['Place Kicker (K)'];
             }
 
@@ -1237,7 +1248,7 @@ function addLeagueSettings() {
                         found_pos += 1;
                     }
                 }
-                if (found_pos == miss_pos_trans.length) {
+                if (found_pos === miss_pos_trans.length) {
                     new_missing_tds.splice(new_missing_tds.indexOf(miss_pos), 1);
                 }
             }
@@ -1246,7 +1257,7 @@ function addLeagueSettings() {
         if (new_missing_tds.length > 0) {
             var $last_section = $scoring.find('table.viewable').find('tbody').first().children('tr').last();
             var trclassname = 'Even';
-            if ($last_section.attr("class").indexOf('Even') != -1) {
+            if ($last_section.attr("class").indexOf('Even') !== -1) {
                 trclassname = 'Odd';
             }
             var $missing_section = jQuery('<tr class="row' + trclassname + '"><td class="categoryName settingLabel">Missing Entries</td><td><table width="100%" cellspacing="0" cellpadding="0" border="0"><tbody></tbody></table></td></tr>');
@@ -1340,28 +1351,28 @@ function getUserSettings() {
         }
 
         jQuery.each(col_settings, function (k, v) {
-            if (k == 'proj' && show_proj) {
+            if (k === 'proj' && show_proj) {
                 show_proj = v;
             }
-            else if (k == 'rank' && show_rank) {
+            else if (k === 'rank' && show_rank) {
                 show_rank = v;
             }
-            else if (k == 'ros' && show_ros) {
+            else if (k === 'ros' && show_ros) {
                 show_ros = v;
             }
-            else if (k == 'depth' && show_depth) {
+            else if (k === 'depth' && show_depth) {
                 show_depth = v;
             }
-            else if (k == 'spark' && show_spark) {
+            else if (k === 'spark' && show_spark) {
                 show_spark = v;
             }
-            else if (k == 'avg' && show_avg) {
+            else if (k === 'avg' && show_avg) {
                 show_avg = v;
             }
-            else if (k == 'med' && show_med) {
+            else if (k === 'med' && show_med) {
                 show_med = v;
             }
-            else if (k == 'current' && show_current) {
+            else if (k === 'current' && show_current) {
                 show_current = v;
             }
         });
@@ -1383,11 +1394,11 @@ function getUserSettings() {
 
             if (update_settings_time && update_settings_typ) {
                 var new_mins = update_settings_time;
-                if (update_settings_typ == 'h') {
+                if (update_settings_typ === 'h') {
                     new_mins *= 60;
                 }
 
-                if (k == 'player') {
+                if (k === 'player') {
                     check_minutes = Math.max(new_mins, 1);
                 }
             }
@@ -1433,24 +1444,24 @@ function setSelectors(firstrun) {
         pts_total = base_table.find(pts_total_selector);
     }
 
-    if (siteType == 'espn' && onMatchupPreviewPage) {
+    if (siteType === 'espn' && onMatchupPreviewPage) {
         playerTable = jQuery(player_table_selector);
     }
     else {
         playerTable = base_table.find(player_table_selector);
     }
     player_table_body = playerTable.find(player_table_body_selector);
-    if (siteType == "espn") {
+    if (siteType === "espn") {
         playerTable = player_table_body;
     }
     player_table_header = playerTable.find(player_table_header_selector);
     player_table_rows = player_table_body.find(player_table_row_selector);
 
-    if (siteType == 'espn') {
+    if (siteType === 'espn') {
         proj_head = player_table_header.find(player_table_header_proj_selector);
         hasProjectionTable = proj_head.length > 0;
     }
-    else if (siteType == "yahoo") {
+    else if (siteType === "yahoo") {
         show_proj = typeof user_settings.columns.proj !== 'undefined' ? user_settings.columns.proj : true;
         show_rank = typeof user_settings.columns.rank !== 'undefined' ? user_settings.columns.rank : true;
 
@@ -1467,7 +1478,7 @@ function setSelectors(firstrun) {
                 player_table_header_proj_selector = 'th:contains(Fan Pts)';
                 if (/^S_PW_/.test(fa_page)) {
                     var statweek = parseInt(fa_page.split('_').reverse()[0]);
-                    if (!isNaN(statweek) && (statweek == current_week)) {
+                    if (!isNaN(statweek) && (statweek === current_week)) {
                         is_FA_current = true;
                     }
                 }
@@ -1481,19 +1492,19 @@ function setSelectors(firstrun) {
         else {
             player_table_header_proj_selector = 'th:contains(Proj Pts)';
             var selected_nav = page_menu.find('div.navlist:first li.Selected:first a').attr('id');
-            if (selected_nav == 'P' || selected_nav == 'GDD') {
+            if (selected_nav === 'P' || selected_nav === 'GDD') {
                 var subid = 'subnav_' + selected_nav;
                 var selected_subnav = page_menu.find('div#statsubnav ul#' + subid + ' li.Selected:first a').attr('href');
                 var subnav_dict = getParams(selected_subnav);
                 var subnav_href = subnav_dict.hasOwnProperty('stat2') ? subnav_dict['stat2'][0] : '';
-                if (selected_nav == 'P' && subnav_href == 'PW') {
+                if (selected_nav === 'P' && subnav_href === 'PW') {
                     player_table_header_proj_selector = 'th:contains(Fan Pts)';
                 }
-                else if (selected_nav == 'GDD' && subnav_href == 'D') {
+                else if (selected_nav === 'GDD' && subnav_href === 'D') {
                     player_table_header_proj_selector = 'th:contains(Rank)';
                 }
             }
-            else if (selected_nav == 'K') {
+            else if (selected_nav === 'K') {
                 show_proj = false;
                 player_table_header_proj_selector = 'th:contains(This Week)';
             }
@@ -1501,7 +1512,7 @@ function setSelectors(firstrun) {
 
         proj_head = player_table_header.find(player_table_header_proj_selector);
     }
-    else if (siteType == "fleaflicker") {
+    else if (siteType === "fleaflicker") {
         show_proj = typeof user_settings.columns.proj !== 'undefined' ? user_settings.columns.proj : true;
         show_rank = typeof user_settings.columns.rank !== 'undefined' ? user_settings.columns.rank : true;
         show_ros = typeof user_settings.columns.ros !== 'undefined' ? user_settings.columns.ros : true;
@@ -1515,18 +1526,18 @@ function setSelectors(firstrun) {
             uri_name = 'week';
         }
         var week_no = url_dict.hasOwnProperty(uri_name) ? url_dict[uri_name][0] : '';
-        if (week_no && week_no != current_week) {
+        if (week_no && week_no !== current_week) {
             is_current_week = false;
         }
         var season_no = url_dict.hasOwnProperty('season') ? url_dict['season'][0] : '';
-        if (season_no && season_no != current_season) {
+        if (season_no && season_no !== current_season) {
             is_current_week = false;
         }
 
         var stat_no = url_dict.hasOwnProperty('statType') ? url_dict['statType'][0] : '';
         var sort_no = url_dict.hasOwnProperty('sortMode') ? url_dict['sortMode'][0] : '';
         if (onFreeAgencyPage) {
-            if (stat_no && stat_no == '7') {
+            if (stat_no && stat_no === '7') {
                 player_table_header_proj_selector = 'FPts';
                 show_spark = false;
             }
@@ -1539,12 +1550,12 @@ function setSelectors(firstrun) {
             hasProjectionTable = false;
         }
 
-        proj_head = player_table_header.find('th').filter(function(i) {
+        proj_head = player_table_header.find('th').filter(function() {
             return jQuery(this).text() === player_table_header_proj_selector;
         });
 
-        if (player_table_header_proj_selector == 'FPts') {
-            if (stat_no && stat_no == '7') {
+        if (player_table_header_proj_selector === 'FPts') {
+            if (stat_no && stat_no === '7') {
                 proj_head = proj_head.last();
             }
             else {
@@ -1579,13 +1590,13 @@ function isDataCurrent(l) {
         var mins = check_minutes;
         var v = 0;
 
-        if (s == 'league') {
+        if (s === 'league') {
             v = updated_league;
         }
-        else if (s == 'translation') {
+        else if (s === 'translation') {
             v = updated_translation;
         }
-        else if (s == 'depth') {
+        else if (s === 'depth') {
             if (!show_depth) {
                 return true;
             }
@@ -1594,13 +1605,13 @@ function isDataCurrent(l) {
                 v = updated_depth;
             }
         }
-        else if (s == 'proj' && !show_proj) {
+        else if (s === 'proj' && !show_proj) {
             return true;
         }
-        else if (s == 'rank' && !show_rank) {
+        else if (s === 'rank' && !show_rank) {
             return true;
         }
-        else if (s == 'ros' && !show_ros) {
+        else if (s === 'ros' && !show_ros) {
             return true;
         }
         else if (isObj(updated_times)) {
@@ -1611,7 +1622,7 @@ function isDataCurrent(l) {
             var exp_type_dict = experts[s_type] || {};
             var exp_val = exp_type_dict.selection || 'none';
             var exp_val_str = exp_val.toString();
-            if (s_type == 'rank' || s_type == 'ros') {
+            if (s_type === 'rank' || s_type === 'ros') {
                 var exp_num_dict = exp_type_dict.num || {};
                 var exp_top = exp_num_dict['top'] || 10;
                 var exp_updated = exp_num_dict['updated'] || 7;
@@ -1662,7 +1673,7 @@ function isDataCurrent(l) {
 function isActivityDataCurrent(pid, upd, typ, live) {
     var chk_mins;
     var r = true;
-    if (typ == 'league') {
+    if (typ === 'league') {
         if (live === 'live') {
             dlog('using live');
             chk_mins = check_minutes_avg_live;
@@ -1678,11 +1689,11 @@ function isActivityDataCurrent(pid, upd, typ, live) {
 
         r = (current_time - upd) < (1000 * 60 * chk_mins);
     }
-    else if (typ == 'games') {
+    else if (typ === 'games') {
         //todo timezones? maybe add a check to make sure length is expected somehow
         var update_week = Math.max(Math.ceil(((upd - seasonstart_avg_week) / 86400000) / 7), 1);
         dlog('update week for player: ' + pid + ': ' + update_week);
-        if (update_week != current_week_avg) {
+        if (update_week !== current_week_avg) {
             r = false;
         }
     }
@@ -1720,7 +1731,7 @@ function runMain() {
             }
 
             // Translation data
-            if (siteType == 'yahoo') {
+            if (siteType === 'yahoo') {
                 if (onMatchupPreviewPage || onFreeAgencyPage) {
                     storage_translation_data = r[storageTranslationKey];
                     if (!(isObj(storage_translation_data))) {
@@ -1747,7 +1758,7 @@ function runMain() {
                     yahooIdsDone.resolve();
                 }
             }
-            else if (siteType == 'fleaflicker' && onMatchupPreviewPage) {
+            else if (siteType === 'fleaflicker' && onMatchupPreviewPage) {
                 storage_translation_data = r[storageTranslationKey];
                 if (!(isObj(storage_translation_data))) {
                     storage_translation_data = {};
@@ -1819,7 +1830,7 @@ function runMain() {
 }
 
 function resetLeagueYear() {
-    if (siteType == 'espn' && ((current_season != current_season_avg) || (current_season != current_season_avg_week))) {
+    if (siteType === 'espn' && ((current_season !== current_season_avg) || (current_season !== current_season_avg_week))) {
         //doing this to reset back to current season
         var espn_points_data = {'leagueId': league_id, 'seasonId': current_season, 'xhr': '1'};
         jQuery.get('//games.espn.com/ffl/freeagency', espn_points_data);
@@ -1875,12 +1886,12 @@ function doLeagueThings() {
     if (onMatchupPreviewPage) {
          jQuery.when(projDone, totalsDone).done(function() {
             dlog('all done');
-            if (siteType == 'fleaflicker') { //maybe add yahoo?
+            if (siteType === 'fleaflicker') { //maybe add yahoo?
                 watchForChanges();
             }
         });
 
-        if (siteType == 'yahoo') {
+        if (siteType === 'yahoo') {
             jQuery.when(yahooIdsDone).done(function() {
                 getAllData('proj');
             });
@@ -1895,7 +1906,7 @@ function doLeagueThings() {
             watchForChanges();
         });
 
-        if (siteType == 'yahoo') {
+        if (siteType === 'yahoo') {
             jQuery.when(yahooIdsDone).done(function() {
                 getAllData();
             });
@@ -1924,14 +1935,15 @@ function getIdxSpan(c, add_this) {
 }
 
 function addColumns() {
-    if (header_index == -1 && !((siteType == 'fleaflicker') && hasProjectionTable)) {
+    if (header_index === -1 && !((siteType === 'fleaflicker') && hasProjectionTable)) {
         return;
     }
     
-    var last_header_col, projection_header, rank_header, spark_header, top_rank_header, ros_header, depth_header, all_header_cells,
+    var last_header_col, projection_header, rank_header, spark_header, top_rank_header, ros_header, depth_header, all_header_cells, top_rank_header_j, top_rank_combine,
+        total_row,
         projection_cell, rank_cell, space_cell, newprojcell, spark_cell, rank_std_cell, ros_cell, ros_std_cell, depth_cell;
 
-    if (siteType == "espn") {
+    if (siteType === "espn") {
         projection_header = '<td class="playertableStat FantasyPlus FantasyPlusProjections FantasyPlusProjectionsHeader" title="Consensus point projections from FantasyPros (via FantasyPlus)">FPROS</td>';
         projection_cell = '<td class="playertableStat FantasyPlus FantasyPlusProjections FantasyPlusProjectionsData">' + loadingDiv + '</td>';
 
@@ -2009,11 +2021,10 @@ function addColumns() {
             }
 
             if (show_rank || show_ros) {
-                var top_rank_header_j = jQuery(top_rank_header);
+                top_rank_header_j = jQuery(top_rank_header);
                 if (show_rank && show_ros) {
                     top_rank_header_j.attr('colspan', 4);
                 }
-                var top_rank_combine;
                 if (show_proj) {
                     top_rank_combine = jQuery(space_cell).add(top_rank_header_j);
                     last_header_col.after(top_rank_combine);
@@ -2097,9 +2108,9 @@ function addColumns() {
                 var currRow = jQuery(this);
 
                 var byeweek_text = currRow.find('td').eq(byeweek).text();
-                var adj_header_index = (byeweek_text == "** BYE **" ? header_index - 1 : header_index);
-                var adj_avg_header_index = (byeweek_text == "** BYE **" ? avg_header_index - 1 : avg_header_index);
-                var adj_last_header_index = (byeweek_text == "** BYE **" ? last_header_index - 1 : last_header_index);
+                var adj_header_index = (byeweek_text === "** BYE **" ? header_index - 1 : header_index);
+                var adj_avg_header_index = (byeweek_text === "** BYE **" ? avg_header_index - 1 : avg_header_index);
+                var adj_last_header_index = (byeweek_text === "** BYE **" ? last_header_index - 1 : last_header_index);
                 var index_adj = 0;
 
                 if (show_med) {
@@ -2135,12 +2146,12 @@ function addColumns() {
             if ((show_proj || show_current) && onClubhousePage) {
                 var bench_header = player_table_body.find('tr.playerTableBgRowHead:last');
                 var bench_before = bench_header.prevAll('.playerTableBgRowSubhead:first');
-                var total_row = bench_before.clone();
+                total_row = bench_before.clone();
 
                 var bench_prev = bench_header.prev();
                 var bench_prev_match = bench_prev.attr('class').match(/playerTableBgRow(\d)/);
                 var bench_num = '0';
-                if (bench_prev_match && bench_prev_match.length ==2) {
+                if (bench_prev_match && bench_prev_match.length === 2) {
                     bench_num = Math.abs(parseInt(bench_prev_match[1]) - 1);
                 }
                 var new_row_class = 'playerTableBgRow' + bench_num;
@@ -2165,7 +2176,7 @@ function addColumns() {
             }
         }
     }
-    else if (siteType == "yahoo") {
+    else if (siteType === "yahoo") {
         if (onMatchupPreviewPage) {
             if (show_proj) {
                 projection_header = '<th style="width: 38px;" class="Ta-end Va-top FantasyPlus FantasyPlusProjections FantasyPlusProjectionsHeader" title="Consensus point projections from FantasyPros (via FantasyPlus)"><div style="width: 40px;">Proj (FP)</div></td>';
@@ -2195,7 +2206,7 @@ function addColumns() {
                     currRows.each(function(l) {
                         var currRow = jQuery(this);
 
-                        if ((l + 1) == currRowsLen) {
+                        if ((l + 1) === currRowsLen) {
                             total_cell = newprojcell;
                         }
 
@@ -2234,7 +2245,7 @@ function addColumns() {
 
             if (custom_cols > 0) {
                 player_table_header.each(function() {
-                    var first_header_col = jQuery(this).find('th').filter(function(i) {
+                    var first_header_col = jQuery(this).find('th').filter(function() {
                         return jQuery(this).text().match(/^\w/);
                     }).first();
 
@@ -2254,30 +2265,30 @@ function addColumns() {
 
                     var search_cell = proj_cell;
                     var search_type = '';
-                    if (proj_cell_text == 'Proj Pts') {
+                    if (proj_cell_text === 'Proj Pts') {
                         search_cell = points_cell;
                         search_type = 'stats';
                     }
-                    else if (proj_cell_text == 'Fan Pts') {
+                    else if (proj_cell_text === 'Fan Pts') {
                         search_cell = proj_cell;
                         search_type = 'proj';
                     }
-                    else if (proj_cell_text == 'Rank') {
+                    else if (proj_cell_text === 'Rank') {
                         search_cell = points_cell;
                         search_type = 'gdd';
                     }
-                    else if (proj_cell_text == 'This Week') {
+                    else if (proj_cell_text === 'This Week') {
                         search_cell = proj_cell;
                         search_type = 'rank';
                     }
 
-                    var isBye = search_cell.text() == 'Bye';
+                    var isBye = search_cell.text() === 'Bye';
                     var isBlank = search_cell.text() === '';
 
                     var all_cells = '';
                     if (isBye) {
                         //todo fix like FF to make more auto
-                        var addCols = (search_type == 'stats') ? 3 : 2;
+                        var addCols = (search_type === 'stats') ? 3 : 2;
                         search_cell.attr('colspan', addCols + custom_cols);
                     }
                     else {
@@ -2292,16 +2303,16 @@ function addColumns() {
                             search_cell.attr('colspan', 1);
                             if (search_cell.next().hasClass('Bdrstart')) {
                                 all_cells += '<td class="Ta-end Nowrap"></td>';
-                                if (search_type == 'stats') {
+                                if (search_type === 'stats') {
                                     search_cell.after('<td class="Ta-end Nowrap"></td>');
                                 }
-                                else if (search_type == 'rank') {
+                                else if (search_type === 'rank') {
                                     search_cell.after('<td class="Ta-end Nowrap"></td><td class="Ta-end Nowrap"></td>');
                                 }
                             }
                         }
 
-                        if (currRow.find('.ysf-player-video-link').length === 0 && search_type == 'stats') {
+                        if (currRow.find('.ysf-player-video-link').length === 0 && search_type === 'stats') {
                             proj_cell = currRow.find('td').eq(header_index - 1);
                         }
                         else {
@@ -2318,7 +2329,7 @@ function addColumns() {
             }
         }
     }
-    else if (siteType == 'fleaflicker') {
+    else if (siteType === 'fleaflicker') {
         projection_header = '<th style="width: 2%;" class="leaf FantasyPlus FantasyPlusProjections FantasyPlusProjectionsHeader" title="Consensus point projections from FantasyPros (via FantasyPlus)">FPros</th>';
         var space_header = '<th class="FantasyPlus horizontal-spacer"></th>';
         space_cell = '<td class="FantasyPlus horizontal-spacer"></td>';
@@ -2368,14 +2379,14 @@ function addColumns() {
         };
 
         var findHeader = function(hname, pname, is_parent) {
-            pname = (typeof pname == 'undefined') ? false : pname;
-            is_parent = (typeof is_parent == 'undefined') ? false : is_parent;
+            pname = (typeof pname === 'undefined') ? false : pname;
+            is_parent = (typeof is_parent === 'undefined') ? false : is_parent;
 
             var reg_test = new RegExp(hname);
             if (pname) {
                 var reg_p_test = new RegExp(pname);
             }
-            var seek_headers = player_table_header.find('th').filter(function(i) {
+            var seek_headers = player_table_header.find('th').filter(function() {
                 var h_j = jQuery(this);
                 if (reg_test.test(h_j.text())) {
                     if (is_parent || !pname) {
@@ -2473,7 +2484,7 @@ function addColumns() {
                 }
             }
 
-            playerTable.each(function(idx) {
+            playerTable.each(function() {
                 var currTab = jQuery(this);
 
                 var this_proj_header = currTab.find('th').filter(function() {
@@ -2484,7 +2495,7 @@ function addColumns() {
                 if (this_proj_header_idx > -1) {
                     var starter_found = false;
                     var currRows = currTab.find('tbody').find(player_table_row_selector);
-                    currRows.each(function(l) {
+                    currRows.each(function() {
                         var currRow = jQuery(this);
                         var currRowTds = currRow.find('td, th');
                         var this_proj_cell = currRowTds.eq(this_proj_header_idx);
@@ -2507,7 +2518,7 @@ function addColumns() {
                         else if (currRow.hasClass('repeated')) {
                             total_cell = space_v_cell;
                         }
-                        else if (currRowTds.first().text() == 'Optimum') {
+                        else if (currRowTds.first().text() === 'Optimum') {
                             total_cell = blank_cell;
                         }
 
@@ -2546,7 +2557,7 @@ function addColumns() {
 
             var addCells = function(idx, data, add_empty) {
                 if (Number.isInteger(idx) && idx >= 0) {
-                    add_empty = (typeof add_empty == 'undefined') ? false : add_empty;
+                    add_empty = (typeof add_empty === 'undefined') ? false : add_empty;
 
                     player_table_rows.each(function() {
                         var currRow = jQuery(this);
@@ -2591,7 +2602,7 @@ function addColumns() {
             seas_header_default.css('width', '5%');
 
             if (show_depth) {
-                var name_head = player_table_header.find('th').filter(function(i) {
+                var name_head = player_table_header.find('th').filter(function() {
                     return jQuery(this).text() === 'Name';
                 });
                 var name_index = getIdxSpan(name_head);
@@ -2618,8 +2629,8 @@ function addColumns() {
             }
 
             if (show_rank || show_ros) {
-                var top_rank_header_j = jQuery(top_rank_header);
-                var top_rank_combine = jQuery(space_header).add(top_rank_header_j);
+                top_rank_header_j = jQuery(top_rank_header);
+                top_rank_combine = jQuery(space_header).add(top_rank_header_j);
                 parent_head.after(top_rank_combine);
 
                 if (show_rank && show_ros) {
@@ -2627,6 +2638,7 @@ function addColumns() {
                 }
 
                 var trh_idx = getIdxSpan(top_rank_header_j) - 1;
+                var trh_subcell;
 
                 if (show_rank) {
                     var rank_header_j = jQuery(rank_header);
@@ -2636,7 +2648,7 @@ function addColumns() {
                         rank_header_j = rank_header_j.add(jQuery(space_header));
                         add_spacer = true;
                     }
-                    var trh_subcell = top_rank_header_j.parent().next().find('th');
+                    trh_subcell = top_rank_header_j.parent().next().find('th');
                     trh_subcell.eq(trh_idx).after(rank_header_j);
 
                     addCells(trh_idx, rank_cell);
@@ -2653,7 +2665,7 @@ function addColumns() {
                         trh_idx += 1;
                     }
                     ros_header_j = ros_header_j.add(jQuery(space_header));
-                    var trh_subcell = top_rank_header_j.parent().next().find('th');
+                    trh_subcell = top_rank_header_j.parent().next().find('th');
                     trh_subcell.eq(trh_idx).after(ros_header_j);
 
                     if (show_rank) {
@@ -2666,7 +2678,7 @@ function addColumns() {
             }
 
             if (show_spark) {
-                var last_fantasy_head = playerTable.find('tr th').filter(function(i) {
+                var last_fantasy_head = playerTable.find('tr th').filter(function() {
                     return jQuery(this).text().match(/Season|Avg/);
                 });
                 var fantasy_index = getIdxSpan(last_fantasy_head);
@@ -2680,13 +2692,13 @@ function addColumns() {
             if (onClubhousePage) {
                 var last_row = player_table_body.find('tr[id^=row].last:first');
 
-                var total_row = last_row.clone();
+                total_row = last_row.clone();
                 last_row.find('td').removeClass('bottom');
 
                 total_row.removeAttr('id');
                 total_row.addClass('divider strong FantasyPlus');
 
-                total_row_tds = total_row.find('td');
+                var total_row_tds = total_row.find('td');
                 total_row_tds.each(function(i) {
                     var t_j = jQuery(this);
                     t_j.addClass('bottom');
@@ -2731,8 +2743,10 @@ function parseLeagueSettings(league_data, siteType) {
     league_settings = {};
     league_settings['siteType'] = siteType;
 
-    if (siteType == 'espn') {
-        var getValue = function(setting_name) {
+    var getValue, league_table;
+
+    if (siteType === 'espn') {
+        getValue = function(setting_name) {
             //TODO fix this for the right section
             return parseFloat($ld.find("td:contains('" + setting_name + "')").next().first().text());
         };
@@ -2847,9 +2861,9 @@ function parseLeagueSettings(league_data, siteType) {
         league_settings['ya549'] = getValue('500-549 total yards allowed (YA549)') || 0;
         league_settings['ya550'] = getValue('550+ total yards allowed (YA550)') || 0;
     }
-    else if (siteType == 'yahoo') {
-        var league_table = jQuery('#settings-stat-mod-table tbody td', $ld);
-        var getValue = function(setting_name) {
+    else if (siteType === 'yahoo') {
+        league_table = jQuery('#settings-stat-mod-table tbody td', $ld);
+        getValue = function(setting_name) {
             var settingVals = [];
             //TODO fix this for multiple same values
             var settingText = league_table.filter(function(){ return this.childNodes[0].nodeValue === setting_name; });
@@ -2858,20 +2872,21 @@ function parseLeagueSettings(league_data, siteType) {
                 var settingList = pointText.split(';');
                 var bonusDict = {};
 
-                jQuery.each(settingList, function( sindex, svalue ) {
+                jQuery.each(settingList, function(sindex, svalue) {
                     svalue = svalue.trim();
+                    var settingStat;
                     if (svalue.indexOf('yards per point') > -1) {
-                        var settingStat = 1.0 / parseFloat(svalue.split(' ')[0]);
+                        settingStat = 1.0 / parseFloat(svalue.split(' ')[0]);
                         settingVals.push(settingStat);
                     }
                     else if (svalue.indexOf('points at ') > -1) {
                         var bonusSettingList = svalue.split(' ');
-                        bonusPts = parseFloat(bonusSettingList[0]);
-                        bonusYds = parseFloat(bonusSettingList[3]);
+                        let bonusPts = parseFloat(bonusSettingList[0]);
+                        let bonusYds = parseFloat(bonusSettingList[3]);
                         bonusDict[bonusYds] = bonusPts;
                     }
                     else {
-                        var settingStat = parseFloat(svalue);
+                        settingStat = parseFloat(svalue);
                         settingVals.push(settingStat);
                     }
                 });
@@ -2974,8 +2989,8 @@ function parseLeagueSettings(league_data, siteType) {
         league_settings['ya499'] = getValue('Defensive Yards Allowed 400-499')[0] || 0;
         league_settings['ya500'] = getValue('Defensive Yards Allowed 500+')[0] || 0;
     }
-    else if (siteType == 'fleaflicker') {
-        var league_table = jQuery('#body-center-main > table', $ld);
+    else if (siteType === 'fleaflicker') {
+        league_table = jQuery('#body-center-main > table', $ld);
         var league_headers = league_table.find('tr td.table-heading').closest('tr');
         //todo separate these by who it applies to, in td.right
         //todo calculate bonuses based on some averages maybe? like yards per catch, etc.
@@ -2993,8 +3008,8 @@ function parseLeagueSettings(league_data, siteType) {
         var min_dist = kick_dist[0];
         var max_dist = kick_dist[kick_dist.length - 1];
 
-        var getValue = function(setting_name, bonus) {
-            bonus = (typeof bonus == 'undefined') ? false : bonus;
+        getValue = function(setting_name, bonus) {
+            bonus = (typeof bonus === 'undefined') ? false : bonus;
             var settingVals = [];
 
             var this_header = league_headers.find("td.table-heading:contains('" + point_type + "')").closest('tr');
@@ -3009,7 +3024,7 @@ function parseLeagueSettings(league_data, siteType) {
             var settingTds = league_tds.find("td.left strong").filter(function() { return search_regex.test(jQuery(this).text()); }).closest('td.left');
 
             if (settingTds && settingTds.length > 0) {
-                jQuery.each(settingTds, function( sindex, svalue ) {
+                jQuery.each(settingTds, function(sindex, svalue) {
                     var scell = jQuery(svalue);
                     var s_contents = scell.contents();
 
@@ -3039,14 +3054,14 @@ function parseLeagueSettings(league_data, siteType) {
                     var every_alt = s_contents.get(bonus_index - 1).textContent.trim();
                     var every_yards = for_every && (/yards? covered/.test(for_every_text) || /yards? covered/.test(every_alt));
 
-                    if (point_type != 'Kicking' && every_yards) {
+                    if (point_type !== 'Kicking' && every_yards) {
                         is_bonus = true;
                         skip = true;
                     }
 
                     if (bonus_details.length) {
                         bonus_type = bonus_details[0].textContent.trim();
-                        if (point_type == 'Kicking' && (/Field Goals\? (Made|Missed)/.test(setting_name))) {
+                        if (point_type === 'Kicking' && (/Field Goals\? (Made|Missed)/.test(setting_name))) {
                             if (!/^\(/.test(bonus_type) && quant.length) {
                                 is_bonus = true;
                             }
@@ -3063,9 +3078,10 @@ function parseLeagueSettings(league_data, siteType) {
                     var expected_yards = 36.36; // from historical data, last 3 years
                     var expected_pct = 1;
 
-                    if (is_bonus == bonus) {
+                    if (is_bonus === bonus) {
+                        var bonus_low, bonus_high;
                         if (is_bonus === false) {
-                            if (point_type != 'Kicking') {
+                            if (point_type !== 'Kicking') {
                                 settingVals.push(s_val);
                             }
                             else {
@@ -3073,13 +3089,13 @@ function parseLeagueSettings(league_data, siteType) {
                                     settingVals.push(s_val);
                                 }
                                 else {
-                                    var bonus_low = bonus_details.filter('span.text-muted.low').text().trim();
+                                    bonus_low = bonus_details.filter('span.text-muted.low').text().trim();
                                     var bonus_low_adj = min_dist;
                                     if (bonus_low) {
                                         bonus_low = parseFloat(bonus_low);
                                         bonus_low_adj = Math.min(Math.max(bonus_low, min_dist), max_dist);
                                     }
-                                    var bonus_high = bonus_details.filter('span.text-muted.high').text().trim();
+                                    bonus_high = bonus_details.filter('span.text-muted.high').text().trim();
                                     var bonus_high_adj = max_dist;
                                     if (bonus_high) {
                                         bonus_high = parseFloat(bonus_high);
@@ -3139,11 +3155,11 @@ function parseLeagueSettings(league_data, siteType) {
                                 bonusDict['pts'] = s_val;
                                 bonusDict['is_per'] = for_every ? true : false;
 
-                                var bonus_low = bonus_details.filter('span.text-muted.low').text().trim();
+                                bonus_low = bonus_details.filter('span.text-muted.low').text().trim();
                                 if (bonus_low) {
                                     bonus_low = parseFloat(bonus_low);
                                 }
-                                var bonus_high = bonus_details.filter('span.text-muted.high').text().trim();
+                                bonus_high = bonus_details.filter('span.text-muted.high').text().trim();
                                 if (bonus_high) {
                                     bonus_high = parseFloat(bonus_high);
                                 }
@@ -3261,19 +3277,19 @@ function fetchPositionData(position, type, cb) {
     var source_type = 'offense';
     var rank_ppr;
 
-    if ((type == 'rank') || (type == 'ros')) {
+    if ((type === 'rank') || (type === 'ros')) {
         rank_ppr = '';
-        if (position == 'rb' || position == 'wr' || position == 'te') {
-            if (league_settings['rec_att'] == 0.5) {
+        if (position === 'rb' || position === 'wr' || position === 'te') {
+            if (league_settings['rec_att'] === 0.5) {
                 rank_ppr = 'half-point-ppr-';
             }
-            else if (league_settings['rec_att'] == 1.0) {
+            else if (league_settings['rec_att'] === 1.0) {
                 rank_ppr = 'ppr-';
             }
         }
 
         var ros_url = '';
-        if (type == 'ros') {
+        if (type === 'ros') {
             ros_url = 'ros-';
         }
 
@@ -3289,7 +3305,7 @@ function fetchPositionData(position, type, cb) {
         //source_site = 'https://www.fantasysharks.com/apps/bert/forecasts/projections.php?csv=1&Position=' + position;
     }
 
-    if (source_type == 'idp') {
+    if (source_type === 'idp') {
         jQuery.ajax({
             url: source_site,
             custom_data: {'cb': cb},
@@ -3309,7 +3325,7 @@ function fetchPositionData(position, type, cb) {
         var expert_type = experts[type] || {};
         var expert_selection = expert_type.selection || [];
 
-        if (type == 'proj' && expert_selection.length === 1) {
+        if (type === 'proj' && expert_selection.length === 1) {
             jQuery.ajax({
                 url: source_site,
                 custom_data: {'cb': cb},
@@ -3325,7 +3341,7 @@ function fetchPositionData(position, type, cb) {
                 cb(position, 'error');
             });
         }
-        else if (type == 'proj') {
+        else if (type === 'proj') {
             var send_data = {
                 'scoring': 'STD',
                 //'expert[]': []
@@ -3374,10 +3390,10 @@ function fetchPositionData(position, type, cb) {
 
                 var expert_list = send_data['expert[]'];
 
-                if (rank_ppr == 'half-point-ppr-') {
+                if (rank_ppr === 'half-point-ppr-') {
                     send_data['scoring'] = 'HALF';
                 }
-                else if (rank_ppr == 'ppr-') {
+                else if (rank_ppr === 'ppr-') {
                     send_data['scoring'] = 'PPR';
                 }
                 else {
@@ -3400,9 +3416,9 @@ function fetchPositionData(position, type, cb) {
                     var acc_pos_idx = ex_headers.find('th.accuracy.position:contains(In-Season)').index();
                     var date_idx = ex_headers.find('th:contains(Date)').index();
 
-                    if (expert_selection.indexOf('all') == -1) {
+                    if (expert_selection.indexOf('all') === -1) {
                         var staff_id = ex_rows.find('td').filter(function() {
-                            return jQuery(this).text() == 'FantasyPros Staff';
+                            return jQuery(this).text() === 'FantasyPros Staff';
                         }).parents('tr').find('td:eq(' + id_idx +') input').val();
 
                         if (jQuery.isNumeric(staff_id)) {
@@ -3515,17 +3531,18 @@ function parsesiteCSV(str) {
     var quote = false;
 
     /*jshint -W120 */
-    for (var row = col = c = 0; c < str.length; c++) {
+    var row, col, c;
+    for (row = col = c = 0; c < str.length; c++) {
         var cc = str[c];
         var nc = str[c+1];
         arr[row] = arr[row] || [];
         arr[row][col] = arr[row][col] || '';
-        if (cc == ',' && typeof nc === "undefined") { col++; arr[row][col] = ''; }
+        if (cc === ',' && typeof nc === "undefined") { col++; arr[row][col] = ''; }
 
-        if (cc == '"' && quote && nc == '"') { arr[row][col] += cc; ++c; continue; }
-        if (cc == '"') { quote = !quote; continue; }
-        if (cc == ',' && !quote) { ++col; continue; }
-        if (cc == '\n' && !quote) { ++row; col = 0; continue; }
+        if (cc === '"' && quote && nc === '"') { arr[row][col] += cc; ++c; continue; }
+        if (cc === '"') { quote = !quote; continue; }
+        if (cc === ',' && !quote) { ++col; continue; }
+        if (cc === '\n' && !quote) { ++row; col = 0; continue; }
 
         arr[row][col] += cc;
     }
@@ -3552,7 +3569,7 @@ function convertFProsToCSV(raw_data, type, pos_name) {
         var new_player_name = player_cell.find('a[href^="/nfl"]').first().text().trim();
 
         var team_text = '';
-        if (type == 'proj') {
+        if (type === 'proj') {
             team_text = player_cell.contents().filter(function() { return this.nodeType === 3; }).text().trim();
         }
         else {
@@ -3568,7 +3585,7 @@ function convertFProsToCSV(raw_data, type, pos_name) {
     });
 
     var new_headers;
-    if (type == 'rank') {
+    if (type === 'rank') {
         if (idp_positions.indexOf(pos_name) > -1) {
             new_headers = fpros_rank_idp_headers;
         }
@@ -3577,7 +3594,7 @@ function convertFProsToCSV(raw_data, type, pos_name) {
             new_headers = fpros_rank_headers;
         }
     }
-    else if (type == 'ros') {
+    else if (type === 'ros') {
         if (idp_positions.indexOf(pos_name) > -1) {
             new_headers = fpros_ros_idp_headers;
         }
@@ -3585,7 +3602,7 @@ function convertFProsToCSV(raw_data, type, pos_name) {
             new_headers = fpros_ros_headers;
         }
     }
-    else if (type == 'proj') {
+    else if (type === 'proj') {
         new_headers = fpros_proj_headers[pos_name];
     }
 
@@ -3616,7 +3633,7 @@ function getYahooIds() {
         new_id_data[storageTranslationKey] = storage_translation_data;
         new_id_data[storageTranslationUpdateKey] = updated_translation;
         chrome.storage.local.set(new_id_data);
-    }).fail(function( jqxhr, textStatus, error ) {
+    }).fail(function(jqxhr, textStatus, error) {
         var err = textStatus + ", " + error;
         dlog('Could not fetch yahoo ID data');
         dlog(err);
@@ -3669,14 +3686,14 @@ function getPosProjections() {
 
                     var player_name = currentline[player_name_header].trim();
 
-                    if (p_name == 'dst') {
-                        if (siteType == "espn") {
+                    if (p_name === 'dst') {
+                        if (siteType === "espn") {
                             player_name = player_name.split(' ').pop() + ' D/ST';
                         }
-                        else if (siteType == "yahoo") {
+                        else if (siteType === "yahoo") {
                             player_name = team_abbrevs[player_name];
                         }
-                        else if (siteType == "fleaflicker") {
+                        else if (siteType === "fleaflicker") {
                             player_name = player_name.split(' ').pop();
                         }
                         player_name = player_name.trim();
@@ -3771,14 +3788,14 @@ function getPosRankings() {
 
                     var player_name = currentline[player_name_header].trim();
 
-                    if (p_name == 'dst') {
-                        if (siteType == "espn") {
+                    if (p_name === 'dst') {
+                        if (siteType === "espn") {
                             player_name = player_name.split(' ').pop() + ' D/ST';
                         }
-                        else if (siteType == "yahoo") {
+                        else if (siteType === "yahoo") {
                             player_name = team_abbrevs[player_name];
                         }
-                        else if (siteType == "fleaflicker") {
+                        else if (siteType === "fleaflicker") {
                             player_name = player_name.split(' ').pop();
                         }
 
@@ -3853,14 +3870,14 @@ function getRosRankings() {
 
                     var player_name = currentline[player_name_header].trim();
 
-                    if (p_name == 'dst') {
-                        if (siteType == "espn") {
+                    if (p_name === 'dst') {
+                        if (siteType === "espn") {
                             player_name = player_name.split(' ').pop() + ' D/ST';
                         }
-                        else if (siteType == "yahoo") {
+                        else if (siteType === "yahoo") {
                             player_name = team_abbrevs[player_name];
                         }
-                        else if (siteType == "fleaflicker") {
+                        else if (siteType === "fleaflicker") {
                             player_name = player_name.split(' ').pop();
                         }
 
@@ -3906,10 +3923,10 @@ function getRosRankings() {
 }
 
 function getPlayerCheckName(n, p, t, typ) {
-    if (typ == 'proj') {
+    if (typ === 'proj') {
         return n.toUpperCase() + '|' + p + '|' + t;
     }
-    else if (typ == 'depth') {
+    else if (typ === 'depth') {
         return n.toUpperCase();
     }
     else {
@@ -3919,10 +3936,10 @@ function getPlayerCheckName(n, p, t, typ) {
 
 function fixPlayerPosition(pname, ppos, f_type) {
     var position_fix_dict = {};
-    if (f_type == 'proj') {
+    if (f_type === 'proj') {
         position_fix_dict = player_position_fix;
     }
-    else if (f_type == 'depth') {
+    else if (f_type === 'depth') {
         position_fix_dict = player_position_fix_depth;
     }
 
@@ -3932,6 +3949,13 @@ function fixPlayerPosition(pname, ppos, f_type) {
 
     if (position_fix_dict.hasOwnProperty(pname)) {
         ppos = position_fix_dict[pname];
+    }
+    
+    if (typeof ppos === "string" && ppos.indexOf(',EDR')) {
+        ppos = ppos.replace(',EDR', '');
+    }
+    else if (ppos.constructor === Array) {
+        ppos = ppos.filter(item => item !== 'EDR');
     }
 
     return ppos;
@@ -3946,11 +3970,11 @@ function fixPlayerName(pname, ppos, pteam, f_type, p_dict) {
     }
     for (let pp=0; pp<ppos_list.length; pp++) {
         ppos = ppos_list[pp];
-        if (f_type == 'proj') {
-            if ((ppos == 'DT') || (ppos == 'DE')) {
+        if (f_type === 'proj') {
+            if ((ppos === 'DT') || (ppos === 'DE')) {
                 ppos = 'DL';
             }
-            else if ((ppos == 'CB') || (ppos == 'S')) {
+            else if ((ppos === 'CB') || (ppos === 'S')) {
                 ppos = 'DB';
             }
         }
@@ -4051,10 +4075,10 @@ function parseDepth(data) {
             depth_poses.each(function(j, x) {
                 var j_x = jQuery(x);
                 var depth_pos = j_x.text().replace(':', '');
-                if (depth_pos == 'NT') {
+                if (depth_pos === 'NT') {
                     depth_pos = 'DT';
                 }
-                else if (depth_pos == 'OLB' || depth_pos == 'ILB' || depth_pos == 'MLB') {
+                else if (depth_pos === 'OLB' || depth_pos === 'ILB' || depth_pos === 'MLB') {
                     depth_pos = 'LB';
                 }
                 if (!weekly_depth_data[team_name].hasOwnProperty(depth_pos)) {
@@ -4231,22 +4255,22 @@ function getAllData(c_type) {
 function validPosition(player_pos, slot_pos) {
     var valid_pos = [slot_pos];
 
-    if (slot_pos.indexOf('/') > -1 && slot_pos != 'D/ST') {
+    if (slot_pos.indexOf('/') > -1 && slot_pos !== 'D/ST') {
         valid_pos = slot_pos.split('/');
     }
-    else if (slot_pos == 'FLEX') {
+    else if (slot_pos === 'FLEX') {
         valid_pos = ['RB', 'WR', 'TE'];
     }
-    else if (slot_pos == 'OP') {
+    else if (slot_pos === 'OP') {
         valid_pos = ['QB', 'RB', 'WR', 'TE'];
     }
-    else if (slot_pos == 'DL') {
+    else if (slot_pos === 'DL') {
         valid_pos = ['DE', 'EDR', 'DT'];
     }
-    else if (slot_pos == 'DB') {
+    else if (slot_pos === 'DB') {
         valid_pos = ['CB', 'S'];
     }
-    else if (slot_pos == 'DP') {
+    else if (slot_pos === 'DP') {
         valid_pos = ['DE', 'EDR', 'DT', 'LB', 'CB', 'S'];
     }
 
@@ -4264,14 +4288,14 @@ function optimizeLineup() {
     var p_proj_vals = [];
 
     var p_proj_cell = jQuery('.FantasyPlusProjectionsData');
-    p_proj_cell.each(function(i) {
+    p_proj_cell.each(function() {
         var v = jQuery(this);
         var p_proj_val = parseFloat(v.text());
 
         var p_name_row = v.parent('tr');
         var p_row_id = p_name_row.find(player_name_selector).attr('id');
 
-        if (typeof p_row_id != "undefined") {
+        if (typeof p_row_id !== "undefined") {
             var [p_cell, p_cell_text] = getPlayerCellText(p_name_row, v);
             var player_cell_data = getPlayerDataFromCell(p_cell, p_cell_text);
             var pos_name = player_cell_data[1];
@@ -4295,7 +4319,7 @@ function optimizeLineup() {
     var wait_timer = 0;
     var wait_increase = 100;
     var move_list = [];
-    starter_rows.each(function(i){
+    starter_rows.each(function(){
         var this_row = jQuery(this);
         var row_pos_text = this_row.find(player_cell_pos_selector).text().trim();
         var row_move_cell = this_row.find('.pncButtonLocked');
@@ -4319,12 +4343,12 @@ function optimizeLineup() {
             if (valid_players.length > 0) {
                 var valid_player = valid_players[0];
 
-                var player_idx = p_proj_vals.findIndex(i => i[0] == valid_player[0]);
+                var player_idx = p_proj_vals.findIndex(i => i[0] === valid_player[0]);
                 p_proj_vals[player_idx] = [null, null, null];
 
                 var this_player_row = player_table_body.find('#' + valid_player[0]).parent('tr');
                 var this_row_pos_text = this_player_row.find(player_cell_pos_selector).text().trim();
-                if (this_row_pos_text != row_pos_text) {
+                if (this_row_pos_text !== row_pos_text) {
                     var p_move_cell = this_player_row.find('.pncButtonMove');
                     if (p_move_cell.length) {
                         move_list.push([p_move_cell, this_row]);
@@ -4346,7 +4370,7 @@ function optimizeLineup() {
         var this_row = mov[1];
 
         var mov_type = p_move_cell.parents('tr').first().find(player_cell_pos_selector).text().trim();
-        if (mov_type != 'Bench') {
+        if (mov_type !== 'Bench') {
             setTimeout(function() {
                 p_move_cell.trigger('click');
                 var bench_move = bench_area.nextAll(player_table_row_selector).not('.irRow').find('.pncButtonHere:visible').first();
@@ -4391,9 +4415,10 @@ function optimizeLineup() {
 
 function calcBonus(bonus_type, pd) {
     var adj = 0;
+    var b_list;
 
-    if (siteType == 'yahoo') {
-        var b_list = [];
+    if (siteType === 'yahoo') {
+        b_list = [];
         var this_settings_dict = league_settings[bonus_type + '_bonus'];
         for (let k in this_settings_dict) {
             if (this_settings_dict.hasOwnProperty(k)) {
@@ -4412,8 +4437,8 @@ function calcBonus(bonus_type, pd) {
             }
         }
     }
-    else if (siteType == 'fleaflicker') {
-        var b_list = league_settings[bonus_type + '_bonus'];
+    else if (siteType === 'fleaflicker') {
+        b_list = league_settings[bonus_type + '_bonus'];
         if (b_list && b_list.length) {
             dlog(pd, 1);
 
@@ -4478,7 +4503,7 @@ function calcBonus(bonus_type, pd) {
 }
 
 function calculateProjections(datatype, player_name, pos_name, team_name) {
-    if (datatype == 'depth') {
+    if (datatype === 'depth') {
         return [player_name, pos_name, team_name];
     }
 
@@ -4495,7 +4520,7 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
 
     var player_data;
 
-    if (datatype == 'proj-default') {
+    if (datatype === 'proj-default') {
         //fix
         if (jQuery.isArray(pos_name)) {
             pos_name = pos_name[0];
@@ -4528,7 +4553,7 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
             }
             else {
                 dlog('Could not find player: ' + full_name);
-                if (datatype == 'proj') {
+                if (datatype === 'proj') {
                     return("--");
                 }
                 else {
@@ -4541,7 +4566,7 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
     dlog('player data: ', 1);
     dlog(player_data, 1);
 
-    if (datatype == 'proj' || datatype == 'proj-default') {
+    if (datatype === 'proj' || datatype === 'proj-default') {
         var player_score = 0;
 
         var settingNames = [
@@ -4597,23 +4622,23 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
                 dlog(setting_score, 1);
                 var p_data = 0;
 
-                if (sn == 'pass_icmp') {
+                if (sn === 'pass_icmp') {
                     p_data = Math.max((player_data['pass_att'] || 0) - (player_data['pass_cmp'] || 0), 0);
                 }
-                else if (sn == 'fgm') {
+                else if (sn === 'fgm') {
                     p_data = Math.max((player_data['fga'] || 0) - (player_data['fg'] || 0), 0);
                 }
-                else if (sn == 'pass_firstdown') {
+                else if (sn === 'pass_firstdown') {
                     if (first_down_pct['pass'].hasOwnProperty(pos_name)) {
                         p_data = first_down_pct['pass'][pos_name] * player_data['pass_att'];
                     }
                 }
-                else if (sn == 'rush_firstdown') {
+                else if (sn === 'rush_firstdown') {
                     if (first_down_pct['rush'].hasOwnProperty(pos_name)) {
                         p_data = first_down_pct['rush'][pos_name] * player_data['rush_att'];
                     }
                 }
-                else if (sn == 'rec_firstdown') {
+                else if (sn === 'rec_firstdown') {
                     if (first_down_pct['rec'].hasOwnProperty(pos_name)) {
                         p_data = first_down_pct['rec'][pos_name] * player_data['rec_att'];
                     }
@@ -4626,7 +4651,7 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
                 dlog(p_plus, 1);
                 player_score += p_plus;
 
-                if (siteType == 'fleaflicker') {
+                if (siteType === 'fleaflicker') {
                     var p_plus_bonus = calcBonus(sn, p_data);
                     dlog(p_plus_bonus, 1);
                     player_score += p_plus_bonus;
@@ -4635,7 +4660,7 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
         }
 
         var thisDefDict = {};
-        if (pos_name == 'D/ST') {
+        if (pos_name === 'D/ST') {
             thisDefDict = defDict;
         }
         else if (idp_positions.indexOf(pos_name) > -1) {
@@ -4657,7 +4682,7 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
 
                 player_score += p_plus_d;
 
-                if (siteType == 'fleaflicker') {
+                if (siteType === 'fleaflicker') {
                     var p_plus_bonus_d = calcBonus(k, p_data_val);
                     dlog(p_plus_bonus_d, 1);
                     player_score += p_plus_bonus_d;
@@ -4666,7 +4691,7 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
         }
 
         var player_adjustment = 0;
-        if (league_settings['siteType'] == 'espn') {
+        if (league_settings['siteType'] === 'espn') {
             player_adjustment =
                 league_settings['pass_300_bonus'] * (300 <= player_data['pass_yds'] && player_data['pass_yds'] < 400) +
                 league_settings['pass_400_bonus'] * ((player_data['pass_yds'] || 0) >= 400) +
@@ -4695,7 +4720,7 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
                 league_settings['ya549'] * (500 <= player_data['def_tyda'] && player_data['def_tyda'] < 550) +
                 league_settings['ya550'] * (550 <= player_data['def_tyda']);
         }
-        else if (league_settings['siteType'] == 'yahoo') {
+        else if (league_settings['siteType'] === 'yahoo') {
             player_adjustment =
                 calcBonus('pass', player_data) +
                 calcBonus('rush', player_data) +
@@ -4725,7 +4750,7 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
 
         return (Math.round(player_score * 10) / 10).toFixed(1);
     }
-    else if (datatype == 'rank') {
+    else if (datatype === 'rank') {
         if (parseFloat(player_data['Avg Rank'])) {
             var player_rank = (Math.round(player_data['Avg Rank'] * 10) / 10).toFixed(1);
             var player_stdev = (Math.round(player_data['Std Dev'] * 10 * 1.96) / 10).toFixed(1);
@@ -4735,7 +4760,7 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
             return ['--', '--'];
         }
     }
-    else if (datatype == 'ros') {
+    else if (datatype === 'ros') {
         if (parseFloat(player_data['Avg Rank Ros'])) {
             var player_ros = (Math.round(player_data['Avg Rank Ros'] * 10) / 10).toFixed(1);
             var player_ros_stdev = (Math.round(player_data['Std Dev Ros'] * 10 * 1.96) / 10).toFixed(1);
@@ -4751,8 +4776,10 @@ function getPlayerDataFromCell(player_cell, player_cell_text) {
     var player_name = '';
     var pos_name = '';
     var team_name = '';
+    
+    var new_posses;
 
-    if (siteType == "espn") {
+    if (siteType === "espn") {
         if (player_cell_text.indexOf('D/ST') > -1) {
             player_name = player_cell.find('a').text().trim();
             team_name = "-";
@@ -4766,17 +4793,17 @@ function getPlayerDataFromCell(player_cell, player_cell_text) {
             player_name = player_split[0];
             var team_pos = player_split[1].split(/\s|\xa0/);
             team_name = team_pos[0].toUpperCase();
-            if (team_name == 'JAX') {
+            if (team_name === 'JAX') {
                 team_name = 'JAC';
             }
-            else if (team_name == 'WSH') {
+            else if (team_name === 'WSH') {
                 team_name = 'WAS';
             }
 
             pos_name = team_pos[1];
             if (player_split.length > 2) {
                 pos_name = [pos_name];
-                var new_posses = player_split.slice(2);
+                new_posses = player_split.slice(2);
                 for (let np=0; np<new_posses.length; np++) {
                     var np_text = new_posses[np];
                     if (!np_text) {
@@ -4790,46 +4817,46 @@ function getPlayerDataFromCell(player_cell, player_cell_text) {
 
         player_name = player_name.replace('*', '');
     }
-    else if (siteType == "yahoo") {
+    else if (siteType === "yahoo") {
         var player_name_cell = player_cell.find('.ysf-player-name');
         // I might have to fix this more
         var pos_name_cell = player_name_cell.find('span').first().text().trim().split(' - ');
         team_name = pos_name_cell[0].toUpperCase();
-        if (team_name == 'JAX') {
+        if (team_name === 'JAX') {
             team_name = 'JAC';
         }
 
         pos_name = pos_name_cell[1];
         if (pos_name.indexOf(',') > -1) {
-            var new_posses = pos_name.split(',');
+            new_posses = pos_name.split(',');
             pos_name = [];
             new_posses.forEach(function(np) {
                 pos_name.push(np.trim());
             });
         }
-        else if (pos_name == "DEF") {
+        else if (pos_name === "DEF") {
             pos_name = "D/ST";
         }
 
         player_name = player_name_cell.find('a').text().trim();
 
-        if (pos_name == 'D/ST') {
+        if (pos_name === 'D/ST') {
             player_name = team_name;
             team_name = '-';
         }
     }
-    else if (siteType == "fleaflicker") {
+    else if (siteType === "fleaflicker") {
         player_name = player_cell.find('div.player-name .player-text').text().trim();
         team_name = player_cell.find('div.player-info span.player-team').text().trim();
         pos_name = player_cell.find('div.player-info span.position').text().trim();
 
-        if (pos_name == 'D/ST') {
+        if (pos_name === 'D/ST') {
             var psplit = player_name.split(/\s|\xa0/);
             player_name = psplit[psplit.length - 1];
             team_name = "-";
         }
         else if (pos_name.indexOf('/') > -1) {
-            var new_posses = pos_name.split('/');
+            new_posses = pos_name.split('/');
             pos_name = [];
             new_posses.forEach(function(np) {
                 pos_name.push(np.trim());
@@ -4848,7 +4875,7 @@ function getPlayerDataFromCell(player_cell, player_cell_text) {
 
 function getPlayerCellText(currRow, cell) {
     var player_cell = currRow.find(player_name_selector);
-    if (siteType == 'yahoo' && onMatchupPreviewPage) {
+    if (siteType === 'yahoo' && onMatchupPreviewPage) {
         player_cell = cell.nearest('td.player');
     }
 
@@ -4865,9 +4892,12 @@ function getPlayerCellText(currRow, cell) {
 }
 
 function getProjectionData(datatype, currRow, cell) {
+    var player_cell, player_cell_text;
     [player_cell, player_cell_text] = getPlayerCellText(currRow, cell);
 
-    if (datatype == 'adjavg') {
+    var player_href, player_id;
+
+    if (datatype === 'adjavg') {
         var normavg;
         if (show_avg) {
             var avg_cell = currRow.find('FantasyPlusAvgData');
@@ -4878,13 +4908,12 @@ function getProjectionData(datatype, currRow, cell) {
             normavg = med_cell.prev().text();
         }
 
-        if ((!player_cell_text) || (normavg == "--")) {
+        if ((!player_cell_text) || (normavg === "--")) {
             insertAdjAvg(currRow, null, null, [], []);
         }
         else {
-            var player_id;
             var live_game = false;
-            if (siteType == 'espn') {
+            if (siteType === 'espn') {
                 //ESPN assigns completely wrong playerIds in the cell for rookies. God damnit ESPN.
                 player_id = player_cell.find('a').attr('playerid');
 
@@ -4904,8 +4933,8 @@ function getProjectionData(datatype, currRow, cell) {
                     }
                 }
             }
-            else if (siteType == 'fleaflicker') {
-                var player_href = player_cell.find('div.player-name a.player-text').attr('href');
+            else if (siteType === 'fleaflicker') {
+                player_href = player_cell.find('div.player-name a.player-text').attr('href');
                 if (player_href) {
                     player_id = player_href.split('-').pop();
                 }
@@ -4979,7 +5008,7 @@ function getProjectionData(datatype, currRow, cell) {
                     dlog('Using cache for player activity: ' + new_player_id);
                     insertAdjAvg(currRow, player_stored_activity_league_avg, player_stored_activity_league_med, player_stored_activity_games, player_stored_activity_league_pts);
                 }
-                else if (siteType == 'espn') {
+                else if (siteType === 'espn') {
                     var espn_points_data = {
                         'leagueId': league_id,
                         'playerId': player_id,
@@ -4996,7 +5025,6 @@ function getProjectionData(datatype, currRow, cell) {
                         custom_data: {
                             curr_row: currRow,
                             player_cell_text: player_cell_text,
-                            norm_avg: normavg,
                             id: new_player_id,
                             old_id: player_id
                         }
@@ -5010,7 +5038,6 @@ function getProjectionData(datatype, currRow, cell) {
                         var pid = cust_data.id;
                         var old_pid = cust_data.old_id;
                         var currRow = cust_data.curr_row;
-                        var normavg = cust_data.norm_avg;
                         var player_cell_text = cust_data.player_cell_text;
 
                         if (!po) {
@@ -5070,7 +5097,7 @@ function getProjectionData(datatype, currRow, cell) {
                                 return jQuery(this).text().match(/BYE/);
                             });
                             var player_bye_week = null;
-                            if (player_bye_cell.length == 1) {
+                            if (player_bye_cell.length === 1) {
                                 player_bye_week = parseFloat(player_bye_cell.prev().text().trim());
                             }
 
@@ -5095,7 +5122,7 @@ function getProjectionData(datatype, currRow, cell) {
                                     p_data['games_played'][i] = null;
                                 }
 
-                                if (player_activity_pts[i] == '-') {
+                                if (player_activity_pts[i] === '-') {
                                     player_activity_pts[i] = null;
                                 }
                                 else {
@@ -5181,7 +5208,7 @@ function getProjectionData(datatype, currRow, cell) {
                                                 if (week_row_text.indexOf('DID NOT PLAY') > -1) {
                                                     p_data['games_played'][i] = 0;
                                                 }
-                                                else if (week_row_text.indexOf('BYE') == -1) {
+                                                else if (week_row_text.indexOf('BYE') === -1) {
                                                     p_data['games_played'][i] = 1;
                                                 }
                                             }
@@ -5205,7 +5232,7 @@ function getProjectionData(datatype, currRow, cell) {
                         }
                     });
                 }
-                else if (siteType == 'fleaflicker') {
+                else if (siteType === 'fleaflicker') {
                     jQuery.ajax({
                         url: player_href,
                         method: 'get',
@@ -5217,19 +5244,19 @@ function getProjectionData(datatype, currRow, cell) {
                         }
                     }).fail(function() {
                         var cust_data = this.custom_data;
-                        var player_href = cust_data.p_href;
+                        var cust_player_href = cust_data.p_href;
                         var currRow = cust_data.curr_row;
 
-                        dlog('Could not get player info: ' + player_href);
+                        dlog('Could not get player info: ' + cust_player_href);
                         insertAdjAvg(currRow, null, null, [], []);
                     }).done(function(po) {
                         var cust_data = this.custom_data;
-                        var player_href = cust_data.p_href;
+                        var cust_player_href = cust_data.p_href;
                         var currRow = cust_data.curr_row;
                         var pid = cust_data.pid;
 
                         if (!po) {
-                            dlog('No data in player info: ' + player_href);
+                            dlog('No data in player info: ' + cust_player_href);
                             insertAdjAvg(currRow, null, null, [], []);
                         }
                         else {
@@ -5254,7 +5281,7 @@ function getProjectionData(datatype, currRow, cell) {
                                     player_activity_pts[i] = null;
                                     p_data['games_played'][i] = 'BYE';
                                 }
-                                else if (player_activity_pts[i] == "—") {
+                                else if (player_activity_pts[i] === "—") {
                                     player_activity_pts[i] = null;
                                     p_data['games_played'][i] = 0;
                                 }
@@ -5281,8 +5308,8 @@ function getProjectionData(datatype, currRow, cell) {
     }
 
     else {
-        if (!player_cell_text || player_cell_text == "(Empty)") {
-            if (siteType == "fleaflicker" && onMatchupPreviewPage) {
+        if (!player_cell_text || player_cell_text === "(Empty)") {
+            if (siteType === "fleaflicker" && onMatchupPreviewPage) {
                 total_player_ids--;
                 if (total_player_ids <= 0) {
                     fetchFleaflickerIds.resolve();
@@ -5290,7 +5317,7 @@ function getProjectionData(datatype, currRow, cell) {
                 return popCell(cell, '', datatype);
             }
             else {
-                if (datatype == 'rank' || datatype == 'ros') {
+                if (datatype === 'rank' || datatype === 'ros') {
                     return popCell(cell, ['--', '--'], datatype);
                 }
                 else {
@@ -5299,7 +5326,7 @@ function getProjectionData(datatype, currRow, cell) {
             }
         }
         else if (player_cell_text.match(/(TQB|HC|P)$/)) { // can't project head coaches or TQB's
-            if (datatype == 'rank' || datatype == 'ros') {
+            if (datatype === 'rank' || datatype === 'ros') {
                 return popCell(cell, ['--', '--'], datatype);
             }
             else {
@@ -5312,25 +5339,27 @@ function getProjectionData(datatype, currRow, cell) {
         var pos_name = player_cell_data[1];
         var team_name = player_cell_data[2];
 
-        if (siteType == "espn") {
-            var calcVal = calculateProjections(datatype, player_name, pos_name, team_name);
+        var calcVal, hasAllData, seenId;
+
+        if (siteType === "espn") {
+            calcVal = calculateProjections(datatype, player_name, pos_name, team_name);
             return popCell(cell, calcVal, datatype);
         }
-        else if (siteType == "yahoo") {
+        else if (siteType === "yahoo") {
             if (onMatchupPreviewPage || onFreeAgencyPage) {
-                var player_href = player_cell.find('.ysf-player-name').find('a').attr('href');
-                var player_id = player_href.split('/').pop();
-                var seenId = storage_translation_data.hasOwnProperty('ID_' + player_id);
+                player_href = player_cell.find('.ysf-player-name').find('a').attr('href');
+                player_id = player_href.split('/').pop();
+                seenId = storage_translation_data.hasOwnProperty('ID_' + player_id);
                 dlog('id is ' + player_id + ', seen is ' + seenId, 1);
 
-                var hasAllData = alldata.hasOwnProperty(player_name.toUpperCase() + '|' + pos_name + '|' + team_name);
+                hasAllData = alldata.hasOwnProperty(player_name.toUpperCase() + '|' + pos_name + '|' + team_name);
 
-                if (pos_name == "D/ST" || seenId || hasAllData) {
+                if (pos_name === "D/ST" || seenId || hasAllData) {
                     if (seenId) {
                         player_name = storage_translation_data['ID_' + player_id];
                     }
 
-                    var calcVal = calculateProjections(datatype, player_name, pos_name, team_name);
+                    calcVal = calculateProjections(datatype, player_name, pos_name, team_name);
                     return popCell(cell, calcVal, datatype);
                 }
                 else {
@@ -5338,19 +5367,19 @@ function getProjectionData(datatype, currRow, cell) {
                 }
             }
             else {
-                var calcVal = calculateProjections(datatype, player_name, pos_name, team_name);
+                calcVal = calculateProjections(datatype, player_name, pos_name, team_name);
                 return popCell(cell, calcVal, datatype);
             }
         }
-        else if (siteType == "fleaflicker") {
-            if (datatype == 'depth') {
+        else if (siteType === "fleaflicker") {
+            if (datatype === 'depth') {
                 if (pos_name.constructor === Array) {
                     var new_pos_list = [];
                     pos_name.forEach(function(pn) {
-                        if (pn == 'DL') {
+                        if (pn === 'DL') {
                            new_pos_list.push('DE', 'DT');
                         }
-                        else if (pn == 'DB') {
+                        else if (pn === 'DB') {
                            new_pos_list.push('CB', 'S');
                         }
                         else {
@@ -5360,20 +5389,20 @@ function getProjectionData(datatype, currRow, cell) {
                     pos_name = new_pos_list;
                 }
                 else {
-                    if (pos_name == 'DL') {
+                    if (pos_name === 'DL') {
                        pos_name = ['DE', 'DT'];
                     }
-                    else if (pos_name == 'DB') {
+                    else if (pos_name === 'DB') {
                        pos_name = ['CB', 'S'];
                     }
                 }
             }
 
             if (onMatchupPreviewPage) {
-                var player_href = player_cell.find('div.player-name a.player-text').attr('href');
+                player_href = player_cell.find('div.player-name a.player-text').attr('href');
                 var player_last = player_href.split('/').pop();
                 var player_name_split = player_last.split('-');
-                var player_id = player_name_split.pop();
+                player_id = player_name_split.pop();
 
                 var player_split_cap = [];
                 for (let i=0; i<player_name_split.length; i++) {
@@ -5381,10 +5410,10 @@ function getProjectionData(datatype, currRow, cell) {
                 }
                 var player_href_name = player_split_cap.join(' ');
 
-                var seenId = storage_translation_data.hasOwnProperty('ID_' + player_id);
-                var hasAllData = alldata.hasOwnProperty(player_href_name + '|' + pos_name + '|' + team_name);
+                seenId = storage_translation_data.hasOwnProperty('ID_' + player_id);
+                hasAllData = alldata.hasOwnProperty(player_href_name + '|' + pos_name + '|' + team_name);
 
-                if (pos_name == "D/ST" || seenId || hasAllData) {
+                if (pos_name === "D/ST" || seenId || hasAllData) {
                     if (hasAllData) {
                         player_name = player_href_name;
                     }
@@ -5397,28 +5426,49 @@ function getProjectionData(datatype, currRow, cell) {
                         fetchFleaflickerIds.resolve();
                     }
 
-                    var calcVal = calculateProjections(datatype, player_name, pos_name, team_name);
+                    calcVal = calculateProjections(datatype, player_name, pos_name, team_name);
                     return popCell(cell, calcVal, datatype);
                 }
                 else {
                     jQuery.ajax({
                         url: player_href,
-                        timeout: ajax_timeout
+                        method: 'get',
+                        timeout: ajax_timeout,
+                        custom_data: {
+                            p_href: player_href,
+                            pid: player_id,
+                            pos_name: pos_name,
+                            team_name: team_name,
+                            datatype: datatype,
+                            cell: cell
+                        }
                     }).done(function(pl) {
                         pl = cleanHTML(pl);
+                        var cust_data = this.custom_data;
+                        var cust_player_id = cust_data.pid;
+                        var cust_pos_name = cust_data.pos_name;
+                        var cust_team_name = cust_data.team_name;
+                        var cust_datatype = cust_data.datatype;
+                        var cust_cell = cust_data.cell;
+
                         var pldata = jQuery(pl);
                         var n = pldata.find('#left-container > div.panel > div.panel-heading').text();
 
-                        var calcVal = calculateProjections(datatype, n, pos_name, team_name);
-                        popCell(cell, calcVal, datatype);
+                        calcVal = calculateProjections(cust_datatype, n, cust_pos_name, cust_team_name);
+                        popCell(cust_cell, calcVal, cust_datatype);
 
                         var new_id_data = {};
-                        storage_translation_data['ID_' + player_id] = n;
+                        storage_translation_data['ID_' + cust_player_id] = n;
                         new_id_data[storageTranslationKey] = storage_translation_data;
                         chrome.storage.local.set(new_id_data);
                     }).fail(function() {
-                        popCell(cell, '--', datatype);
-                        chrome.runtime.sendMessage({ request: 'fetch_fail', value: player_href });
+                        var cust_data = this.custom_data;
+                        var cust_player_href = cust_data.p_href;
+                        var cust_datatype = cust_data.datatype;
+                        var cust_cell = cust_data.cell;
+
+                        popCell(cust_cell, '--', cust_datatype);
+                        chrome.runtime.sendMessage({ request: 'fetch_fail', value: cust_player_href });
                     }).always(function() {
                         total_player_ids--;
                         if (total_player_ids <= 0) {
@@ -5428,7 +5478,7 @@ function getProjectionData(datatype, currRow, cell) {
                 }
             }
             else {
-                var calcVal = calculateProjections(datatype, player_name, pos_name, team_name);
+                calcVal = calculateProjections(datatype, player_name, pos_name, team_name);
                 return popCell(cell, calcVal, datatype);
             }
         }
@@ -5479,10 +5529,10 @@ function calcAdjAvg(thisrow, player_id, games_played, weekly_points) {
 }
 
 function insertAdjAvg(thisrow, p_avg, p_med, games_played, weekly_points) {
-    var old_avg;
+    var old_avg, thiscell;
 
     if (show_avg) {
-        var thiscell = thisrow.find('.FantasyPlusAvgData');
+        thiscell = thisrow.find('.FantasyPlusAvgData');
         old_avg = parseFloat(thiscell.prev().text());
 
         if (!jQuery.isNumeric(p_avg)) {
@@ -5497,7 +5547,7 @@ function insertAdjAvg(thisrow, p_avg, p_med, games_played, weekly_points) {
     }
 
     if (show_med) {
-        var thiscell = thisrow.find('.FantasyPlusMedianData');
+        thiscell = thisrow.find('.FantasyPlusMedianData');
         if (parseFloat(old_avg)) {
             old_avg = parseFloat(p_avg);
         }
@@ -5520,7 +5570,7 @@ function insertAdjAvg(thisrow, p_avg, p_med, games_played, weekly_points) {
         var thisCurrent = thisrow.find('.FantasyPlusCurrentData');
         var curr_score = "--";
         if (weekly_points && weekly_points.length > 0) {
-            if (current_season == current_season_avg_week && jQuery.isNumeric(weekly_points[current_week - 1])) {
+            if (current_season === current_season_avg_week && jQuery.isNumeric(weekly_points[current_week - 1])) {
                 curr_score = weekly_points[current_week - 1];
             }
 
@@ -5622,7 +5672,7 @@ function insertAdjAvg(thisrow, p_avg, p_med, games_played, weekly_points) {
                     spotRadius: 2
                 };
 
-                if (siteType == 'fleaflicker') {
+                if (siteType === 'fleaflicker') {
                     spark_options['height'] = '25px';
                     spark_options['width'] = '40px';
                     spark_options['tooltipClassname'] = 'fp-jqstooltip';
@@ -5647,7 +5697,7 @@ function insertAdjAvg(thisrow, p_avg, p_med, games_played, weekly_points) {
 }
 
 function reDefer() {
-    if ((header_index > -1) || ((siteType == 'fleaflicker') && hasProjectionTable)) {
+    if ((header_index > -1) || ((siteType === 'fleaflicker') && hasProjectionTable)) {
         projDone = jQuery.Deferred();
         rankDone = jQuery.Deferred();
         rosDone = jQuery.Deferred();
@@ -5655,17 +5705,17 @@ function reDefer() {
         depthDone = jQuery.Deferred();
         totalsDone = jQuery.Deferred();
 
-        if (siteType == 'yahoo' && (onMatchupPreviewPage || onFreeAgencyPage)) {
+        if (siteType === 'yahoo' && (onMatchupPreviewPage || onFreeAgencyPage)) {
             yahooIdsDone = jQuery.Deferred();
         }
-        else if (siteType == 'fleaflicker' && onMatchupPreviewPage) {
+        else if (siteType === 'fleaflicker' && onMatchupPreviewPage) {
             fetchFleaflickerIds = jQuery.Deferred();
         }
     }
 }
 
 function addPlayerData() {
-    if (header_index > -1 || ((siteType == 'fleaflicker') && hasProjectionTable)) {
+    if (header_index > -1 || ((siteType === 'fleaflicker') && hasProjectionTable)) {
         if (show_proj) {
             addProjections();
         }
@@ -5703,7 +5753,7 @@ function addPlayerData() {
 }
 
 function addAllData() {
-    if (header_index > -1 || ((siteType == 'fleaflicker') && hasProjectionTable)) {
+    if (header_index > -1 || ((siteType === 'fleaflicker') && hasProjectionTable)) {
         addPlayerData();
 
         if (show_avg || show_med || show_spark || show_current) {
@@ -5732,13 +5782,13 @@ function addAllData() {
 }
 
 function isCurrentWeek() {
-    if (siteType == 'espn') {
+    if (siteType === 'espn') {
         return true;
     }
-    else if (siteType == 'fleaflicker') {
+    else if (siteType === 'fleaflicker') {
         return is_current_week;
     }
-    else if (siteType == 'yahoo') {
+    else if (siteType === 'yahoo') {
         if (page_menu) {
             var proj_week;
             if (onMatchupPreviewPage) {
@@ -5750,7 +5800,7 @@ function isCurrentWeek() {
                 proj_week = page_menu.find('#selectlist_nav span').text().replace(/\D/g, '');
             }
 
-            if (!isNaN(proj_week) && (proj_week == current_week)) {
+            if (!isNaN(proj_week) && (proj_week === current_week)) {
                 return true;
             }
             else {
@@ -5785,17 +5835,17 @@ jQuery.fn.nearest = function (selector) {
 };
 
 function popCell(c, v, dtype) {
-    if (dtype == 'depth') {
+    if (dtype === 'depth') {
         return insertDepth(c, v);
     }
-    else if (dtype == 'rank' || dtype == 'ros') {
+    else if (dtype === 'rank' || dtype === 'ros') {
         var rnk = v[0];
         var std = v[1];
 
         c.text(rnk);
 
-        if (siteType == "espn" || siteType == "fleaflicker") {
-            if (rnk == "--") {
+        if (siteType === "espn" || siteType === "fleaflicker") {
+            if (rnk === "--") {
                 c.next().text(std); //change this in the future for "is stdev enabled column"
             }
             else {
@@ -5813,7 +5863,7 @@ function popCell(c, v, dtype) {
 function addProjections() {
     var datatype = 'proj';
     var isCurrWeek;
-    if (siteType == 'yahoo' && onFreeAgencyPage) {
+    if (siteType === 'yahoo' && onFreeAgencyPage) {
         isCurrWeek = is_FA_current;
     }
     else {
@@ -5823,7 +5873,7 @@ function addProjections() {
     if (isCurrWeek) {
         var projCells = player_table_body.find('.FantasyPlusProjectionsData');
 
-        if (siteType == 'fleaflicker') { //todo wont work if disabled
+        if (siteType === 'fleaflicker') { //todo wont work if disabled
             total_player_ids = projCells.length;
         }
 
@@ -5833,7 +5883,7 @@ function addProjections() {
 
             var byeweek_text = currRow.find('td:contains("** BYE **")');
             var isByeWeek = (byeweek_text.length > 0);
-            if (siteType == 'espn' && onMatchupPreviewPage) {
+            if (siteType === 'espn' && onMatchupPreviewPage) {
                 byeweek_text.html('<span style="color:#999999">BYE</span>');
             }
 
@@ -5861,7 +5911,7 @@ function addProjections() {
         player_table_body.find('.FantasyPlusProjectionsData').each(function() {
             var cell = jQuery(this);
             var ctext = '-';
-            if (siteType == 'fleaflicker') {
+            if (siteType === 'fleaflicker') {
                 ctext = '—';
             }
             cell.text(ctext);
@@ -5876,7 +5926,9 @@ function addProjections() {
 }
 
 function addProjTotals() {
-    if (siteType == 'espn') {
+    var sumTotal;
+    if (siteType === 'espn') {
+        var sumTotalESPN, sumTotalCurr;
         if (!(show_proj || show_current)) {
             dlog('totals done');
             totalsDone.resolve();
@@ -5891,26 +5943,25 @@ function addProjTotals() {
                 });
 
                 var addESPNTotals = function(typ) {
-                    var isProj = typ == 'proj';
-                    var isCurr = typ == 'curr';
+                    var isProj = typ === 'proj';
+                    var isCurr = typ === 'curr';
                     if (!(isProj || isCurr)) {
                         return;
                     }
 
                     var header_rows = player_table_header;
                     var starter_row = header_rows.filter(function() {
-                        return jQuery(this).prev().find('th.playertableSectionHeaderFirst').text() == 'STARTERS';
+                        return jQuery(this).prev().find('th.playertableSectionHeaderFirst').text() === 'STARTERS';
                     });
 
                     var cell_class;
                     if (isProj) {
                         cell_class = '.FantasyPlusProjections';
-                        var sumTotal, sumTotalESPN;
                         sumTotal = sumTotalESPN = 0;
                     }
                     else if (isCurr) {
                         cell_class = '.FantasyPlusCurrent';
-                        var sumTotalCurr = 0;
+                        sumTotalCurr = 0;
                     }
 
                     var keepAdding = true;
@@ -6018,7 +6069,7 @@ function addProjTotals() {
             }
         }
     }
-    else if (siteType == 'yahoo') {
+    else if (siteType === 'yahoo') {
         if (!show_proj) {
             dlog('totals done');
             totalsDone.resolve();
@@ -6127,9 +6178,9 @@ function addProjTotals() {
             }
         }
     }
-    else if (siteType == 'fleaflicker') {
+    else if (siteType === 'fleaflicker') {
         if (onClubhousePage) {
-            var sumTotal, sumTotalFlea, sumTotalActual;
+            var sumTotalFlea, sumTotalActual;
             sumTotal = sumTotalFlea = sumTotalActual = 0;
 
             var proj_tot_cell = player_table_body.find('tr td.FantasyPlusProjectionsTotal');
@@ -6255,7 +6306,7 @@ function addRankings() {
     var datatype = 'rank';
 
     var isCurrWeek;
-    if (siteType == 'yahoo' && onFreeAgencyPage) {
+    if (siteType === 'yahoo' && onFreeAgencyPage) {
         isCurrWeek = is_FA_current;
     }
     else {
@@ -6275,7 +6326,7 @@ function addRankings() {
             if (isByeWeek) {
                 dlog('bye week');
                 cell.text(projectedRanking);
-                if (siteType == 'espn') {
+                if (siteType === 'espn') {
                     cell.next().text(projectedRanking); //todo change this in the future for "is stdev enabled column"
                 }
             }
@@ -6285,7 +6336,7 @@ function addRankings() {
         }
         else {
             var ctext = '-';
-            if (siteType == 'fleaflicker') { //todo maybe fix to show columns anyway, or at least ros
+            if (siteType === 'fleaflicker') { //todo maybe fix to show columns anyway, or at least ros
                 ctext = '—';
             }
             cell.text(ctext);
@@ -6300,7 +6351,7 @@ function addRos() {
     var datatype = 'ros';
 
     var isCurrWeek;
-    if (siteType == 'yahoo' && onFreeAgencyPage) {
+    if (siteType === 'yahoo' && onFreeAgencyPage) {
         isCurrWeek = is_FA_current;
     }
     else {
@@ -6317,7 +6368,7 @@ function addRos() {
         }
         else {
             var ctext = '-';
-            if (siteType == 'fleaflicker') {
+            if (siteType === 'fleaflicker') {
                 ctext = '—';
             }
             cell.text(ctext);
@@ -6379,10 +6430,10 @@ function insertDepth(cell, depthData) {
 
         var p_depth = '--';
 
-        if (posname == 'D/ST') {
+        if (posname === 'D/ST') {
             cell.text('--');
         }
-        else if (teamname == 'FA') {
+        else if (teamname === 'FA') {
             cell.text('--');
         }
         else {
@@ -6394,6 +6445,8 @@ function insertDepth(cell, depthData) {
             }
 
             var team_pos_data = {};
+            var pdata, new_fix;
+
             if (posname.constructor === Array) {
                 for (let p=0; p < posname.length; p++) {
                     var pn = posname[p];
@@ -6404,18 +6457,18 @@ function insertDepth(cell, depthData) {
                         if (new_pos_data.hasOwnProperty(plname_cap)) {
                             team_pos_data = new_pos_data;
                             posname = pn;
-                            var pdata = team_pos_data[plname_cap];
+                            pdata = team_pos_data[plname_cap];
                             p_depth = posname + pdata['num'];
                             break;
                         }
                         else {
-                            var new_fix = fixPlayerName(plname, pn, teamname, 'depth', new_pos_data);
+                            new_fix = fixPlayerName(plname, pn, teamname, 'depth', new_pos_data);
                             if (new_fix) {
                                 plname = new_fix[0];
                                 posname = new_fix[1];
                                 plname_cap = plname.toUpperCase();
                                 team_pos_data = new_pos_data;
-                                var pdata = team_pos_data[plname_cap];
+                                pdata = team_pos_data[plname_cap];
                                 pdata['true_name'] = plname;
                                 p_depth = posname + pdata['num'];
                                 break;
@@ -6429,20 +6482,20 @@ function insertDepth(cell, depthData) {
                 if (team_data.hasOwnProperty(posname)) {
                     team_pos_data = team_data[posname];
                     if (team_pos_data.hasOwnProperty(plname_cap)) {
-                        var pdata = team_pos_data[plname_cap];
+                        pdata = team_pos_data[plname_cap];
                         p_depth = posname + pdata['num'];
                     }
                     else {
-                        var new_fix = fixPlayerName(plname, posname, teamname, 'depth', team_pos_data);
+                        new_fix = fixPlayerName(plname, posname, teamname, 'depth', team_pos_data);
                         if (new_fix) {
                             plname = new_fix[0];
                             posname = new_fix[1];
                             plname_cap = plname.toUpperCase();
-                            var pdata = team_pos_data[plname_cap];
+                            pdata = team_pos_data[plname_cap];
                             pdata['true_name'] = plname;
                             p_depth = posname + pdata['num'];
                         }
-                        else if (posname == 'RB') {
+                        else if (posname === 'RB') {
                             //todo make above a function
                             var newposname = 'FB';
                             var new_team_pos_data = {};
@@ -6451,17 +6504,17 @@ function insertDepth(cell, depthData) {
                                 if (new_team_pos_data.hasOwnProperty(plname_cap)) {
                                     posname = newposname;
                                     team_pos_data = new_team_pos_data;
-                                    var pdata = team_pos_data[plname_cap];
+                                    pdata = team_pos_data[plname_cap];
                                     p_depth = posname + pdata['num'];
                                 }
                                 else {
-                                    var new_fix = fixPlayerName(plname, newposname, teamname, 'depth', new_team_pos_data);
+                                    new_fix = fixPlayerName(plname, newposname, teamname, 'depth', new_team_pos_data);
                                     if (new_fix) {
                                         plname = new_fix[0];
                                         posname = new_fix[1];
                                         plname_cap = plname.toUpperCase();
                                         team_pos_data = new_team_pos_data;
-                                        var pdata = team_pos_data[plname_cap];
+                                        pdata = team_pos_data[plname_cap];
                                         pdata['true_name'] = plname;
                                         p_depth = posname + pdata['num'];
                                     }
@@ -6472,7 +6525,9 @@ function insertDepth(cell, depthData) {
                 }
             }
 
-            if (p_depth == '--') { dlog('Could not get depth for player: ' + depthData[0]); }
+            if (p_depth === '--') {
+                dlog('Could not get depth for player: ' + depthData[0]);
+            }
             cell.text(p_depth);
 
             var players_sorted = Object.keys(team_pos_data).sort(function(a,b){ return team_pos_data[a].num - team_pos_data[b].num; });
@@ -6493,7 +6548,7 @@ function insertDepth(cell, depthData) {
                     }
 
                     var trstring = '<tr>';
-                    if (pname_check.toUpperCase() == plname.toUpperCase()) {
+                    if (pname_check.toUpperCase() === plname.toUpperCase()) {
                         trstring = '<tr style="background-color: lightblue">';
                     }
                     var pstring = trstring + '<td style="width: 40px;">' + posname + pnum + ':' + '</td><td style="width: 140px;">' + pname_print + '</td><td style="width: 90px;">' + ptype + '</td><td style="width: 80px;">' + p_status + '</td></tr>';
@@ -6513,7 +6568,10 @@ function insertDepth(cell, depthData) {
                     side: 'right'
                 });
             }
-            else { dlog('No team data for pos: ' + posname); dlog(team_data); }
+            else {
+                dlog('No team data for pos: ' + posname);
+                dlog(team_data);
+            }
         }
     }
 
@@ -6546,9 +6604,9 @@ function refreshData(fetch) {
         activity_data[current_season][siteType] = {};
         activity_data_current_season_site = activity_data[current_season][siteType];
 
-        if ((siteType == 'yahoo' && (onMatchupPreviewPage || onFreeAgencyPage)) || (siteType == 'fleaflicker' && onMatchupPreviewPage)) {
+        if ((siteType === 'yahoo' && (onMatchupPreviewPage || onFreeAgencyPage)) || (siteType === 'fleaflicker' && onMatchupPreviewPage)) {
             storage_translation_data = {};
-            if (siteType == 'yahoo') {
+            if (siteType === 'yahoo') {
                 updated_translation = 0;
                 getYahooIds();
             }
@@ -6588,7 +6646,7 @@ function watchForChanges() {
         activityDone.resolve();
         */
         var target_selector = base_table_selector;
-        if (siteType == 'fleaflicker') {
+        if (siteType === 'fleaflicker') {
             target_selector = 'div#body';
             if (onFreeAgencyPage) {
                 observerConfig['characterData'] = false;
@@ -6601,18 +6659,18 @@ function watchForChanges() {
             observer_disconned = false;
             if (mutations.length > 0) {
                 //todo fix when grabbing player ids
-                if (siteType == 'yahoo') {
-                    var m = mutations[0];
+                if (siteType === 'yahoo') {
+                    let m = mutations[0];
                     var thisMutTgt = m['target'];
                     if (thisMutTgt) {
                         var thisMutTgtId = thisMutTgt['id'];
                         var thisMutTgtClass = thisMutTgt['className'];
-                        if (thisMutTgtId == 'selectlist_nav' || thisMutTgtClass == 'flyout-title') {
+                        if (thisMutTgtId === 'selectlist_nav' || thisMutTgtClass === 'flyout-title') {
                             acceptedChange = false;
                         }
                     }
                 }
-                else if (siteType == 'fleaflicker') {
+                else if (siteType === 'fleaflicker') {
                     acceptedChange = false;
                     if (onMatchupPreviewPage) {
                         acceptedChange = true;
@@ -6622,11 +6680,11 @@ function watchForChanges() {
                             var md = mutations[m];
                             var thisMutNodes = md['addedNodes'];
                             if (thisMutNodes && thisMutNodes.length) {
-                                for (ma=0; ma < thisMutNodes.length; ma++) {
+                                for (let ma=0; ma < thisMutNodes.length; ma++) {
                                     var thisMutNode = thisMutNodes[ma];
                                     var thisMutTgtParent = thisMutNode['parentElement'];
                                     if (thisMutTgtParent) {
-                                        if (thisMutTgtParent.localName == 'div' && thisMutTgtParent.id == 'body') {
+                                        if (thisMutTgtParent.localName === 'div' && thisMutTgtParent.id === 'body') {
                                             dlog('accepted');
                                             acceptedChange = true;
                                         }
@@ -6663,7 +6721,7 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
     var req = msg.request;
     var val = msg.value;
 
-    if (req == 'refresh_data') {
+    if (req === 'refresh_data') {
         refreshData(true);
         sendResponse('ok');
     }
