@@ -1,0 +1,1 @@
+"use strict";$(function(){jQuery("#set-settings").click(function(t){window.open(chrome.extension.getURL("settings.html"),"_blank")})});

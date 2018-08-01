@@ -1,8 +1,10 @@
+/* global chrome, ga */
+
 var refreshData = function(event) {
     chrome.tabs.query({ active:true, currentWindow:true }, function(tabs) {
         var thisTab = tabs[0];
         chrome.tabs.sendMessage(thisTab.id, { request: "refresh_data" }, function (response) {
-            if (response == 'ok') {
+            if (response === 'ok') {
                 ga('send', 'event', 'manual_data_refresh', 'success', thisTab.url);
             }
             else {
@@ -22,4 +24,4 @@ document.addEventListener('DOMContentLoaded', function() {
     jQuery("#report-bug").click(function(event) {
 		window.open('https://chrome.google.com/webstore/detail/fantasyplus/gojndgicjncbiobejfpjpcahadininga/support', "_blank");
 	});
-})
+});

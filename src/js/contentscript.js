@@ -3557,7 +3557,7 @@ function convertFProsToCSV(raw_data, type, pos_name) {
     data_rows.each(function(i, v) {
         var jv = jQuery(v);
         var player_cell = jv.find('td.player-label');
-        var new_player_name = player_cell.find('a[href^="/nfl"]').first().text().trim();
+        var new_player_name = player_cell.find('a[href^="/nfl"]').first().find('span.full-name').text().trim();
 
         var team_text = '';
         if (type === 'proj') {
@@ -3611,7 +3611,7 @@ function getYahooIds() {
     // go to https://sports.yahoo.com/site/api/resource/sports.league.playerssearch;count=2;league=nfl;name=;pos=;start=?bkt=%5B%22spdmtest%22%2C%22mlb-gamechannel%22%2C%22sp-football-reg-options-expanded%22%2C%22sp-footballl-signup-primary-join%22%2C%22sp-survival-promo-ctl%22%5D&device=desktop&feature=canvassOffnet%2CnewContentAttribution%2Clivecoverage%2Ccanvass&intl=us&lang=en-US&partner=none&prid=as7g78lcqbjvm&region=US&site=sports&tz=America%2FNew_York&ver=1.0.1932&returnMeta=true'
     // copy as curl, change count
     // that | jq -r '.data.players | to_entries[] | "\(.key)\": \"\(.value.display_name)\","' | sed -e 's/nfl.p./"ID_/'
-    jQuery.getJSON(chrome.extension.getURL('yahoo_ids.json')
+    jQuery.getJSON(chrome.extension.getURL('data/yahoo_ids.json')
     ).done(function(yahoo_json) {
         storage_translation_data = yahoo_json;
 
@@ -3755,6 +3755,7 @@ function getPosRankings() {
         if (raw_data !== 'error') {
             pos_name = p_name.toUpperCase();
             raw_data = convertFProsToCSV(raw_data, type, pos_name);
+            dlog(raw_data);
 
             parsed_rank = parsesiteCSV(raw_data);
 
@@ -3777,6 +3778,8 @@ function getPosRankings() {
                         team_name = team_name_conversion[team_name];
                     }
 
+                    dlog(currentline);
+                    dlog(currentline[player_name_header]);
                     var player_name = currentline[player_name_header].trim();
 
                     if (p_name === 'dst') {
@@ -4739,6 +4742,11 @@ function calculateProjections(datatype, player_name, pos_name, team_name) {
         dlog('returning score: ', 1);
         dlog(player_name +','+ player_score, 1);
 
+        if (isNaN(player_score)) {
+            dlog('bad player score');
+            return '--';
+        }
+        
         return (Math.round(player_score * 10) / 10).toFixed(1);
     }
     else if (datatype === 'rank') {
@@ -6645,6 +6653,10 @@ function watchForChanges() {
             }
         }
         var target_observe = document.querySelector(target_selector);
+        if (target_observe === null) {
+            dlog('Not attaching observer');
+            return;
+        }
         observer = new MutationObserver(function (mutations) {
             var acceptedChange = true;
             observer_disconned = false;

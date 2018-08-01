@@ -1,8 +1,10 @@
+/* global chrome, ga */
+
 chrome.runtime.onInstalled.addListener(function(details) {
-	if (details.reason == 'install') {
+	if (details.reason === 'install') {
         ga('send', 'event', 'Install');
 		chrome.tabs.create({url: 'install.html', active: true}, function(tab) {});
-	} else if (details.reason == 'update') {
+	} else if (details.reason === 'update') {
         var thisVersion = chrome.runtime.getManifest().version;
         var thisVersion_split = thisVersion.split('.');
         var thisVersion_1 = thisVersion_split[0];
@@ -24,11 +26,11 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
     var req = msg.request;
     var val = msg.value;
     
-    if (req == 'valid_site') {
+    if (req === 'valid_site') {
         ga('send', 'pageview', sender.url);
         chrome.pageAction.show(sender.tab.id);
     }
-    else if (req == 'fetch_fail') {
+    else if (req === 'fetch_fail') {
         ga('send', 'event', 'Fetch fail', val);
     }
 });

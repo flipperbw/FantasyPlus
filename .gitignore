@@ -1,2 +1,6 @@
+/node_modules
 *.swp
 src.zip
+npm-debug.log
+package-lock.json
+package.json

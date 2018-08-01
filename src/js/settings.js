@@ -6,6 +6,8 @@
 // update freq for adjavg
 // put changes detected warning at the top
 
+/* global chrome, ga */
+
 var user_settings = {};
 
 //todo add stdev for each rank
@@ -58,16 +60,16 @@ changes.misc = $.extend(true, {}, misc);
 var has_change = false;
 
 function check_recursive(d, t) {
-    for (k in d) {
+    for (let k in d) {
         if (d.hasOwnProperty(k)) {
             var v = d[k];
             if ($.isPlainObject(v)) {
                 check_recursive(v, t);
             }
-            else if (t == 'set') {
+            else if (t === 'set') {
                 d[k] = false;
             }
-            else if (t == 'check') {
+            else if (t === 'check') {
                 if (v === true) {
                     has_change = true;
                 }
@@ -178,6 +180,8 @@ $(function () {
             change_button();
         });
         
+        var $handle;
+        
         // Freq Time
         freq_ranges.rangeslider({
             polyfill: false,
@@ -249,7 +253,7 @@ $(function () {
                 }
             }
 
-            if (k == 'rank' || k == 'ros') {
+            if (k === 'rank' || k === 'ros') {
                 var nums = v['num'];
                 $.each(nums, function (a, b) {
                     $('#experts-' + k + '-num-' + a).val(b);
@@ -272,11 +276,11 @@ $(function () {
             
             var expert_set_tooltip = expert_set.siblings('.tooltip-error');
             
-            if (sub_type == 'num') {
+            if (sub_type === 'num') {
                 check_status = expert_set.val();
                 check_status = Number(check_status);
                 var min_num = 0;
-                if (fetch_val == 'top') {
+                if (fetch_val === 'top') {
                     min_num = 1;
                 }
                 if (!check_status || !Number.isInteger(check_status) || check_status <= min_num) {
@@ -287,13 +291,13 @@ $(function () {
                     expert_set.tooltip('hide');
                 }
             }
-            else if (sub_type == 'selection') {
+            else if (sub_type === 'selection') {
                 var row_btns = expert_set.parents('.row').find(':input[type=checkbox]');
                 var all_btn = row_btns.filter(function() {
                     return $(this).attr('id').match(/-all$/);
                 });
                 
-                if (fetch_val == 'all') {
+                if (fetch_val === 'all') {
                     row_btns.not(expert_set).each(function() {
                         var b = $(this);
                         if (b.prop('checked') === true) {
@@ -313,7 +317,7 @@ $(function () {
                         all_btn.prop('checked', false);
                     }
                     
-                    if (fetch_type == 'rank' || fetch_type == 'ros') {
+                    if (fetch_type === 'rank' || fetch_type === 'ros') {
                         var top_section = expert_set.parents('#experts-' + fetch_type + '-top');
                         
                         if (top_section.length === 1) {
@@ -331,7 +335,7 @@ $(function () {
                 }
                 
                 var checked_btns = row_btns.filter(function() {
-                    return $(this).prop('checked') == true;
+                    return $(this).prop('checked') === true;
                 });
                 
                 if (checked_btns.length === 0) {
@@ -429,7 +433,7 @@ $(function () {
             
             exp_dict['selection'] = exp_sel_vals;
             
-            if (k == 'rank' || k == 'ros') {
+            if (k === 'rank' || k === 'ros') {
                 var exp_num_dict = {};
                 var text_inputs = exp_section.find('input[type=text]');
                 
