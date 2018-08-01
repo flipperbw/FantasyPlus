@@ -3271,6 +3271,26 @@ function parseLeagueSettings(league_data, siteType) {
     return league_settings;
 }
 
+function ajaxCbPos(settings) {
+    jQuery.ajax(
+        settings
+    ).done(function(data) {
+        var cb = this.custom_data.cb;
+        var cust_position = this.custom_data.pos;
+
+        data = cleanHTML(data);
+        cb(cust_position, data.trim());
+    }).fail(function() {
+        var cb = this.custom_data.cb;
+        var cust_position = this.custom_data.pos;
+        var cust_source_site = this.custom_data.source_site;
+
+        idp_fetch_fail = true;
+        chrome.runtime.sendMessage({ request: 'fetch_fail', value: cust_source_site });
+        cb(cust_position, 'error');
+    });
+}
+
 //Get the data from external sites
 function fetchPositionData(position, type, cb) {
     var source_site = '';
@@ -3305,41 +3325,25 @@ function fetchPositionData(position, type, cb) {
         //source_site = 'https://www.fantasysharks.com/apps/bert/forecasts/projections.php?csv=1&Position=' + position;
     }
 
+    var ajax_settings = {
+        url: source_site,
+        timeout: ajax_timeout,
+        custom_data: {
+            'cb': cb,
+            'source_site': source_site,
+            'pos': position
+        }
+    };
+
     if (source_type === 'idp') {
-        jQuery.ajax({
-            url: source_site,
-            custom_data: {'cb': cb},
-            timeout: ajax_timeout
-        }).done(function(data) {
-            var cb = this.custom_data.cb;
-            data = cleanHTML(data);
-            cb(position, data.trim());
-        }).fail(function() {
-            var cb = this.custom_data.cb;
-            idp_fetch_fail = true;
-            chrome.runtime.sendMessage({ request: 'fetch_fail', value: source_site });
-            cb(position, 'error');
-        });
+        ajaxCbPos(ajax_settings);
     }
     else {
         var expert_type = experts[type] || {};
         var expert_selection = expert_type.selection || [];
 
         if (type === 'proj' && expert_selection.length === 1) {
-            jQuery.ajax({
-                url: source_site,
-                custom_data: {'cb': cb},
-                timeout: ajax_timeout
-            }).done(function(data) {
-                var cb = this.custom_data.cb;
-                data = cleanHTML(data);
-                cb(position, data.trim());
-            }).fail(function() {
-                var cb = this.custom_data.cb;
-                fetch_fail = true;
-                chrome.runtime.sendMessage({ request: 'fetch_fail', value: source_site });
-                cb(position, 'error');
-            });
+            ajaxCbPos(ajax_settings);
         }
         else if (type === 'proj') {
             var send_data = {
@@ -3356,32 +3360,21 @@ function fetchPositionData(position, type, cb) {
                 }
             }
             */
+            
+            ajax_settings['method'] = 'get';
+            ajax_settings['data'] = send_data;
+            ajax_settings['traditional'] = true;
 
-            jQuery.ajax({
-                url: source_site,
-                method: 'get',
-                data: send_data,
-                traditional: true,
-                custom_data: {'cb': cb},
-                timeout: ajax_timeout
-            }).done(function(data) {
-                var cb = this.custom_data.cb;
-                data = cleanHTML(data);
-                cb(position, data.trim());
-            }).fail(function() {
-                var cb = this.custom_data.cb;
-                fetch_fail = true;
-                chrome.runtime.sendMessage({ request: 'fetch_fail', value: source_site });
-                cb(position, 'error');
-            });
+            ajaxCbPos(ajax_settings);
         }
         else {
-            jQuery.ajax({
-                url: source_site,
-                custom_data: {'cb': cb},
-                timeout: ajax_timeout
-            }).done(function(data) {
+            jQuery.ajax(
+                ajax_settings
+            ).done(function(data) {
                 var cb = this.custom_data.cb;
+                var cust_position = this.custom_data.pos;
+                var cust_source_site = this.custom_data.source_site;
+
                 data = cleanHTML(data);
 
                 var send_data = {
@@ -3499,27 +3492,25 @@ function fetchPositionData(position, type, cb) {
 
                 dlog(expert_list);
                 delete send_data['expert[]'];
-
-                jQuery.ajax({
-                    url: source_site,
+                
+                var new_ajax_settings = {
+                    url: cust_source_site,
                     method: 'get',
                     data: send_data,
-                    custom_data: {'cb': cb},
-                    timeout: ajax_timeout
-                }).done(function(data) {
-                    var cb = this.custom_data.cb;
-                    data = cleanHTML(data);
-                    cb(position, data.trim());
-                }).fail(function() {
-                    var cb = this.custom_data.cb;
-                    fetch_fail = true;
-                    chrome.runtime.sendMessage({ request: 'fetch_fail', value: source_site });
-                    cb(position, 'error');
-                });
+                    timeout: ajax_timeout,
+                    custom_data: {
+                        'cb': cb,
+                        'source_site': cust_source_site,
+                        'pos': cust_position
+                    }
+                };
+
+                ajaxCbPos(new_ajax_settings);
             }).fail(function() {
                 var cb = this.custom_data.cb;
+                var cust_source_site = this.custom_data.source_site;
                 fetch_fail = true;
-                chrome.runtime.sendMessage({ request: 'fetch_fail', value: source_site });
+                chrome.runtime.sendMessage({ request: 'fetch_fail', value: cust_source_site });
                 cb(position, 'error');
             });
         }
