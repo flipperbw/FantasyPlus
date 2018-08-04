@@ -92,11 +92,13 @@ var storageUserSettingsKey = 'fp_user_settings';
 
 function clearStoredData() {
     chrome.storage.local.get(null, function(d) {
+        /* jshint unused: vars */
         jQuery.each(d, function(k, v) {
             if (k !== storageUserSettingsKey) {
                 chrome.storage.local.remove(k);
             }
         });
+        /* jshint unused: true */
     });
 }
 
@@ -547,17 +549,6 @@ var baseUrlFleaflicker = 'fleaflicker.com';
 if (document.URL.match(new RegExp(baseUrlESPN))) {
     siteType = 'espn';
 
-    /*
-    //need to disable calls to prototypeJS for espn and maybe others. otherwise this breaks. also lots of api errors.
-    //https://www.playerprofiler.com/wp-admin/admin-ajax.php?action=playerprofiler_api&endpoint=%2Fplayer%2FME-0600
-    //https://www.playerprofiler.com/api/v1/embed/game-log/ME-0600
-    //https://www.playerprofiler.com/nfl/mike-evans/#/game-log
-    jQuery('body').append('<div data-pp-linker-content><p>Mike Evans</p></div>');
-    jQuery('body').append("<script>window._pp = window._pp || {}; window._pp['linker'] = 'modal';</script>");
-    jQuery('body').append('<script src="https://d998027e2znu1.cloudfront.net/widgets/embed.js"></script>');
-    jQuery('body').append('<div data-pp-linker-content>Mike Evans</div>');
-    */
-
     var onMatchupPreviewPage = document.URL.match(/ffl\/matchuppreview/);
     var onClubhousePage = document.URL.match(/ffl\/(clubhouse|dropplayers|rosterfix)/);
     var onFreeAgencyPage = document.URL.match(/ffl\/(freeagency|watchlist)/);
@@ -583,6 +574,24 @@ if (document.URL.match(new RegExp(baseUrlESPN))) {
     if (onLeagueSettingsPage) {
         addLeagueSettings();
     }
+
+    /*
+    //https://www.playerprofiler.com/wp-admin/admin-ajax.php?action=playerprofiler_api&endpoint=%2Fplayer%2FME-0600
+    //https://www.playerprofiler.com/api/v1/embed/game-log/ME-0600
+    //https://www.playerprofiler.com/nfl/mike-evans/#/game-log
+
+    // - need to fix the dumb old prototypeJS bug for playerprofiler to work
+    var elt = document.createElement("script");
+    elt.type = 'text/javascript';
+    elt.innerHTML = 'Element.prototype = Node.prototype;';
+    document.head.appendChild(elt);
+
+
+
+    jQuery('body').append("<script>window._pp = window._pp || {}; window._pp['linker'] = 'modal';</script>"); // linker
+    jQuery('body').append('<script src="https://d998027e2znu1.cloudfront.net/widgets/embed.js"></script>');
+    jQuery('body').append('<div data-pp-linker-content>Mike Evans</div>');
+    */
 
     league_id = document.URL.match(/leagueId=(\d+)/)[1];
     league_settings_url = '//games.espn.com/ffl/leaguesetup/sections/scoring?leagueId=' + league_id;
@@ -1169,6 +1178,7 @@ function addLeagueSettings() {
             let thistd_text = $thistd.text();
 
             let frac_cell = false;
+
             //again, espn adds a dumb extra space
             //todo combine these
             let cell_indexof = thistd_text.search(/ards\s+\(PY/);
@@ -1193,7 +1203,7 @@ function addLeagueSettings() {
                 let denom_str = '';
                 let denom_reg = thistd_text.match(/\([A-Z]+(\d+)\)/);
                 if (denom_reg.length) {
-                    let denom_str = denom_reg[1];
+                    denom_str = denom_reg[1];
                 }
                 let same_val = check_denom(td_num, denom_str, expected_val, $td_cell);
                 if (same_val) {
@@ -1209,7 +1219,7 @@ function addLeagueSettings() {
                 let denom_str = '';
                 let denom_reg = thistd_text.match(/\([A-Z]+(\d+)\)/);
                 if (denom_reg.length) {
-                    let denom_str = denom_reg[1];
+                    denom_str = denom_reg[1];
                 }
                 let same_val = check_denom(td_num, denom_str, expected_val, $td_cell);
                 if (same_val) {
@@ -1675,15 +1685,15 @@ function isActivityDataCurrent(pid, upd, typ, live) {
     var r = true;
     if (typ === 'league') {
         if (live === 'live') {
-            dlog('using live');
+            dlog('using live', 1);
             chk_mins = check_minutes_avg_live;
         }
         else if (live === 'done') {
-            dlog('using done');
+            dlog('using done', 1);
             chk_mins = check_minutes_avg_done;
         }
         else {
-            dlog('using day');
+            dlog('using day', 1);
             chk_mins = check_minutes_avg;
         }
 
@@ -1692,14 +1702,14 @@ function isActivityDataCurrent(pid, upd, typ, live) {
     else if (typ === 'games') {
         //todo timezones? maybe add a check to make sure length is expected somehow
         var update_week = Math.max(Math.ceil(((upd - seasonstart_avg_week) / 86400000) / 7), 1);
-        dlog('update week for player: ' + pid + ': ' + update_week);
+        dlog('update week for player: ' + pid + ': ' + update_week, 1);
         if (update_week !== current_week_avg) {
             r = false;
         }
     }
 
     if (r === false) {
-        dlog('Activity data out of date for player: ' + pid + ', type is: ' + typ + ', by: ' + ((current_time - upd) / 1000));
+        dlog('Activity data out of date for player: ' + pid + ', type is: ' + typ + ', by: ' + ((current_time - upd) / 1000), 1);
     }
 
     return r;
@@ -1942,7 +1952,8 @@ function addColumns() {
     var last_header_col, projection_header, rank_header, spark_header, top_rank_header, ros_header, depth_header, all_header_cells, top_rank_header_j, top_rank_combine,
         total_row,
         projection_cell, rank_cell, space_cell, newprojcell, spark_cell, rank_std_cell, ros_cell, ros_std_cell, depth_cell;
-
+    //var profiler_header, profiler_cell;
+    
     if (siteType === "espn") {
         projection_header = '<td class="playertableStat FantasyPlus FantasyPlusProjections FantasyPlusProjectionsHeader" title="Consensus point projections from FantasyPros (via FantasyPlus)">FPROS</td>';
         projection_cell = '<td class="playertableStat FantasyPlus FantasyPlusProjections FantasyPlusProjectionsData">' + loadingDiv + '</td>';
@@ -1976,6 +1987,7 @@ function addColumns() {
             rank_header = '<td colspan="2" style="text-align: center" class="playertableStat FantasyPlus FantasyPlusRankings FantasyPlusRankingsHeader" title="Projected position rank (lower is better) for *this week* from FantasyPros (via FantasyPlus)">THIS WEEK</td>'; //say wk 9 or this week
             ros_header = '<td colspan="2" style="text-align: center" class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosHeader" title="Projected position rank (lower is better) for *the rest of the season* from FantasyPros (via FantasyPlus)">REMAINING</td>';
             depth_header = '<td class="playertableStat FantasyPlus FantasyPlusDepth FantasyPlusDepthHeader" title="Depth chart information (via FantasyPlus)">DEPTH</td>';
+            //profiler_header = '<td class="playertableStat FantasyPlus FantasyPlusProfiler FantasyPlusProfilerHeader" title="Depth chart information (via FantasyPlus)">PROFILE</td>';
 
             var adjavg_cell = '<td class="playertableStat FantasyPlus FantasyPlusAvg FantasyPlusAvgData">' + loadingDiv + '</td>';
             var median_cell = '<td class="playertableStat FantasyPlus FantasyPlusMedian FantasyPlusMedianData">' + loadingDiv + '</td>';
@@ -1986,6 +1998,7 @@ function addColumns() {
             ros_cell = '<td class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosData">' + loadingDiv + '</td>';
             ros_std_cell = '<td class="playertableStat FantasyPlus FantasyPlusRos FantasyPlusRosStdevData"></td>';
             depth_cell = '<td class="playertableStat FantasyPlus FantasyPlusDepth FantasyPlusDepthData">' + loadingDiv + '</td>';
+            //profiler_cell = '<td class="playertableStat FantasyPlus FantasyPlusProfiler FantasyPlusProfilerData">' + loadingDiv + '</td>';
             space_cell = '<td class="FantasyPlus sectionLeadingSpacer"></td>';
 
             all_header_cells = '';
@@ -2061,6 +2074,7 @@ function addColumns() {
                 var player_head = player_table_header.find('td:contains(TEAM POS)');
                 var player_header_index = player_head.first().index();
                 player_head.after(depth_header);
+                //player_head.after(profiler_header);
             }
 
             var season_num = 0;
@@ -2140,6 +2154,7 @@ function addColumns() {
 
                 if (show_depth) {
                     currRow.find('td').eq(player_header_index).after(depth_cell);
+                    //currRow.find('td').eq(player_header_index).after(profiler_cell);
                 }
             });
 
@@ -2174,6 +2189,21 @@ function addColumns() {
 
                 bench_header.before(total_row);
             }
+            
+            //well, this doesnt work. just doesnt assign the cards
+            /*
+            var all_profiler_cells = player_table_body.find('.FantasyPlusProfilerData');
+            all_profiler_cells.each(function() {
+                var cell = jQuery(this);
+                var currRow = cell.parent();
+
+                var player_cell, player_cell_text;
+                [player_cell, player_cell_text] = getPlayerCellText(currRow, cell);
+                var player_cell_data = getPlayerDataFromCell(player_cell, player_cell_text);
+                var player_name = player_cell_data[0];
+                cell.html(`<div data-pp-linker-content>${player_name}</div>`);
+            });
+            */
         }
     }
     else if (siteType === "yahoo") {
@@ -3755,7 +3785,6 @@ function getPosRankings() {
         if (raw_data !== 'error') {
             pos_name = p_name.toUpperCase();
             raw_data = convertFProsToCSV(raw_data, type, pos_name);
-            dlog(raw_data);
 
             parsed_rank = parsesiteCSV(raw_data);
 
@@ -3778,8 +3807,6 @@ function getPosRankings() {
                         team_name = team_name_conversion[team_name];
                     }
 
-                    dlog(currentline);
-                    dlog(currentline[player_name_header]);
                     var player_name = currentline[player_name_header].trim();
 
                     if (p_name === 'dst') {
@@ -5004,7 +5031,7 @@ function getProjectionData(datatype, currRow, cell) {
                 // Fetch points during gametime constantly for CURR, otherwise daily for stat corrections
 
                 if (isActivityDataCurrent(new_player_id, player_stored_activity_league_updated, 'league', live_game) && isActivityDataCurrent(new_player_id, player_stored_activity_games_updated, 'games')) {
-                    dlog('Using cache for player activity: ' + new_player_id);
+                    dlog('Using cache for player activity: ' + new_player_id, 1);
                     insertAdjAvg(currRow, player_stored_activity_league_avg, player_stored_activity_league_med, player_stored_activity_games, player_stored_activity_league_pts);
                 }
                 else if (siteType === 'espn') {
@@ -5129,7 +5156,8 @@ function getProjectionData(datatype, currRow, cell) {
                                 }
                             }
 
-                            dlog(player_activity_pts);
+                            dlog('Player Activity pts', 1);
+                            dlog(player_activity_pts, 1);
 
                             p_data_league['last_updated'] = current_time;
                             p_data_league['weekly_points'] = player_activity_pts;
@@ -5144,7 +5172,7 @@ function getProjectionData(datatype, currRow, cell) {
                             }
                             // Only fetch on tuesday
                             else if (isActivityDataCurrent(pid, p_data['games_played_updated'], 'games')) {
-                                dlog('using cache for games played for: ' + pid);
+                                dlog('using cache for games played for: ' + pid, 1);
                                 calcAdjAvg(currRow, pid, p_data['games_played'], p_data_league['weekly_points']);
                             }
                             else {
@@ -5196,7 +5224,7 @@ function getProjectionData(datatype, currRow, cell) {
                                         var adata = jQuery(p);
 
                                         var postseason_row = jQuery('tr td:contains("POSTSEASON")', adata).parents('tr');
-                                        var week_rows = jQuery('tr td:contains("REGULAR SEASON")', adata).parents('tr').nextUntil(postseason_row).filter(function(i) {
+                                        var week_rows = jQuery('tr td:contains("REGULAR SEASON")', adata).parents('tr').nextUntil(postseason_row).filter(function() {
                                             return jQuery(this).find('td').length > 1;
                                         });
                                         week_rows.each(function(i, v) {
@@ -5496,8 +5524,9 @@ function calcAdjAvg(thisrow, player_id, games_played, weekly_points) {
     var past_weekly_points_data = weekly_points.slice(0, current_week_avg - 1);
     var past_points_played = [];
 
-    dlog(past_weekly_points_data);
-    dlog(games_played);
+    dlog('Past points data', 1);
+    dlog(past_weekly_points_data, 1);
+    dlog(games_played, 1);
 
     for (let g=0; g < past_weekly_points_data.length; g++) {
         if (games_played[g] === 1) {
@@ -5611,7 +5640,7 @@ function insertAdjAvg(thisrow, p_avg, p_med, games_played, weekly_points) {
             var team_name = player_cell_data[2];
 
             var expected_projection = calculateProjections('proj-default', player_name, pos_name, team_name);
-            dlog('we expect for pos: ' + pos_name + ', to get: ' + expected_projection);
+            dlog('we expect for pos: ' + pos_name + ', to get: ' + expected_projection, 1);
             if (jQuery.isNumeric(expected_projection)) {
                 expected_projection = Number(expected_projection);
             }
@@ -6722,7 +6751,7 @@ function watchForChanges() {
 
 chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
     var req = msg.request;
-    var val = msg.value;
+    //var val = msg.value;
 
     if (req === 'refresh_data') {
         refreshData(true);
