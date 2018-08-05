@@ -15,13 +15,13 @@ var refreshData = function(event) {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
-    jQuery("#refresh-data").click(function(event) {
+    jQuery("#refresh-data").on('click', function(event) {
 		refreshData();
 	});
-    jQuery("#settings-btn").click(function(event) {
+    jQuery("#settings-btn").on('click', function(event) {
 		window.open(chrome.extension.getURL("settings.html"), "_blank");
 	});
-    jQuery("#report-bug").click(function(event) {
+    jQuery("#report-bug").on('click', function(event) {
 		window.open('https://chrome.google.com/webstore/detail/fantasyplus/gojndgicjncbiobejfpjpcahadininga/support', "_blank");
 	});
 });

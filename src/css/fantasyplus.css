@@ -1,9 +1,10 @@
-.fp-jqstooltip { 
+/*noinspection CssUnusedSymbol*/
+.fp-jqstooltip {
     height: 23px !important;
     width: 60px !important;
     position: absolute;
-    left: 0px;
-    top: 0px;
+    left: 0;
+    top: 0;
     visibility: hidden;
     background-color: rgba(0, 0, 0, 0.6);
     color: white;
@@ -13,7 +14,7 @@
     font-stretch: normal;
     font-size: 10px;
     line-height: normal;
-    font-family: arial, "san serif";
+    font-family: arial, "sans-serif";
     text-align: left;
     white-space: nowrap;
     padding: 5px;

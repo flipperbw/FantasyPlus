@@ -111,11 +111,11 @@ $(function () {
         }
     }
     
-    var column_settings = $('#columns input');
+    var column_settings = $('#columns');
     var freq_ranges = $('input[type="range"]');
     var freq_typs = $('.freq-typ');
     var expert_sel = $('#experts :input');
-    var misc_settings = $('#misc input');
+    var misc_settings = $('#misc');
     
     $('input[type="text"][id$=top]').tooltip({
         placement: 'bottom',
@@ -168,7 +168,7 @@ $(function () {
             $('#show' + k).prop('checked', v);
         });
                 
-        column_settings.click(function() {
+        column_settings.on('click', 'input', function() {
             var section = 'columns';
             
             var col_set = $(this);
@@ -191,9 +191,7 @@ $(function () {
                 var input_parent = this.$range.siblings('input:first');
                 var range_id = input_parent.data('name');
                 var stored_range = update_freq[range_id] || {};
-                var show_val = stored_range.time || this.value;
-
-                $handle[0].textContent = show_val;
+                $handle[0].textContent = stored_range.time || this.value;
             }
         }).on('input', function() {
             var section = 'update_freq';
@@ -215,7 +213,7 @@ $(function () {
             var check_id = freq_range.data('name');
             var stored_range = update_freq[check_id] || {};
             var show_val = stored_range.time || freq_range.val();
-            freq_range.val(show_val).change();
+            freq_range.val(show_val).trigger('change');
         });
         
         // Freq Typ
@@ -226,7 +224,7 @@ $(function () {
             freq_typ.val(stored_typ.typ);
         });
         
-        freq_typs.change(function() {
+        freq_typs.on('change', function() {
             var section = 'update_freq';
             var sub_section = 'typ';
 
@@ -244,12 +242,12 @@ $(function () {
         $.each(experts, function (k, v) {
             var exp_list = v['selection'];
             if (exp_list.indexOf('all') > -1) {
-                $('#experts-' + k + '-selection-all').click();
+                $('#experts-' + k + '-selection-all').trigger('click');
             }
             else {
                 for (var e=0; e<exp_list.length; e++) {
                     var e_val = exp_list[e].toLowerCase();
-                    $('#experts-' + k + '-selection-' + e_val).click();
+                    $('#experts-' + k + '-selection-' + e_val).trigger('click');
                 }
             }
 
@@ -261,7 +259,7 @@ $(function () {
             }
         });
         
-        expert_sel.change(function() {
+        expert_sel.on('change', function() {
             var section = 'experts';
 
             var expert_set = $(this);
@@ -272,6 +270,7 @@ $(function () {
             
             var stored_experts = experts[fetch_type][sub_type];
             var check_val = false;
+            //var check_err = false;
             var check_status;
             
             var expert_set_tooltip = expert_set.siblings('.tooltip-error');
@@ -294,7 +293,7 @@ $(function () {
             else if (sub_type === 'selection') {
                 var row_btns = expert_set.parents('.row').find(':input[type=checkbox]');
                 var all_btn = row_btns.filter(function() {
-                    return $(this).attr('id').match(/-all$/);
+                    return /-all$/.test($(this).attr('id'));
                 });
                 
                 if (fetch_val === 'all') {
@@ -349,8 +348,7 @@ $(function () {
                     check_status.push($(this).attr('id').split('-').pop());
                 });
             }
-            
-            
+
             if (Array.isArray(check_status) && Array.isArray(stored_experts)) {
                 check_val = !(stored_experts.length === check_status.length && stored_experts.every(el => check_status.includes(el)));
                 changes[section][fetch_type][sub_type] = check_val;
@@ -370,7 +368,7 @@ $(function () {
             $('#' + k).prop('checked', v);
         });
                 
-        misc_settings.click(function() {
+        misc_settings.on('click', 'input', function() {
             var section = 'misc';
 
             var misc_set = $(this);
@@ -383,12 +381,13 @@ $(function () {
         });
         
         var settings_height = $('.settings').outerHeight(true);
-        var contact_height = $('.contact').outerHeight(true);
-        var contact_border_height = $('.contact').outerHeight() - $('.contact').innerHeight();
+        var $contact = $('.contact');
+        var contact_height = $contact.outerHeight(true);
+        var contact_border_height = $contact.outerHeight() - $contact.innerHeight();
         $('.changes').height(settings_height - contact_height - contact_border_height);
     });
     
-    save_btn.click(function() {
+    save_btn.on('click', function() {
         save_btn.text('Saving...');
 
         var storage = {'fp_user_settings': {}};
@@ -396,24 +395,22 @@ $(function () {
         
         // Columns
         var new_columns = {};
-        $.each(columns, function (k,v) {
-            var show_val = $('#show' + k).prop('checked');
-            new_columns[k] = show_val;
+        $.each(columns, function (k, v) {
+            new_columns[k] = $('#show' + k).prop('checked');
         });
         storage_settings.columns = new_columns;
         
         // Update Frequency
         var new_update_freq = {};
-        $.each(update_freq, function (k,v) {
-            var time_section = freq_ranges.filter('[data-name="' + k + '"]');
-            var new_time = parseInt(time_section.val());
-            var typ_section = freq_typs.filter('[data-name="' + k + '"]');
-            var new_typ = typ_section.val();
-            var new_update_dict = {
+        $.each(update_freq, function (k, v) {
+            let time_section = freq_ranges.filter('[data-name="' + k + '"]').first();
+            let new_time = parseInt(time_section.val().toString());
+            let typ_section = freq_typs.filter('[data-name="' + k + '"]').first();
+            let new_typ = typ_section.val();
+            new_update_freq[k] = {
                 'time': new_time,
                 'typ': new_typ
             };
-            new_update_freq[k] = new_update_dict;
         });
         storage_settings.update_freq = new_update_freq;
         
@@ -439,8 +436,7 @@ $(function () {
                 
                 text_inputs.each(function() {
                     var exp_num_type = $(this).attr('id').split('-').pop();
-                    var exp_num_val = Number($(this).val());
-                    exp_num_dict[exp_num_type] = exp_num_val;
+                    exp_num_dict[exp_num_type] = Number($(this).val());
                 });
                 
                 exp_dict['num'] = exp_num_dict;
@@ -452,9 +448,8 @@ $(function () {
 
         // Misc
         var new_misc = {};
-        $.each(misc, function (k, v) {
-            var misc_val = $('#' + k).prop('checked');
-            new_misc[k] = misc_val;
+        $.each(misc, (k, v) => {
+            new_misc[k] = $('#' + k).prop('checked');
         });
         storage_settings.misc = new_misc;
 

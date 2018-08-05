@@ -18,9 +18,8 @@ body {
 }
 
 .separator {
-    padding: 15px 0px;
-    border-bottom: 1px solid transparent;
-    border-color: #a09e9e;
+    padding: 15px 0;
+    border-bottom: 1px solid #a09e9e;
 }
 
 .set-btn {
