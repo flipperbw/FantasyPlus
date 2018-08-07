@@ -1,5 +1,3 @@
-console.log('yahoo');
-
 var yahooIdsDone = jQuery.Deferred();
 var updated_translation = 0;
 

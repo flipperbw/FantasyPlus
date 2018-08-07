@@ -1,5 +1,3 @@
-console.log('espn');
-
 onMatchupPreviewPage = document.URL.match(/ffl\/matchuppreview/);
 onClubhousePage = document.URL.match(/ffl\/(clubhouse|dropplayers|rosterfix)/);
 onFreeAgencyPage = document.URL.match(/ffl\/(freeagency|watchlist)/);

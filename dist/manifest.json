@@ -1,72 +1,110 @@
 {
-  "name": "FantasyPlus",
-  "short_name": "FantasyPlus",
-  "version": "3.3.9",
-  "manifest_version": 2,
-  "update_url": "https://clients2.google.com/service/update2/crx",
-  "description": "Adds extra data and information (projections, stats, depth charts, etc.) to fantasy football sites (ESPN, Yahoo, and FleaFlicker).",
-  "icons": {
-    "16" : "img/FantasyPlusIcon-16.png",
-    "48" : "img/FantasyPlusIcon-48.png",
-    "128" : "img/FantasyPlusIcon-128.png"
-  },
-  "permissions": [
-    "http://*/*",
-    "https://*/*",
-    "webRequest",
-	"storage",
-    "unlimitedStorage",
-    "tabs"
-  ],
-  "content_security_policy": "script-src 'self' https://www.google-analytics.com; object-src 'self'",
-  "options_page": "settings.html",
-  "background": {
-    "page": "background.html"
-  },
-  "web_accessible_resources": [
-	"data/yahoo_ids.json"
-  ],
-  "page_action": {
-    "default_icon": {
-      "19": "img/FantasyPlusIcon-19.png",
-      "38": "img/FantasyPlusIcon-38.png"
+    "name": "FantasyPlus",
+    "short_name": "FantasyPlus",
+    "version": "3.3.9",
+    "manifest_version": 2,
+    "update_url": "https://clients2.google.com/service/update2/crx",
+    "description": "Adds extra data and information (projections, stats, depth charts, etc.) to fantasy football sites (ESPN, Yahoo, and FleaFlicker).",
+    "icons": {
+        "16": "img/FantasyPlusIcon-16.png",
+        "48": "img/FantasyPlusIcon-48.png",
+        "128": "img/FantasyPlusIcon-128.png"
     },
-    "default_title": "FantasyPlus",
-    "default_popup": "page_action.html"
-  },
-  "content_scripts": [
-    {
-      "matches": [
-		"http://games.espn.com/ffl/clubhouse*",
-		"http://games.espn.com/ffl/freeagency*",
-		"http://games.espn.com/ffl/matchuppreview*", 
-		"http://games.espn.com/ffl/dropplayers*",
-		"http://games.espn.com/ffl/tradereview*",
-		"http://games.espn.com/ffl/rosterfix*",
-		"http://games.espn.com/ffl/leagueoffice*",
-		"http://games.espn.com/ffl/leaguesetup/settings*",
-		"http://games.espn.com/ffl/watchlist*",
-		"http://games.espn.com/ffl/tools/waiverorder*",
-		"http://games.espn.com/ffl/playertable/prebuilt/freeagency*",
-		"http://football.fantasysports.yahoo.com/f1/*",
-		"https://football.fantasysports.yahoo.com/f1/*",
-		"http://www.fleaflicker.com/nfl/leagues/*",
-		"https://www.fleaflicker.com/nfl/leagues/*",
-		"http://fleaflicker.com/nfl/leagues/*",
-		"https://fleaflicker.com/nfl/leagues/*"
-	  ],
-	  "js": [
-		"js/lib/jquery.min.js",
-		"js/lib/jquery.sparkline.js",
-		"js/lib/table2CSV.js",
-		"js/lib/tooltipster.bundle.min.js",
-		"js/contentscript.js"
-	  ],
-	  "css": [
-		"css/fantasyplus.css",
-		"css/lib/tooltipster.bundle.min.css",
-		"css/lib/tooltipster-sideTip-light.min.css"
-	  ]
-    }
-  ]
+    "permissions": [
+        "http://*/*",
+        "https://*/*",
+        "webRequest",
+        "storage",
+        "unlimitedStorage",
+        "tabs"
+    ],
+    "content_security_policy": "script-src 'self' https://www.google-analytics.com; object-src 'self'",
+    "options_page": "settings.html",
+    "background": {
+        "page": "background.html"
+    },
+    "web_accessible_resources": [
+        "data/yahoo_ids.json"
+    ],
+    "page_action": {
+        "default_icon": {
+            "19": "img/FantasyPlusIcon-19.png",
+            "38": "img/FantasyPlusIcon-38.png"
+        },
+        "default_title": "FantasyPlus",
+        "default_popup": "page_action.html"
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "http://games.espn.com/ffl/clubhouse*",
+                "http://games.espn.com/ffl/freeagency*",
+                "http://games.espn.com/ffl/matchuppreview*",
+                "http://games.espn.com/ffl/dropplayers*",
+                "http://games.espn.com/ffl/tradereview*",
+                "http://games.espn.com/ffl/rosterfix*",
+                "http://games.espn.com/ffl/leagueoffice*",
+                "http://games.espn.com/ffl/leaguesetup/settings*",
+                "http://games.espn.com/ffl/watchlist*",
+                "http://games.espn.com/ffl/tools/waiverorder*",
+                "http://games.espn.com/ffl/playertable/prebuilt/freeagency*"
+            ],
+            "js": [
+                "js/lib/jquery.min.js",
+                "js/lib/jquery.sparkline.js",
+                "js/lib/table2CSV.js",
+                "js/lib/tooltipster.bundle.min.js",
+                "js/setup.js",
+                "js/espn.js",
+                "js/contentscript.js"
+            ],
+            "css": [
+                "css/lib/tooltipster.bundle.min.css",
+                "css/lib/tooltipster-sideTip-light.min.css",
+                "css/fantasyplus.css"
+            ]
+        },
+        {
+            "matches": [
+                "http://football.fantasysports.yahoo.com/f1/*",
+                "https://football.fantasysports.yahoo.com/f1/*"
+            ],
+            "js": [
+                "js/lib/jquery.min.js",
+                "js/lib/jquery.sparkline.js",
+                "js/lib/table2CSV.js",
+                "js/lib/tooltipster.bundle.min.js",
+                "js/setup.js",
+                "js/yahoo.js",
+                "js/contentscript.js"
+            ],
+            "css": [
+                "css/lib/tooltipster.bundle.min.css",
+                "css/lib/tooltipster-sideTip-light.min.css",
+                "css/fantasyplus.css"
+            ]
+        },
+        {
+            "matches": [
+                "http://www.fleaflicker.com/nfl/leagues/*",
+                "https://www.fleaflicker.com/nfl/leagues/*",
+                "http://fleaflicker.com/nfl/leagues/*",
+                "https://fleaflicker.com/nfl/leagues/*"
+            ],
+            "js": [
+                "js/lib/jquery.min.js",
+                "js/lib/jquery.sparkline.js",
+                "js/lib/table2CSV.js",
+                "js/lib/tooltipster.bundle.min.js",
+                "js/setup.js",
+                "js/fleaflicker.js",
+                "js/contentscript.js"
+            ],
+            "css": [
+                "css/lib/tooltipster.bundle.min.css",
+                "css/lib/tooltipster-sideTip-light.min.css",
+                "css/fantasyplus.css"
+            ]
+        }
+    ]
 }

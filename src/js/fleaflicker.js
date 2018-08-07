@@ -1,6 +1,3 @@
-console.log('fleaflicker');
-
-
 var fetchFleaflickerIds = jQuery.Deferred();
 var total_player_ids = 0;
 var is_current_week = true;
@@ -66,6 +63,7 @@ function fixPage() {
         }
     }
 }
+
 function setSelectors() {
     base_table = jQuery(base_table_selector);
 

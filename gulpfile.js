@@ -1,8 +1,9 @@
-var gulp = require('gulp'),
+const gulp = require('gulp'),
     pump = require('pump'),
     clean = require('gulp-clean'),
     babel = require('gulp-babel'),
     uglify = require('gulp-uglify'),
+    minify = require('gulp-babel-minify'),
     postcss = require('gulp-postcss'),
     cssnext = require('postcss-cssnext'),
     csso = require('postcss-csso');
@@ -208,10 +209,9 @@ gulp.task('js', ['clean_js'], function(cb) {
         babel({
             presets: ['es2015']
         }),
-        uglify({
-            compress: {
-                drop_console: true
-            }
+        minify({
+            removeConsole: true,
+            removeDebugger: true
         }),
         gulp.dest(folders.build.js.files)
     ], cb);
