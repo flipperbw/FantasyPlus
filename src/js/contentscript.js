@@ -1,16 +1,19 @@
 const main = async () => {
+    await resetOldData();
+
     await getUserSettings();
 
     fixPage();
+    setSelectors();
 
     if (!hasProjectionTable) return;
 
-    setSelectors();
     addColumns();
 
     await assignDataFromStorage.run();
 
-    doLeagueThings();
+    setWatch.run();
+    runGetAllData.run();
 };
 
 main();

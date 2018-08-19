@@ -1,1 +1,1 @@
-"use strict";var main=async function(){await getUserSettings(),fixPage();hasProjectionTable&&(setSelectors(),addColumns(),await assignDataFromStorage.run(),doLeagueThings())};main();
+"use strict";var main=async function(){await resetOldData(),await getUserSettings(),fixPage(),setSelectors();hasProjectionTable&&(addColumns(),await assignDataFromStorage.run(),setWatch.run(),runGetAllData.run())};main();
