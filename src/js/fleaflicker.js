@@ -1,3 +1,5 @@
+siteType = 'fleaflicker';
+
 var url_base = '//www.fleaflicker.com';
 var url_nfl = 'nfl/leagues';
 

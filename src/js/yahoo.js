@@ -1,3 +1,5 @@
+siteType = 'yahoo';
+
 var url_base = '//football.fantasysports.yahoo.com';
 var url_nfl = 'f1';
 

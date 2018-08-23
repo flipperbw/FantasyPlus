@@ -528,7 +528,8 @@ var player_name_fix = {
     'Steven Hauschka': 'Stephen Hauschka',
     'Stephen Hauschka': 'Steven Hauschka',
     'Adoree\' Jackson': 'Adoree Jackson',
-    'Daniel Sorensen': 'Daniel Sorenson'
+    'Daniel Sorensen': 'Daniel Sorenson',
+    'Johnathan Cyprien': 'Jonathan Cyprien'
 };
 
 var player_name_translations = {
@@ -634,7 +635,7 @@ var fpros_proj_headers = {
     'WR':  ['Player', 'Team', 'rush_att', 'rush_yds', 'rush_tds', 'rec_att', 'rec_yds', 'rec_tds', 'fumbles', 'fpts'],
     'TE':  ['Player', 'Team', 'rec_att', 'rec_yds', 'rec_tds','fumbles', 'fpts'],
     'K':   ['Player', 'Team', 'fg', 'fga', 'xpt', 'fpts'],
-    'DST': ['Player', 'Team', 'def_sack', 'def_int', 'def_fr', 'def_ff', 'def_td', 'def_assist', 'def_safety', 'def_pa', 'def_tyda', 'fpts']
+    'DST': ['Player', 'Team', 'def_sack', 'def_int', 'def_fr', 'def_ff', 'def_td', 'def_safety', 'def_pa', 'def_tyda', 'fpts']
 };
 
 var fpros_rank_headers = ['Rank', 'WSIS', 'Player', 'Team', 'Matchup', 'Best Rank', 'Worst Rank', 'Avg Rank', 'Std Dev'];
@@ -671,21 +672,7 @@ var storageDepthUpdateKey = 'fp_last_updated_depth';
 
 var storageKeys = [storageActivityKey, storageDepthKey, storageDepthUpdateKey];
 
-//remove
-var baseUrlESPN = 'games.espn.com';
-var baseUrlYahoo = 'football.fantasysports.yahoo.com';
-var baseUrlFleaflicker = 'fleaflicker.com';
-
-if (document.URL.match(new RegExp(baseUrlESPN))) {
-    siteType = 'espn';
-}
-else if (document.URL.match(new RegExp(baseUrlYahoo))) {
-    siteType = 'yahoo';
-}
-else if (document.URL.match(new RegExp(baseUrlFleaflicker))) {
-    siteType = 'fleaflicker';
-}
-//
+var siteType = '';
 
 function getParams(u) {
     var qd = {};
@@ -1558,7 +1545,13 @@ function parsePos(typ, raw_data, p_name) {
         }
 
         for (let j = player_name_header + 1; j < headers.length; j++) {
-            //check for if(currentline[j]) here? and set to '' if not?
+            if (typeof currentline[j] === "undefined") {
+                dlog.log('Error fetching ' + typ);
+                dlog.log(currentline);
+                dlog.log(pos_name);
+                continue;
+            }
+
             var currentline_text = currentline[j].trim();
             var key_name = headers[j].trim();
             if (typ === 'ros') {

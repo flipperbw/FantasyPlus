@@ -1,3 +1,5 @@
+siteType = 'espn';
+
 var url_base = '//games.espn.com';
 var url_nfl = 'ffl';
 
