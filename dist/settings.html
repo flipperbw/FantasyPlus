@@ -1,459 +1,465 @@
 <html>
-    <head>
-        <title>FantasyPlus Settings</title>
-        <script type="text/javascript" src="js/ga.js"></script>
-        <script type="text/javascript" src="js/lib/jquery.min.js"></script>
-        <script type="text/javascript" src="js/lib/rangeslider.min.js"></script>
-        <script type="text/javascript" src="js/lib/bootstrap.min.js"></script>
-        <script type="text/javascript" src="js/settings.js"></script>
-        <link rel="stylesheet" href="css/lib/rangeslider.css" type="text/css" charset="utf-8">
-        <link rel="stylesheet" href="css/lib/bootstrap.min.css" type="text/css" charset="utf-8">
-        <link rel="stylesheet" href="css/settings.css" type="text/css" charset="utf-8">
-    </head>
-    <body>
-        <div class="settings-body">
-        
-            <div class="heading center-contents">
-                <div class="center">
-                    <img src="img/FantasyPlusIcon-128.png" height="65" width="65">
-                </div>
-                <div class="center">
-                    <h1>FantasyPlus Settings</h1>
-                </div>
-            </div>
-        
-            <div class="heading main-content">
-            
-                <div class="settings">
-                
-                    <div class="panel">
-                        <div class="panel-heading">
-                            <h4>Add/Remove Columns</h4>
-                        </div>
-                        <div id="columns">
-                            <table>
-                                <tbody>
-                                    <tr class="no-border">
-                                        <td class="left center-text" rowspan=2 style="border-bottom: 1px solid #ddd;">
-                                            <span>General</span>
-                                            <div class="sites">
-                                                <img src="img/espn.png">
-                                                <img src="img/yahoo.png">
-                                                <img src="img/fleaflicker.png">
-                                            </div>
-                                        </td>
-                                        <td class="top" colspan=2>
-                                            <div class="onoffswitch">
-                                                <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="showproj" checked>
-                                                <label class="onoffswitch-label" for="showproj">
-                                                    <span class="onoffswitch-inner">
-                                                        <span>Projections</span>
-                                                    </span>
-                                                    <span class="onoffswitch-switch"></span>
-                                                </label>
-                                            </div>
-                                        </td>
-                                        <td class="spacer"></td>
-                                    </tr>
-                                    <tr>
-                                        <td class="bottom">
-                                            <div class="onoffswitch">
-                                                <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="showdepth" checked>
-                                                <label class="onoffswitch-label" for="showdepth">
-                                                    <span class="onoffswitch-inner">
-                                                        Depth Charts
-                                                    </span>
-                                                    <span class="onoffswitch-switch"></span>
-                                                </label>
-                                            </div>
-                                        </td>
-                                        <td class="bottom">
-                                            <div class="onoffswitch">
-                                                <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="showspark" checked>
-                                                <label class="onoffswitch-label" for="showspark">
-                                                    <span class="onoffswitch-inner">
-                                                        Trendlines
-                                                    </span>
-                                                    <span class="onoffswitch-switch"></span>
-                                                </label>
-                                            </div>
-                                        </td>
-                                        <td class="spacer"></td>
-                                    </tr>
-                                    <tr>
-                                        <td class="top bottom left center-text">
-                                            <span>Ranks</span>
-                                            <div class="sites">
-                                                <img src="img/espn.png">
-                                                <img src="img/yahoo.png">
-                                                <img src="img/fleaflicker.png">
-                                            </div>
-                                        </td>
-                                        <td class="top bottom">
-                                            <div class="onoffswitch">
-                                                <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="showrank" checked>
-                                                <label class="onoffswitch-label" for="showrank">
-                                                    <span class="onoffswitch-inner">
-                                                        Weekly
-                                                    </span>
-                                                    <span class="onoffswitch-switch"></span>
-                                                </label>
-                                            </div>
-                                        </td>
-                                        <td class="top bottom">
-                                            <div class="onoffswitch">
-                                                <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="showros" checked>
-                                                <label class="onoffswitch-label" for="showros">
-                                                    <span class="onoffswitch-inner">
-                                                        Rest of Season
-                                                    </span>
-                                                    <span class="onoffswitch-switch"></span>
-                                                </label>
-                                            </div>
-                                        </td>
-                                        <td class="spacer"></td>
-                                    </tr>
-                                    <tr class="no-border">
-                                        <td class="left center-text" rowspan=2>
-                                            <span>Enhancements</span>
-                                            <div class="sites">
-                                                <img src="img/espn.png">
-                                            </div>
-                                        </td>
-                                        <td class="top">
-                                            <div class="onoffswitch">
-                                                <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="showavg" checked>
-                                                <label class="onoffswitch-label" for="showavg">
-                                                    <span class="onoffswitch-inner">
-                                                        Injury Averages
-                                                    </span>
-                                                    <span class="onoffswitch-switch"></span>
-                                                </label>
-                                            </div>
-                                        </td>
-                                        <td class="top">
-                                            <div class="onoffswitch">
-                                                <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="showmed" checked>
-                                                <label class="onoffswitch-label" for="showmed">
-                                                    <span class="onoffswitch-inner">
-                                                        Injury Medians
-                                                    </span>
-                                                    <span class="onoffswitch-switch"></span>
-                                                </label>
-                                            </div>
-                                        </td>
-                                        <td class="spacer"></td>
-                                    </tr>
-                                    <tr class="no-border">
-                                        <td class="bottom" colspan=2>
-                                            <div class="onoffswitch">
-                                                <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="showcurrent" checked>
-                                                <label class="onoffswitch-label" for="showcurrent">
-                                                    <span class="onoffswitch-inner">
-                                                        Current Score
-                                                    </span>
-                                                    <span class="onoffswitch-switch"></span>
-                                                </label>
-                                            </div>
-                                        </td>
-                                        <td class="spacer"></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    
-                    <div class="panel">
-                        <div class="panel-heading">
-                            <h4>Update Frequency</h4>
-                        </div>
-                        <div class="extra-padding-med">
-                            <div class="freq-range center-contents">
-                                <input data-name="player" type="range" min="1" max="60" value="30" title="">
-                                <div class="freq-select">
-                                    <select class="freq-typ" data-name="player" title="">
-                                      <option value="m">Minutes</option>
-                                      <option value="h">Hours</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="panel" id="panel-experts">
-                        <div class="panel-heading">
-                            <h4>FantasyPros Experts</h4>
-                        </div>
-                        <div id="experts">
-                            <div class="container-fluid">
-                                <div class="row spacing" id="experts-proj">
-                                    <div class="col-xs-3 col-xs-3s center-contents center-text">
-                                        <span>Projections</span>
-                                    </div>
-                                    <div class="col-xs-2">
-                                        <div class="btn-group btn-group-justified" data-toggle="buttons">
-                                            <label class="btn btn-round btn-custom">
-                                                <input type="checkbox" id="experts-proj-selection-all" autocomplete="off">All
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="col-xs-7 col-xs-7l">
-                                        <div class="btn-group btn-group-justified btn-group-spread" data-toggle="buttons">
-                                            <label class="btn btn-round btn-custom">
-                                                <input type="checkbox" id="experts-proj-selection-cbs" autocomplete="off">CBS
-                                            </label>
-                                            <label class="btn btn-custom">
-                                                <input type="checkbox" id="experts-proj-selection-espn" autocomplete="off">ESPN
-                                            </label>
-                                            <label class="btn btn-custom">
-                                                <input type="checkbox" id="experts-proj-selection-numberfire" autocomplete="off">numberFire
-                                            </label>
-                                            <label class="btn btn-custom">
-                                                <input type="checkbox" id="experts-proj-selection-stats" autocomplete="off">STATS
-                                            </label>
-                                            <label class="btn btn-round btn-custom">
-                                                <input type="checkbox" id="experts-proj-selection-fftoday" autocomplete="off">FFToday
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row spacing" id="experts-rank">
-                                    <div class="col-xs-3 col-xs-3s center-contents center-text">
-                                        <span>Weekly Ranks</span>
-                                    </div>
-                                    <div class="col-xs-2">
-                                        <div class="btn-group btn-group-justified" data-toggle="buttons">
-                                            <label class="btn btn-round btn-custom btn-double">
-                                                <input type="checkbox" id="experts-rank-selection-all" autocomplete="off">All
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="col-xs-4 col-xs-4l">
-                                        <div class="row">
-                                            <div class="col-xs-12">
-                                            <div id="experts-rank-top" class="btn-group btn-group-justified" data-toggle="buttons">
-                                                <label class="btn btn-round btn-custom">
-                                                    <input type="checkbox" id="experts-rank-selection-overall" autocomplete="off">Top Overall
-                                                </label>
-                                                <label class="btn btn-round btn-custom">
-                                                    <input type="checkbox" id="experts-rank-selection-position" autocomplete="off">Top Position
-                                                </label>
-                                            </div>
-                                            </div>
-                                            <div class="col-xs-12">
-                                                <div class="center-contents">
-                                                    <div class="input-group input-group-top">
-                                                        <span class="input-group-addon"># of Experts</span>
-                                                        <input type="text" class="form-control center-text" placeholder="10" id="experts-rank-num-top">
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-xs-3">
-                                        <div class="row">
-                                            <div class="col-xs-12">
-                                                <div class="btn-group btn-group-justified" data-toggle="buttons">
-                                                    <label class="btn btn-round btn-custom">
-                                                        <input type="checkbox" id="experts-rank-selection-updated" autocomplete="off">Last Updated
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="row">
-                                            <div class="col-xs-12">
-                                                <div class="center-contents">
-                                                    <div class="input-group input-group-update">
-                                                        <span class="input-group-addon"># of Days</span>
-                                                        <input type="text" class="form-control center-text" placeholder="1" id="experts-rank-num-updated">
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row spacing" id="experts-ros">
-                                    <div class="col-xs-3 col-xs-3s center-contents center-text">
-                                        <span>Rest of Season Ranks</span>
-                                    </div>
-                                    <div class="col-xs-2">
-                                        <div class="btn-group btn-group-justified" data-toggle="buttons">
-                                            <label class="btn btn-round btn-custom btn-double">
-                                                <input type="checkbox" id="experts-ros-selection-all" autocomplete="off">All
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="col-xs-4 col-xs-4l">
-                                        <div class="row">
-                                            <div class="col-xs-12">
-                                            <div id="experts-ros-top" class="btn-group btn-group-justified" data-toggle="buttons">
-                                                <label class="btn btn-round btn-custom">
-                                                    <input type="checkbox" id="experts-ros-selection-overall" autocomplete="off">Top Overall
-                                                </label>
-                                                <label class="btn btn-round btn-custom">
-                                                    <input type="checkbox" id="experts-ros-selection-position" autocomplete="off">Top Position
-                                                </label>
-                                            </div>
-                                            </div>
-                                            <div class="col-xs-12">
-                                                <div class="center-contents">
-                                                    <div class="input-group input-group-top">
-                                                        <span class="input-group-addon"># of Experts</span>
-                                                        <input type="text" class="form-control center-text" placeholder="5" id="experts-ros-num-top">
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-xs-3">
-                                        <div class="row">
-                                            <div class="col-xs-12">
-                                                <div class="btn-group btn-group-justified" data-toggle="buttons">
-                                                    <label class="btn btn-round btn-custom">
-                                                        <input type="checkbox" id="experts-ros-selection-updated" autocomplete="off">Last Updated
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="row">
-                                            <div class="col-xs-12">
-                                                <div class="center-contents">
-                                                    <div class="input-group input-group-update">
-                                                        <span class="input-group-addon"># of Days</span>
-                                                        <input type="text" class="form-control center-text" placeholder="7" id="experts-ros-num-updated">
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="panel-disable"></div>
-                        <div class="panel-disable-msg">
-                            <h3>Temporarily Disabled :(</h3>
-                        </div>
-                    </div>
-                    
-                    <div class="panel panel-bottom">
-                        <div class="panel-heading">
-                            <h4>Miscellaneous</h4>
-                        </div>
-                        <div id="misc">
-                            <table>
-                                <tbody>
-                                    <tr class="no-border">
-                                        <td class="top bottom left center-text">
-                                            <span>Pages</span>
-                                            <div class="sites">
-                                                <img src="img/espn.png">
-                                                <img src="img/yahoo.png">
-                                                <img src="img/fleaflicker.png">
-                                            </div>
-                                        </td>
-                                        <td class="top bottom">
-                                            <div class="onoffswitch">
-                                                <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="remove_ads" checked>
-                                                <label class="onoffswitch-label" for="remove_ads">
-                                                    <span class="onoffswitch-inner">
-                                                        Hide Ads/Promos
-                                                    </span>
-                                                    <span class="onoffswitch-switch"></span>
-                                                </label>
-                                            </div>
-                                        </td>
-                                        <td class="top bottom">
-                                            <div class="onoffswitch">
-                                                <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="fix_css" checked>
-                                                <label class="onoffswitch-label" for="fix_css">
-                                                    <span class="onoffswitch-inner">
-                                                        Fix Broken CSS
-                                                    </span>
-                                                    <span class="onoffswitch-switch"></span>
-                                                </label>
-                                            </div>
-                                        </td>
-                                        <td class="spacer"></td>
-                                    </tr>
+<head>
+    <title>FantasyPlus Settings</title>
+    <script type="text/javascript" src="js/ga.js"></script>
+    <script type="text/javascript" src="js/lib/jquery.min.js"></script>
+    <script type="text/javascript" src="js/lib/rangeslider.min.js"></script>
+    <script type="text/javascript" src="js/lib/bootstrap.min.js"></script>
+    <script type="text/javascript" src="js/settings.js"></script>
+    <link rel="stylesheet" href="css/lib/rangeslider.css" type="text/css" charset="utf-8">
+    <link rel="stylesheet" href="css/lib/bootstrap.min.css" type="text/css" charset="utf-8">
+    <link rel="stylesheet" href="css/settings.css" type="text/css" charset="utf-8">
+</head>
+<body>
+<div class="settings-body">
 
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    
-                </div>
-                
-                <div class="changelog">
-                
-                    <div class="panel contact">
-                        <div class="panel-heading">
-                            <h4>Report Bug/Request Feature</h4>
-                        </div>
-                        <div class="report center-contents">
-                            <a role="button" class="btn btn-warning left" href="https://github.com/flipperbw/FantasyPlus/issues" target="_blank">Github</a>
-                            <a role="button" class="btn btn-primary left" href="https://chrome.google.com/webstore/detail/fantasyplus/gojndgicjncbiobejfpjpcahadininga/support" target="_blank">Chrome Store</a>
-                            <a role="button" class="btn btn-info" href="https://www.reddit.com/message/compose?to=flipperbw&subject=FantasyPlus%20Bug%2FRequest" target="_blank">Reddit</a>
-                        </div>
-                    </div>
-                    
-                    <div class="panel panel-bottom changes">
-                        <div class="panel-heading">
-                            <h4>Changelog</h4>
-                        </div>
-                        <div class="panel-body">
-                            <ul>
-                                <li>
-									<h3>3.3.8 (2018-08-01)</h3>
-									<ul>
-                                        <li>File optimizations</li>
-										<li>Updating Yahoo missing data</li>
-									</ul>
-                                    
-									<h3>3.3.7 (2018-07-29)</h3>
-									<ul>
-                                        <li>Updating for the 2018 season</li>
-										<li>Many site-specific fixes</li>
-										<li>Temporarily removing expert selection, as FantasyPros now requires login</li>
-									</ul>
-                                    
-                                    <h3>3.3.0 (2017-11-02)</h3>
-									<ul>
-										<li>Added medians</li>
-										<li>Fixed inaccurate trendlines if the player was traded</li>
-									</ul>
-
-									<h3>3.2.0 (2017-10-29)</h3>
-									<ul>
-										<li>Fixing more FPros data</li>
-										<li>Early Lineup Optimizer setup</li>
-									</ul>
-
-									<h3>3.1.7 (2017-09-05)</h3>
-                                    <ul>
-                                        <li>Fixing Yahoo projections</li>
-                                        <li>Enabling HTTPS for fleaflicker</li>
-                                        <li>Adjustments for Rams (STL - LAR)</li>
-                                    </ul>
-									
-									<h3>3.1.6 (2017-08-16)</h3>
-                                    <ul>
-                                        <li>Updating for the 2017 season!</li>
-                                    </ul>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                    
-                </div>
-                
-            </div>
-            
-            <div class="save center-contents">
-                <button type="button" autocomplete="off" id="save" class="btn btn-success save-btn" disabled="disabled">
-                    Save (no changes)
-                </button>
-            </div>
-            
+    <div class="heading center-contents">
+        <div class="center">
+            <img src="img/FantasyPlusIcon-128.png" height="65" width="65">
         </div>
-    </body>
+        <div class="center">
+            <h1>FantasyPlus Settings</h1>
+        </div>
+    </div>
+
+    <div class="heading main-content">
+
+        <div class="settings">
+
+            <div class="panel">
+                <div class="panel-heading">
+                    <h4>Add/Remove Columns</h4>
+                </div>
+                <div id="columns">
+                    <table>
+                        <tbody>
+                            <tr class="no-border">
+                                <td class="left center-text" rowspan=2 style="border-bottom: 1px solid #ddd;">
+                                    <span>General</span>
+                                    <div class="sites">
+                                        <img src="img/espn.png">
+                                        <img src="img/yahoo.png">
+                                        <img src="img/fleaflicker.png">
+                                    </div>
+                                </td>
+                                <td class="top" colspan=2>
+                                    <div class="onoffswitch">
+                                        <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="showproj" checked>
+                                        <label class="onoffswitch-label" for="showproj">
+                                            <span class="onoffswitch-inner">
+                                                <span>Projections</span>
+                                            </span>
+                                            <span class="onoffswitch-switch"></span>
+                                        </label>
+                                    </div>
+                                </td>
+                                <td class="spacer"></td>
+                            </tr>
+                            <tr>
+                                <td class="bottom">
+                                    <div class="onoffswitch">
+                                        <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="showdepth" checked>
+                                        <label class="onoffswitch-label" for="showdepth">
+                                            <span class="onoffswitch-inner">
+                                                Depth Charts
+                                            </span>
+                                            <span class="onoffswitch-switch"></span>
+                                        </label>
+                                    </div>
+                                </td>
+                                <td class="bottom">
+                                    <div class="onoffswitch">
+                                        <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="showspark" checked>
+                                        <label class="onoffswitch-label" for="showspark">
+                                            <span class="onoffswitch-inner">
+                                                Trendlines
+                                            </span>
+                                            <span class="onoffswitch-switch"></span>
+                                        </label>
+                                    </div>
+                                </td>
+                                <td class="spacer"></td>
+                            </tr>
+                            <tr>
+                                <td class="top bottom left center-text">
+                                    <span>Ranks</span>
+                                    <div class="sites">
+                                        <img src="img/espn.png">
+                                        <img src="img/yahoo.png">
+                                        <img src="img/fleaflicker.png">
+                                    </div>
+                                </td>
+                                <td class="top bottom">
+                                    <div class="onoffswitch">
+                                        <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="showrank" checked>
+                                        <label class="onoffswitch-label" for="showrank">
+                                            <span class="onoffswitch-inner">
+                                                Weekly
+                                            </span>
+                                            <span class="onoffswitch-switch"></span>
+                                        </label>
+                                    </div>
+                                </td>
+                                <td class="top bottom">
+                                    <div class="onoffswitch">
+                                        <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="showros" checked>
+                                        <label class="onoffswitch-label" for="showros">
+                                            <span class="onoffswitch-inner">
+                                                Rest of Season
+                                            </span>
+                                            <span class="onoffswitch-switch"></span>
+                                        </label>
+                                    </div>
+                                </td>
+                                <td class="spacer"></td>
+                            </tr>
+                            <tr class="no-border">
+                                <td class="left center-text" rowspan=2>
+                                    <span>Enhancements</span>
+                                    <div class="sites">
+                                        <img src="img/espn.png">
+                                    </div>
+                                </td>
+                                <td class="top">
+                                    <div class="onoffswitch">
+                                        <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="showavg" checked>
+                                        <label class="onoffswitch-label" for="showavg">
+                                            <span class="onoffswitch-inner">
+                                                Injury Averages
+                                            </span>
+                                            <span class="onoffswitch-switch"></span>
+                                        </label>
+                                    </div>
+                                </td>
+                                <td class="top">
+                                    <div class="onoffswitch">
+                                        <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="showmed" checked>
+                                        <label class="onoffswitch-label" for="showmed">
+                                            <span class="onoffswitch-inner">
+                                                Injury Medians
+                                            </span>
+                                            <span class="onoffswitch-switch"></span>
+                                        </label>
+                                    </div>
+                                </td>
+                                <td class="spacer"></td>
+                            </tr>
+                            <tr class="no-border">
+                                <td class="bottom" colspan=2>
+                                    <div class="onoffswitch">
+                                        <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="showcurrent" checked>
+                                        <label class="onoffswitch-label" for="showcurrent">
+                                            <span class="onoffswitch-inner">
+                                                Current Score
+                                            </span>
+                                            <span class="onoffswitch-switch"></span>
+                                        </label>
+                                    </div>
+                                </td>
+                                <td class="spacer"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-heading">
+                    <h4>Update Frequency</h4>
+                </div>
+                <div class="extra-padding-med">
+                    <div class="freq-range center-contents">
+                        <input data-name="player" type="range" min="1" max="60" value="30" title="">
+                        <div class="freq-select">
+                            <select class="freq-typ" data-name="player" title="">
+                              <option value="m">Minutes</option>
+                              <option value="h">Hours</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel" id="panel-experts">
+                <div class="panel-heading">
+                    <h4>FantasyPros Experts</h4>
+                </div>
+                <div id="experts">
+                    <div class="container-fluid">
+                        <div class="row spacing" id="experts-proj">
+                            <div class="col-xs-3 col-xs-3s center-contents center-text">
+                                <span>Projections</span>
+                            </div>
+                            <div class="col-xs-2">
+                                <div class="btn-group btn-group-justified" data-toggle="buttons">
+                                    <label class="btn btn-round btn-custom">
+                                        <input type="checkbox" id="experts-proj-selection-all" autocomplete="off">All
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-xs-7 col-xs-7l">
+                                <div class="btn-group btn-group-justified btn-group-spread" data-toggle="buttons">
+                                    <label class="btn btn-round btn-custom">
+                                        <input type="checkbox" id="experts-proj-selection-cbs" autocomplete="off">CBS
+                                    </label>
+                                    <label class="btn btn-custom">
+                                        <input type="checkbox" id="experts-proj-selection-espn" autocomplete="off">ESPN
+                                    </label>
+                                    <label class="btn btn-custom">
+                                        <input type="checkbox" id="experts-proj-selection-numberfire" autocomplete="off">numberFire
+                                    </label>
+                                    <label class="btn btn-custom">
+                                        <input type="checkbox" id="experts-proj-selection-stats" autocomplete="off">STATS
+                                    </label>
+                                    <label class="btn btn-round btn-custom">
+                                        <input type="checkbox" id="experts-proj-selection-fftoday" autocomplete="off">FFToday
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row spacing" id="experts-rank">
+                            <div class="col-xs-3 col-xs-3s center-contents center-text">
+                                <span>Weekly Ranks</span>
+                            </div>
+                            <div class="col-xs-2">
+                                <div class="btn-group btn-group-justified" data-toggle="buttons">
+                                    <label class="btn btn-round btn-custom btn-double">
+                                        <input type="checkbox" id="experts-rank-selection-all" autocomplete="off">All
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-xs-4 col-xs-4l">
+                                <div class="row">
+                                    <div class="col-xs-12">
+                                    <div id="experts-rank-top" class="btn-group btn-group-justified" data-toggle="buttons">
+                                        <label class="btn btn-round btn-custom">
+                                            <input type="checkbox" id="experts-rank-selection-overall" autocomplete="off">Top Overall
+                                        </label>
+                                        <label class="btn btn-round btn-custom">
+                                            <input type="checkbox" id="experts-rank-selection-position" autocomplete="off">Top Position
+                                        </label>
+                                    </div>
+                                    </div>
+                                    <div class="col-xs-12">
+                                        <div class="center-contents">
+                                            <div class="input-group input-group-top">
+                                                <span class="input-group-addon"># of Experts</span>
+                                                <input type="text" class="form-control center-text" placeholder="10" id="experts-rank-num-top">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xs-3">
+                                <div class="row">
+                                    <div class="col-xs-12">
+                                        <div class="btn-group btn-group-justified" data-toggle="buttons">
+                                            <label class="btn btn-round btn-custom">
+                                                <input type="checkbox" id="experts-rank-selection-updated" autocomplete="off">Last Updated
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-12">
+                                        <div class="center-contents">
+                                            <div class="input-group input-group-update">
+                                                <span class="input-group-addon"># of Days</span>
+                                                <input type="text" class="form-control center-text" placeholder="1" id="experts-rank-num-updated">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row spacing" id="experts-ros">
+                            <div class="col-xs-3 col-xs-3s center-contents center-text">
+                                <span>Rest of Season Ranks</span>
+                            </div>
+                            <div class="col-xs-2">
+                                <div class="btn-group btn-group-justified" data-toggle="buttons">
+                                    <label class="btn btn-round btn-custom btn-double">
+                                        <input type="checkbox" id="experts-ros-selection-all" autocomplete="off">All
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-xs-4 col-xs-4l">
+                                <div class="row">
+                                    <div class="col-xs-12">
+                                    <div id="experts-ros-top" class="btn-group btn-group-justified" data-toggle="buttons">
+                                        <label class="btn btn-round btn-custom">
+                                            <input type="checkbox" id="experts-ros-selection-overall" autocomplete="off">Top Overall
+                                        </label>
+                                        <label class="btn btn-round btn-custom">
+                                            <input type="checkbox" id="experts-ros-selection-position" autocomplete="off">Top Position
+                                        </label>
+                                    </div>
+                                    </div>
+                                    <div class="col-xs-12">
+                                        <div class="center-contents">
+                                            <div class="input-group input-group-top">
+                                                <span class="input-group-addon"># of Experts</span>
+                                                <input type="text" class="form-control center-text" placeholder="5" id="experts-ros-num-top">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xs-3">
+                                <div class="row">
+                                    <div class="col-xs-12">
+                                        <div class="btn-group btn-group-justified" data-toggle="buttons">
+                                            <label class="btn btn-round btn-custom">
+                                                <input type="checkbox" id="experts-ros-selection-updated" autocomplete="off">Last Updated
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-12">
+                                        <div class="center-contents">
+                                            <div class="input-group input-group-update">
+                                                <span class="input-group-addon"># of Days</span>
+                                                <input type="text" class="form-control center-text" placeholder="7" id="experts-ros-num-updated">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel-disable"></div>
+                <div class="panel-disable-msg">
+                    <h3>Temporarily Disabled :(</h3>
+                </div>
+            </div>
+
+            <div class="panel panel-bottom">
+                <div class="panel-heading">
+                    <h4>Miscellaneous</h4>
+                </div>
+                <div id="misc">
+                    <table>
+                        <tbody>
+                            <tr class="no-border">
+                                <td class="top bottom left center-text">
+                                    <span>Pages</span>
+                                    <div class="sites">
+                                        <img src="img/espn.png">
+                                        <img src="img/yahoo.png">
+                                        <img src="img/fleaflicker.png">
+                                    </div>
+                                </td>
+                                <td class="top bottom">
+                                    <div class="onoffswitch">
+                                        <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="remove_ads" checked>
+                                        <label class="onoffswitch-label" for="remove_ads">
+                                            <span class="onoffswitch-inner">
+                                                Hide Ads/Promos
+                                            </span>
+                                            <span class="onoffswitch-switch"></span>
+                                        </label>
+                                    </div>
+                                </td>
+                                <td class="top bottom">
+                                    <div class="onoffswitch">
+                                        <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="fix_css" checked>
+                                        <label class="onoffswitch-label" for="fix_css">
+                                            <span class="onoffswitch-inner">
+                                                Fix Broken CSS
+                                            </span>
+                                            <span class="onoffswitch-switch"></span>
+                                        </label>
+                                    </div>
+                                </td>
+                                <td class="spacer"></td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="changelog">
+
+            <div class="panel contact">
+                <div class="panel-heading">
+                    <h4>Report Bug/Request Feature</h4>
+                </div>
+                <div class="report center-contents">
+                    <a role="button" class="btn btn-warning left" href="https://github.com/flipperbw/FantasyPlus/issues" target="_blank">Github</a>
+                    <a role="button" class="btn btn-primary left" href="https://chrome.google.com/webstore/detail/fantasyplus/gojndgicjncbiobejfpjpcahadininga/support" target="_blank">Chrome Store</a>
+                    <a role="button" class="btn btn-info" href="https://www.reddit.com/message/compose?to=flipperbw&subject=FantasyPlus%20Bug%2FRequest" target="_blank">Reddit</a>
+                </div>
+            </div>
+
+            <div class="panel panel-bottom changes">
+                <div class="panel-heading">
+                    <h4>Changelog</h4>
+                </div>
+                <div class="panel-body">
+                    <ul>
+                        <li>
+                            <h3>3.3.9 (2018-08-23)</h3>
+                            <ul>
+                                <li>Adjusting for FPros site changes</li>
+                                <li>Bug fixes</li>
+                            </ul>
+
+                            <h3>3.3.8 (2018-08-01)</h3>
+                            <ul>
+                                <li>File optimizations</li>
+                                <li>Updating Yahoo missing data</li>
+                            </ul>
+
+                            <h3>3.3.7 (2018-07-29)</h3>
+                            <ul>
+                                <li>Updating for the 2018 season</li>
+                                <li>Many site-specific fixes</li>
+                                <li>Temporarily removing expert selection, as FantasyPros now requires login</li>
+                            </ul>
+
+                            <h3>3.3.0 (2017-11-02)</h3>
+                            <ul>
+                                <li>Added medians</li>
+                                <li>Fixed inaccurate trendlines if the player was traded</li>
+                            </ul>
+
+                            <h3>3.2.0 (2017-10-29)</h3>
+                            <ul>
+                                <li>Fixing more FPros data</li>
+                                <li>Early Lineup Optimizer setup</li>
+                            </ul>
+
+                            <h3>3.1.7 (2017-09-05)</h3>
+                            <ul>
+                                <li>Fixing Yahoo projections</li>
+                                <li>Enabling HTTPS for fleaflicker</li>
+                                <li>Adjustments for Rams (STL - LAR)</li>
+                            </ul>
+
+                            <h3>3.1.6 (2017-08-16)</h3>
+                            <ul>
+                                <li>Updating for the 2017 season!</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="save center-contents">
+        <button type="button" autocomplete="off" id="save" class="btn btn-success save-btn" disabled="disabled">
+            Save (no changes)
+        </button>
+    </div>
+
+</div>
+</body>
 </html>
