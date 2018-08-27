@@ -20,7 +20,7 @@ var files = {
     html: '*.html',
     data: '*',
     img: '*',
-    misc: '/manifest.json'
+    misc: 'manifest.json'
 };
 
 var folders = {

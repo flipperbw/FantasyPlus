@@ -26,6 +26,9 @@ player_name_selector = 'td.player';
 page_menu_selector = 'header div#full_stat_nav';
 pts_total_selector = 'span.proj-pts-week';
 
+var player_head;
+var player_table_header_player_selector = 'th.player';
+
 if (onMatchupPreviewPage) {
     base_table_selector = '#yspmaincontent';
     page_menu_selector = 'header span';
@@ -53,7 +56,7 @@ show_med = false; //TODO remove
 show_current = false;
 show_spark = false; //TODO remove
 show_ros = false; //TODO remove
-show_depth = false; //TODO remove
+//show_depth = false; //TODO remove
 show_std = false;
 
 var yahooIdsDone = jQuery.Deferred();
@@ -89,6 +92,7 @@ function setSelectors() {
 
     show_proj = typeof user_settings.columns.proj !== 'undefined' ? user_settings.columns.proj : true;
     show_rank = typeof user_settings.columns.rank !== 'undefined' ? user_settings.columns.rank : true;
+    show_depth = typeof user_settings.columns.depth !== 'undefined' ? user_settings.columns.depth : true;
 
     if (onMatchupPreviewPage) {
         player_table_header_proj_selector = 'th:contains(Proj)';
@@ -136,6 +140,7 @@ function setSelectors() {
     }
 
     proj_head = player_table_header.find(player_table_header_proj_selector);
+    player_head = player_table_header.find(player_table_header_player_selector);
 
     if (onMatchupPreviewPage) {
         show_rank = false;
@@ -283,12 +288,12 @@ function addColumns() {
         projection_header.text('Proj (FP)');
         
         var rank_header = jQuery(`<th style="width: ${cell_width}; text-align: center;" class="${fp} ${fp}Rankings ${fp}RankingsHeader" title="Projected position rank (lower is better) for *this week* from FantasyPros (via ${fp})">Rank (FP)</th>`);
-        //var depth_header = jQuery(`<th style="width: 50px; text-align: center;" class="playertableStat ${fp} ${fp}Depth ${fp}DepthHeader" title="Depth chart information (via ${fp})">DEPTH</th>`);
+        var depth_header = jQuery(`<th style="width: 50px;" class="Ta-c Bdrend ${fp} ${fp}Depth ${fp}DepthHeader" title="Depth chart information (via ${fp})">Depth</th>`);
 
         projection_cell.addClass('Nowrap');
 
         var rank_cell = jQuery(`<td class="Nowrap Ta-end ${fp} ${fp}Rankings ${fp}RankingsData">${loadingDiv}</td>`);
-        //var depth_cell = jQuery(`<td class="Nowrap Ta-end ${fp} ${fp}Depth ${fp}DepthData">${loadingDiv}</td>`);
+        var depth_cell = jQuery(`<td class="Nowrap Ta-c Bdrend ${fp} ${fp}Depth ${fp}DepthData">${loadingDiv}</td>`);
 
         custom_cols = 0;
         var all_header_cells = jQuery();
@@ -301,25 +306,38 @@ function addColumns() {
             custom_cols++;
             all_header_cells = all_header_cells.add(rank_header);
         }
-        //if (show_depth) {
-        //  custom_cols++;
-        //  all_header_cells.add(depth_header);
-        //}
 
-        if (custom_cols === 0) return;
+        if (custom_cols === 0 && !show_depth) return;
 
         player_table_header.each(function() {
-            let first_header_col = jQuery(this).find('th').filter(function() {
-                return /^\w/.test(jQuery(this).text());
-            }).first();
+            if (show_proj || show_rank) {
+                let first_header_col = jQuery(this).find('th').filter(function () {
+                    return /^\w/.test(jQuery(this).text());
+                }).first();
 
-            let fhc_curr_cols = parseInt(first_header_col.attr('colspan'));
-            if (!isNaN(fhc_curr_cols) && !first_header_col.data('modified')) {
-                first_header_col.attr({'colspan': fhc_curr_cols + custom_cols, 'data-modified': true});
+                let fhc_curr_cols = parseInt(first_header_col.attr('colspan'));
+                if (!isNaN(fhc_curr_cols) && !first_header_col.data('modified')) {
+                    first_header_col.attr({'colspan': fhc_curr_cols + custom_cols, 'data-modified': true});
+                }
+            }
+
+            if (show_depth) {
+                let depth_header_col = jQuery(this).find('th').first();
+
+                let dh_curr_cols = parseInt(depth_header_col.attr('colspan'));
+                if (!isNaN(dh_curr_cols) && !depth_header_col.data('modified')) {
+                    depth_header_col.attr({'colspan': dh_curr_cols + 1, 'data-modified': true});
+                }
             }
         });
 
-        proj_head.after(all_header_cells);
+        if (custom_cols > 0) {
+            proj_head.after(all_header_cells);
+        }
+
+        if (show_depth) {
+            player_head.after(depth_header);
+        }
 
         var blankCell = jQuery('<td class="Ta-end Nowrap"></td>'); //need fantasyplus class?
 
@@ -389,6 +407,11 @@ function addColumns() {
                 }
 
                 proj_cell.after(all_cells);
+            }
+
+            if (show_depth) {
+                var player_cell = currRow.find(player_name_selector).first();
+                player_cell.after(depth_cell.clone());
             }
 
             if (currRow.find('td:first').hasClass('Selected')) {

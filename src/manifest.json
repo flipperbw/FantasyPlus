@@ -1,9 +1,8 @@
 {
     "name": "FantasyPlus",
     "short_name": "FantasyPlus",
-    "version": "3.3.9",
+    "version": "3.3.10",
     "manifest_version": 2,
-    "update_url": "https://clients2.google.com/service/update2/crx",
     "description": "Adds extra data and information (projections, stats, depth charts, etc.) to fantasy football sites (ESPN, Yahoo, and FleaFlicker).",
     "icons": {
         "16": "img/FantasyPlusIcon-16.png",
@@ -19,7 +18,10 @@
         "tabs"
     ],
     "content_security_policy": "script-src 'self' https://www.google-analytics.com; object-src 'self'",
-    "options_page": "settings.html",
+    "options_ui": {
+        "page": "settings.html",
+        "open_in_tab": true
+    },
     "background": {
         "page": "background.html"
     },
