@@ -91,11 +91,11 @@ function setSelectors() {
         uri_name = 'week';
     }
     var week_no = url_dict.hasOwnProperty(uri_name) ? url_dict[uri_name][0] : '';
-    if (week_no && week_no !== current_week) {
+    if (week_no && (parseInt(week_no) !== current_week)) {
         is_current_week = false;
     }
     var season_no = url_dict.hasOwnProperty('season') ? url_dict['season'][0] : '';
-    if (season_no && season_no !== current_season) {
+    if (season_no && (parseInt(season_no) !== current_season)) {
         is_current_week = false;
     }
 

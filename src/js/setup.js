@@ -632,7 +632,7 @@ var team_name_conversion = {'ARZ': 'ARI', 'GBP': 'GB', 'KCC': 'KC', 'NEP': 'NE',
 var fpros_proj_headers = {
     'QB':  ['Player', 'Team', 'pass_att', 'pass_cmp', 'pass_yds', 'pass_tds', 'pass_ints', 'rush_att', 'rush_yds', 'rush_tds', 'fumbles', 'fpts'],
     'RB':  ['Player', 'Team', 'rush_att', 'rush_yds', 'rush_tds', 'rec_att', 'rec_yds', 'rec_tds', 'fumbles', 'fpts'],
-    'WR':  ['Player', 'Team', 'rush_att', 'rush_yds', 'rush_tds', 'rec_att', 'rec_yds', 'rec_tds', 'fumbles', 'fpts'],
+    'WR':  ['Player', 'Team', 'rec_att', 'rec_yds', 'rec_tds', 'rush_att', 'rush_yds', 'rush_tds', 'fumbles', 'fpts'],
     'TE':  ['Player', 'Team', 'rec_att', 'rec_yds', 'rec_tds','fumbles', 'fpts'],
     'K':   ['Player', 'Team', 'fg', 'fga', 'xpt', 'fpts'],
     'DST': ['Player', 'Team', 'def_sack', 'def_int', 'def_fr', 'def_ff', 'def_td', 'def_safety', 'def_pa', 'def_tyda', 'fpts']
