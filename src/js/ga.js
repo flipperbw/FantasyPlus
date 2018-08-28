@@ -14,7 +14,7 @@
 })(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
 
 var extensionId = chrome.i18n.getMessage("@@extension_id");
-if (extensionId === 'gojndgicjncbiobejfpjpcahadininga') {
+if (extensionId === 'gojndgicjncbiobejfpjpcahadininga' || extensionId === '6277a8c5-abab-44a5-a527-3d01c48c583d') {
 	ga('create', 'UA-84810100-1', 'auto');
 }
 

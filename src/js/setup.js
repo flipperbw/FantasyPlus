@@ -2353,6 +2353,7 @@ RowData.prototype._init = function() {
     this.player_cell = this._getPlayerCell();
     this.player_cell_text = this._getPlayerCellText();
 
+    if (this._isBlank()) return {};
     //player_name, pos_name, team_name, (live_game, player_id, player_href)
     Object.assign(this, this._getPlayerInfo());
 };
@@ -2939,6 +2940,9 @@ var AddData = function() {
         }
 
         total_players_depth = data.length;
+        if (total_players_depth === 0) {
+            depthDone.resolve();
+        }
 
         self._iterData('depth', data);
 

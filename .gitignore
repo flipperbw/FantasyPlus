@@ -1,6 +1,8 @@
 *.swp
 src.zip
 dist.zip
+ff_src.zip
+/ff_src
 /node_modules
 npm-debug.log
 package-lock.json

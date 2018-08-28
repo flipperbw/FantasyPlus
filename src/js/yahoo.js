@@ -399,12 +399,15 @@ function addColumns() {
                     }
                 }
 
+                /*
+                // TODO: do I need this?
                 if (currRow.find('.ysf-player-video-link').length === 0 && search_type === 'stats') {
                     proj_cell = currRow.find('td').eq(header_index - 1);
                 }
                 else {
                     proj_cell = currRow.find('td').eq(header_index);
                 }
+                */
 
                 proj_cell.after(all_cells);
             }
@@ -610,6 +613,26 @@ function calcAdjProjections(player_data) {
         parseLeagueSettings.league_settings['ya500'] * (500 <= player_data['def_tyda']);
 }
 
+/*
+var orig = RowData.prototype._getPlayerCell;
+RowData.prototype._getPlayerCell = function() {
+    if (onMatchupPreviewPage) {
+        return this.cell.nearest('td.player');
+    }
+    return orig.apply(this, arguments);
+};
+*/
+
+//make new applybefore func out of this
+RowData.prototype._getPlayerCell = (function(orig) {
+    return function() { //put args defs here
+        if (onMatchupPreviewPage) {
+            return this.cell.nearest('td.player');
+        }
+        return orig.apply(this, arguments);
+    }
+})(RowData.prototype._getPlayerCell);
+
 RowData.prototype._getPlayerInfo = function() {
     var player_name_cell = this.player_cell.find('.ysf-player-name');
     // I might have to fix this more
@@ -656,26 +679,6 @@ RowData.prototype._getPlayerInfo = function() {
     };
 };
 
-/*
-var orig = RowData.prototype._getPlayerCell;
-RowData.prototype._getPlayerCell = function() {
-    if (onMatchupPreviewPage) {
-        return this.cell.nearest('td.player');
-    }
-    return orig.apply(this, arguments);
-};
-*/
-
-//make new applybefore func out of this
-RowData.prototype._getPlayerCell = (function(orig) {
-    return function() { //put args defs here
-        if (onMatchupPreviewPage) {
-            return this.cell.nearest('td.player');
-        }
-        return orig.apply(this, arguments);
-    }
-})(RowData.prototype._getPlayerCell);
-
 override(getProjectionData, '_calcAndPop', applyBefore(function(rowData, datatype) {
     if (onMatchupPreviewPage || onFreeAgencyPage) {
         var seenId = storage_translation_data.hasOwnProperty('ID_' + rowData.player_id);
@@ -717,7 +720,7 @@ isCurrentWeek = function() {
         proj_week = page_menu.find('#selectlist_nav span').text().replace(/\D/g, '');
     }
 
-    return !isNaN(proj_week) && (proj_week === current_week);
+    return !isNaN(proj_week) && (parseInt(proj_week) === current_week);
 };
 
 addData.projTotals = function() {

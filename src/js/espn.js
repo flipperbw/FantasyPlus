@@ -1096,8 +1096,6 @@ function calcAdjProjections(player_data) {
 }
 
 RowData.prototype._getPlayerInfo = function() {
-    if (this._isBlank()) return {};
-
     var player_name = '';
     var pos_name = '';
     var team_name = '';
