@@ -2567,6 +2567,7 @@ function insertAdjAvg(thisrow, p_avg, p_med, games_played, weekly_points) {
     if (show_current) {
         var thisCurrent = thisrow.find('.FantasyPlusCurrentData');
         var curr_score = "--";
+
         if (weekly_points && weekly_points.length > 0) {
             // noinspection JSDeprecatedSymbols
             if (current_season === current_season_avg_week && jQuery.isNumeric(weekly_points[current_week - 1])) {

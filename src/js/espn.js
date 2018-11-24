@@ -601,6 +601,7 @@ function fixPage() {
     if (remove_ads) {
         jQuery('.games-footercol, .transitional-elements').remove();
         jQuery('.games-innercol2').children('br').remove();
+        jQuery('.eplus').remove();
         if (onClubhousePage) {
             //('.games-alert-tilt', '.games-alert-mod.alert-mod2.games-blue-alert', 'div.draftKings');
             jQuery('iframe[src*="streak.espn.com"]').parent().remove();
@@ -609,6 +610,7 @@ function fixPage() {
             jQuery('.games-rightcol-spacer, a[href*="pizzahut"], div.promotional-info, div.header-ad, div[class^="games-ad"]').remove();
         }
     }
+
     if (fix_css) {
         jQuery('.gamesmain.container').css('margin-bottom', '10px');
         if (onClubhousePage) {

@@ -309,7 +309,12 @@ function addColumns() {
 
         if (custom_cols === 0 && !show_depth) return;
 
+        var forecast_adj = false;
         player_table_header.each(function() {
+            if (jQuery(this).find('th:contains("Forecast")').length) {
+                forecast_adj = true;
+            }
+
             if (show_proj || show_rank) {
                 let first_header_col = jQuery(this).find('th').filter(function () {
                     return /^\w/.test(jQuery(this).text());
@@ -345,9 +350,13 @@ function addColumns() {
         player_table_rows.each(function() {
             var currRow = jQuery(this);
 
+            let adj_header_idx = header_index;
+            if (forecast_adj && currRow.parents('table').find('thead tr th:contains("Forecast")').length === 0) {
+                adj_header_idx -= 1;
+            }
             var currRowTds = currRow.find('td');
-            var points_cell = currRowTds.eq(header_index - 1);
-            var proj_cell = currRowTds.eq(header_index);
+            var points_cell = currRowTds.eq(adj_header_idx - 1);
+            var proj_cell = currRowTds.eq(adj_header_idx);
 
             var search_cell = proj_cell;
             var search_type = null;
@@ -398,16 +407,6 @@ function addColumns() {
                         }
                     }
                 }
-
-                /*
-                // TODO: do I need this?
-                if (currRow.find('.ysf-player-video-link').length === 0 && search_type === 'stats') {
-                    proj_cell = currRow.find('td').eq(header_index - 1);
-                }
-                else {
-                    proj_cell = currRow.find('td').eq(header_index);
-                }
-                */
 
                 proj_cell.after(all_cells);
             }
