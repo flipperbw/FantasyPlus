@@ -6,7 +6,9 @@ var url_nfl = 'nfl/leagues';
 league_id = document.URL.match(new RegExp(`/${url_nfl}/(${num_rgx})`))[1];
 league_settings_url = `${url_base}/${url_nfl}/${league_id}/scoring`;
 
-onMatchupPreviewPage = new RegExp(`/${url_nfl}/${num_rgx}/scores/${num_rgx}`).test(document.URL);
+//onMatchupPreviewPage = new RegExp(`/${url_nfl}/${num_rgx}/scores/${num_rgx}`).test(document.URL);
+//TODO: idk. something happened here to make the tds join together in the rows like 'RBWR'
+onMatchupPreviewPage = false;
 onClubhousePage = new RegExp(`/${url_nfl}/${num_rgx}/teams/${num_rgx}(\\?|$)`).test(document.URL);
 onFreeAgencyPage = new RegExp(`/${url_nfl}/${num_rgx}/players([^/]|$)`).test(document.URL);
 onGeneralProjPage = new RegExp(`/${url_nfl}/${num_rgx}/teams/${num_rgx}/watched`).test(document.URL);

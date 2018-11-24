@@ -602,6 +602,7 @@ function fixPage() {
         jQuery('.games-footercol, .transitional-elements').remove();
         jQuery('.games-innercol2').children('br').remove();
         jQuery('.eplus').remove();
+        jQuery('.games-alert-mod:contains("hiring")').remove();
         if (onClubhousePage) {
             //('.games-alert-tilt', '.games-alert-mod.alert-mod2.games-blue-alert', 'div.draftKings');
             jQuery('iframe[src*="streak.espn.com"]').parent().remove();
@@ -613,6 +614,7 @@ function fixPage() {
 
     if (fix_css) {
         jQuery('.gamesmain.container').css('margin-bottom', '10px');
+        //jQuery('.fpop_tab_left').css('width', '12px !important');
         if (onClubhousePage) {
             jQuery('.games-bottomcol').css('margin', 0);
             var $games_dates_mod = jQuery('.games-dates-mod');
