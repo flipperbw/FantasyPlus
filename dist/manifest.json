@@ -1,7 +1,7 @@
 {
     "name": "FantasyPlus",
     "short_name": "FantasyPlus",
-    "version": "3.3.13",
+    "version": "3.3.14",
     "manifest_version": 2,
     "description": "Adds extra data and information (projections, stats, depth charts, etc.) to fantasy football sites (ESPN, Yahoo, and FleaFlicker).",
     "icons": {
