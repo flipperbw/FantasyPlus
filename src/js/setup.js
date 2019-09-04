@@ -50,6 +50,11 @@ document.body.appendChild(tag);
 //but with a catch for div > div
 //https://gist.github.com/duzun/187785d63ccb95da8883
 
+//for new seasons:
+//  find tuesday of season start
+//  update yahoo ids
+//  edit release notes
+
 /* global chrome, console */
 
 chrome.runtime.sendMessage({ request: 'valid_site' });
@@ -69,8 +74,8 @@ var dlog = {
     get level() { return this.loggingLevel; }
 };
 
-//dlog.level = dlog.WARN;
-dlog.level = dlog.LOG;
+dlog.level = dlog.WARN;
+//dlog.level = dlog.LOG;
 //dlog.level = dlog.INFO;
 
 jQuery.noConflict();
@@ -187,7 +192,6 @@ var alldata,
     storage_translation_data,
     activity_data,
     activity_data_current_season_site,
-    siteType,
     onMatchupPreviewPage,
     onClubhousePage,
     onFreeAgencyPage,
@@ -300,6 +304,7 @@ var season_start_map = {
     '2016': [8, 6],
     '2017': [8, 5],
     '2018': [8, 4],
+    '2019': [8, 3],
 };
 
 // from 2014-2015 season data
@@ -1127,22 +1132,13 @@ var ParseLeagueSettings = function() {
 var parseLeagueSettings = new ParseLeagueSettings();
 
 function ajaxCbPos(settings) {
-    jQuery.ajax(
-        settings
-    ).done(function(data) {
-        var cb = this.custom_data.cb;
-        var cust_position = this.custom_data.pos;
-
-        data = cleanHTML(data);
-        cb(cust_position, data.trim());
-    }).fail(function() {
-        var cb = this.custom_data.cb;
-        var cust_position = this.custom_data.pos;
-        var cust_source_site = this.custom_data.source_site;
-
-        idp_fetch_fail = true;
-        chrome.runtime.sendMessage({ request: 'fetch_fail', value: cust_source_site });
-        cb(cust_position, 'error');
+    chrome.runtime.sendMessage({
+        query: "pos",
+        data: settings
+    },
+    data => {
+        data = cleanHTML(data).trim();
+        settings.custom_data.cb(settings.custom_data.pos, data)
     });
 }
 

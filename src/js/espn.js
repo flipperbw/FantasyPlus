@@ -1,7 +1,9 @@
+/* global playerTable, player_table_header, player_table_body */
+
 siteType = 'espn';
 
 var url_base = '//games.espn.com';
-var url_nfl = 'ffl';
+var url_nfl = 'football';
 
 league_id = document.URL.match(new RegExp(`leagueId=(${num_rgx})`))[1];
 
@@ -685,7 +687,7 @@ function addColumns() {
     if (!canAddColumns()) return;
 
     var cellClass = `playertableStat ${fp}`;
-    
+
     var projection_header = `<td class="${cellClass} ${fp}Projections ${fp}ProjectionsHeader" title="Consensus point projections from FantasyPros (via ${fp})">FPROS</td>`;
     var projection_cell = `<td class="${cellClass} ${fp}Projections ${fp}ProjectionsData">${loadingDiv}</td>`;
 
