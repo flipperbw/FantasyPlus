@@ -2,12 +2,12 @@
 
 siteType = 'espn';
 
-var url_base = '//games.espn.com';
+var url_base = '//fantasy.espn.com';
 var url_nfl = 'football';
 
 league_id = document.URL.match(new RegExp(`leagueId=(${num_rgx})`))[1];
 
-var url_league_sections = `${url_base}/${url_nfl}/leaguesetup/sections`;
+var url_league_sections = `${url_base}/${url_nfl}/league/sections`;
 var url_league_roster = `${url_league_sections}/roster`;
 
 league_settings_url = `${url_league_sections}/scoring?leagueId=${league_id}`;
