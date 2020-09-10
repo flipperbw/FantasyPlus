@@ -211,6 +211,8 @@ gulp.task('js', ['clean_js'], function(cb) {
         minify({
             removeConsole: true,
             removeDebugger: true
+            // removeConsole: false,
+            // removeDebugger: false
         }),
         gulp.dest(folders.build.js.files)
     ], cb);

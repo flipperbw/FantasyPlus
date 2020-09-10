@@ -165,7 +165,7 @@ function getYahooIds() {
 
     // go to https://sports.yahoo.com/site/api/resource/sports.league.playerssearch;count=2;league=nfl;name=;pos=;start=?bkt=%5B%22spdmtest%22%2C%22mlb-gamechannel%22%2C%22sp-football-reg-options-expanded%22%2C%22sp-footballl-signup-primary-join%22%2C%22sp-survival-promo-ctl%22%5D&device=desktop&feature=canvassOffnet%2CnewContentAttribution%2Clivecoverage%2Ccanvass&intl=us&lang=en-US&partner=none&prid=as7g78lcqbjvm&region=US&site=sports&tz=America%2FNew_York&ver=1.0.1932&returnMeta=true'
     // copy as curl, change count
-    // that | jq -r '.data.players | to_entries[] | "\(.key)\": \"\(.value.display_name)\","' | sed -e 's/nfl.p./"ID_/'
+    // that | jq -r '.data.players | to_entries[] | "\(.key)\": \"\(.value.display_name)\","' | sed -e 's/nfl.p./"ID_/' | sed -e 's/^[\s \t]//'
     jQuery.getJSON(chrome.extension.getURL('data/yahoo_ids.json')
     ).done(function(yahoo_json) {
         storage_translation_data = yahoo_json;
@@ -283,10 +283,10 @@ function addColumns() {
     else {
         //this is technically inefficient since we need to check for custom cols first
         let cell_width = "40px";
-        
+
         projection_header.css({ width: cell_width, 'text-align': "center" });
         projection_header.text('Proj (FP)');
-        
+
         var rank_header = jQuery(`<th style="width: ${cell_width}; text-align: center;" class="${fp} ${fp}Rankings ${fp}RankingsHeader" title="Projected position rank (lower is better) for *this week* from FantasyPros (via ${fp})">Rank (FP)</th>`);
         var depth_header = jQuery(`<th style="width: 50px;" class="Ta-c Bdrend ${fp} ${fp}Depth ${fp}DepthHeader" title="Depth chart information (via ${fp})">Depth</th>`);
 

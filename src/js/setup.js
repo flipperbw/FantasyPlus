@@ -305,6 +305,7 @@ var season_start_map = {
     '2017': [8, 5],
     '2018': [8, 4],
     '2019': [8, 3],
+    '2020': [8, 8]
 };
 
 // from 2014-2015 season data
@@ -491,7 +492,7 @@ var team_abbrevs = {
     'Buffalo Bills': 'BUF',
     'Pittsburgh Steelers': 'PIT',
     'Baltimore Ravens': 'BAL',
-    'Oakland Raiders': 'OAK',
+    'Las Vegas Raiders': 'LV',
     'Jacksonville Jaguars': 'JAC',
     'Miami Dolphins': 'MIA',
     'Detroit Lions': 'DET',
@@ -501,7 +502,7 @@ var team_abbrevs = {
     'New York Giants': 'NYG',
     'Chicago Bears': 'CHI',
     'Tampa Bay Buccaneers': 'TB',
-    'Washington Redskins': 'WAS',
+    'Washington Football Team': 'WAS',
     'Atlanta Falcons': 'ATL',
     'Los Angeles Chargers': 'LAC',
     'Indianapolis Colts': 'IND',
@@ -657,7 +658,7 @@ var depth_type_map = {
     'black': 'Reserve'
 };
 
-var depth_url = '//subscribers.footballguys.com/apps/depthchart.php?type=all&lite=no&exclude_coaches=yes';
+var depth_url = 'https://subscribers.footballguys.com/apps/depthchart.php?type=all&lite=no&exclude_coaches=yes';
 var url_fpros = 'https://www.fantasypros.com/nfl';
 var url_sharks = 'https://www.fantasysharks.com';
 var url_sharks_proj = `${url_sharks}/apps/bert/forecasts/projections.php`;
@@ -1860,16 +1861,14 @@ function parseDepth(data) {
 }
 
 function getDepth() {
-    jQuery.ajax({
-        url: depth_url,
-        timeout: ajax_timeout
-    }).done(function(data) {
-        data = cleanHTML(data);
+    chrome.runtime.sendMessage({
+        query: "depth",
+        data: {url: depth_url}
+    },
+    data => {
+        data = cleanHTML(data).trim();
+        // depth_fail = true; TODO
         parseDepth(data);
-    }).fail(function() {
-        depth_fail = true;
-        chrome.runtime.sendMessage({ request: 'fetch_fail', value: depth_url });
-        addData.run('depth');
     });
 }
 
